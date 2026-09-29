@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real Estate - Plateforme Immobilière au Maroc</title>
+    <!-- Google Fonts: Inter & Poppins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@500;600;700;800&display=swap"
+        rel="stylesheet">
+    <!-- CDN Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Feuille de style personnalisée -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+    <!-- HEADER STICKY -->
+    <header id="main-header">
+        <div class="header-container">
+            <a href="index.html" class="logo">
+                <span class="logo-icon"></span>
+                <span class="logo-text">Real <span class="logo-accent">Estate</span></span>
+            </a>
+
+            <!-- Navigation Desktop -->
+            <nav class="nav-desktop">
+                <a href="#acheter" class="nav-link">Acheter</a>
+                <a href="#louer" class="nav-link">Louer</a>
+                <a href="#nouveautes" class="nav-link">Nouveautés</a>
+                <a href="#carte" class="nav-link">Carte</a>
+            </nav>
+
+            <!-- Actions Header -->
+            <div class="header-actions">
+                <a href="#login" class="btn btn-outline" id="btn-login">Se connecter</a>
+                <a href="#publier" class="btn btn-primary" id="btn-publish">+ Publier une annonce</a>
+                <button class="burger-btn" id="burger-btn" aria-label="Ouvrir le menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Menu Mobile Drawer -->
+        <nav class="nav-mobile" id="nav-mobile">
+            <a href="#acheter" class="mobile-nav-link">Acheter</a>
+            <a href="#louer" class="mobile-nav-link">Louer</a>
+            <a href="#nouveautes" class="mobile-nav-link">Nouveautés</a>
+            <a href="#carte" class="mobile-nav-link">Carte interactive</a>
+            <div class="mobile-actions">
+                <a href="#login" class="btn btn-outline btn-block">Se connecter</a>
+                <a href="#publier" class="btn btn-primary btn-block">+ Publier une annonce</a>
+            </div>
+        </nav>
+    </header>
+
+    <!-- SECTION HERO -->
+    <section class="hero-section">
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+            <h1 class="hero-title">Trouvez votre bien immobilier au Maroc</h1>
+            <p class="hero-subtitle">Des milliers de biens à découvrir partout au Maroc : villas, appartements, riads et locaux</p>
+
+            <!-- Barre de Recherche Imposante -->
+            <div class="search-box-card">
+                <form class="search-form" id="search-form" onsubmit="event.preventDefault(); handleSearch();">
+                    <div class="search-input-group">
+                        <span class="input-icon"></span>
+                        <div class="input-text-wrapper">
+                            <label for="search-city">Ville ou quartier</label>
+                            <input type="text" id="search-city" placeholder="Ex: Casablanca, Marrakech, Rabat..." />
+                        </div>
+                    </div>
+
+                    <div class="search-divider"></div>
+
+                    <div class="search-input-group">
+                        <span class="input-icon"></span>
+                        <div class="input-text-wrapper">
+                            <label for="search-type">Type de bien</label>
+                            <select id="search-type">
+                                <option value="">Tous les types</option>
+                                <option value="Maison">Maison</option>
+                                <option value="Villa">Villa</option>
+                                <option value="Appartement">Appartement</option>
+                                <option value="Terrain">Terrain</option>
+                                <option value="Local Commercial">Local Commercial</option>
+                                <option value="Bureau">Bureau</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-search" id="btn-search-main">
+                        <span class="search-icon"></span>
+                        <span>Rechercher</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- BARRE DE FILTRES RAPIDES (CHIPS) -->
+    <section class="filters-bar-section">
+        <div class="container">
+            <div class="chips-container" id="chips-container">
+                <button class="filter-chip active" data-filter="Tous">Tous</button>
+                <button class="filter-chip" data-filter="Maison">Maison</button>
+                <button class="filter-chip" data-filter="Villa">Villa</button>
+                <button class="filter-chip" data-filter="Appartement">Appartement</button>
+                <button class="filter-chip" data-filter="Terrain">Terrain</button>
+                <button class="filter-chip" data-filter="Local Commercial">Local Commercial</button>
+                <button class="filter-chip" data-filter="Bureau">Bureau</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION PRINCIPALE : ANNONCES EN VEDETTE -->
+    <main class="main-content">
+        <div class="container">
+            <div class="section-header">
+                <div>
+                    <h2 class="section-title">Annonces à la une</h2>
+                    <p class="section-subtitle">Découvrez notre sélection exclusive de biens vérifiés partout au Maroc</p>
+                </div>
+                <div class="properties-count" id="properties-count">6 biens disponibles</div>
+            </div>
+
+            <!-- Grille de cartes d'annonces -->
+            <div class="property-grid" id="property-list">
+
+                <!-- Carte 1 -->
+                <article class="property-card" data-type="Villa" data-city="Casablanca">
+                    <div class="card-media">
+                        <img src="https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=700&q=80"
+                            alt="Villa Contemporaine Californie" loading="lazy" />
+                        <span class="badge badge-sale">À VENDRE</span>
+                        <button class="btn-favorite" aria-label="Ajouter aux favoris">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="card-price">4 850 000 <span class="currency">DH</span></div>
+                        <h3 class="card-title">Superbe Villa Contemporaine avec Piscine</h3>
+                        <p class="card-location">Californie, Casablanca</p>
+                        <div class="card-features">
+                            <span class="feature-item">5 ch.</span>
+                            <span class="feature-item">4 sdb</span>
+                            <span class="feature-item">420 m²</span>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Carte 2 -->
+                <article class="property-card" data-type="Appartement" data-city="Tanger">
+                    <div class="card-media">
+                        <img src="https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=700&q=80"
+                            alt="Appartement Vue Mer Tanger" loading="lazy" />
+                        <span class="badge badge-rent">À LOUER</span>
+                        <button class="btn-favorite" aria-label="Ajouter aux favoris">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="card-price">12 500 <span class="currency">DH / mois</span></div>
+                        <h3 class="card-title">Appartement Moderne Vue Panoramique sur Mer</h3>
+                        <p class="card-location">Malabata, Tanger</p>
+                        <div class="card-features">
+                            <span class="feature-item">3 ch.</span>
+                            <span class="feature-item">2 sdb</span>
+                            <span class="feature-item">135 m²</span>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Carte 3 -->
+                <article class="property-card" data-type="Appartement" data-city="Casablanca">
+                    <div class="card-media">
+                        <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=700&q=80"
+                            alt="Penthouse de luxe Gauthier" loading="lazy" />
+                        <span class="badge badge-sale">À VENDRE</span>
+                        <button class="btn-favorite" aria-label="Ajouter aux favoris">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="card-price">3 200 000 <span class="currency">DH</span></div>
+                        <h3 class="card-title">Penthouse de Prestige avec Grande Terrasse</h3>
+                        <p class="card-location">Gauthier, Casablanca</p>
+                        <div class="card-features">
+                            <span class="feature-item">3 ch.</span>
+                            <span class="feature-item">3 sdb</span>
+                            <span class="feature-item">195 m²</span>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Carte 4 -->
+                <article class="property-card" data-type="Villa" data-city="Marrakech">
+                    <div class="card-media">
+                        <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=700&q=80"
+                            alt="Villa Riad Palmeraie Marrakech" loading="lazy" />
+                        <span class="badge badge-sale">À VENDRE</span>
+                        <button class="btn-favorite" aria-label="Ajouter aux favoris">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="card-price">6 900 000 <span class="currency">DH</span></div>
+                        <h3 class="card-title">Riad Privé d'Exception dans la Palmeraie</h3>
+                        <p class="card-location">Palmeraie, Marrakech</p>
+                        <div class="card-features">
+                            <span class="feature-item">6 ch.</span>
+                            <span class="feature-item">6 sdb</span>
+                            <span class="feature-item">650 m²</span>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Carte 5 -->
+                <article class="property-card" data-type="Bureau" data-city="Casablanca">
+                    <div class="card-media">
+                        <img src="https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=700&q=80"
+                            alt="Plateau Bureau Casablanca Finance City" loading="lazy" />
+                        <span class="badge badge-rent">À LOUER</span>
+                        <button class="btn-favorite" aria-label="Ajouter aux favoris">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="card-price">26 000 <span class="currency">DH / mois</span></div>
+                        <h3 class="card-title">Plateau de Bureaux Aménagé Haut Standing</h3>
+                        <p class="card-location">Casablanca Finance City (CFC)</p>
+                        <div class="card-features">
+                            <span class="feature-item">Open Space</span>
+                            <span class="feature-item">2 sdb</span>
+                            <span class="feature-item">220 m²</span>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Carte 6 -->
+                <article class="property-card" data-type="Maison" data-city="Rabat">
+                    <div class="card-media">
+                        <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=700&q=80"
+                            alt="Maison de Ville Hay Riad" loading="lazy" />
+                        <span class="badge badge-sale">À VENDRE</span>
+                        <button class="btn-favorite" aria-label="Ajouter aux favoris">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="card-price">3 600 000 <span class="currency">DH</span></div>
+                        <h3 class="card-title">Charmante Maison Familiale avec Jardin Privatif</h3>
+                        <p class="card-location">Hay Riad, Rabat</p>
+                        <div class="card-features">
+                            <span class="feature-item">4 ch.</span>
+                            <span class="feature-item">3 sdb</span>
+                            <span class="feature-item">280 m²</span>
+                        </div>
+                    </div>
+                </article>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- SECTION CARTE INTERACTIVE -->
+    <section class="map-section" id="carte">
+        <div class="container">
+            <div class="section-header text-center">
+                <h2 class="section-title">Explorez sur la carte</h2>
+                <p class="section-subtitle">Visualisez directement l'emplacement exact de nos biens sélectionnés à Casablanca et ses environs</p>
+            </div>
+            <div class="map-wrapper">
+                <div id="map"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION POURQUOI NOUS CHOISIR -->
+    <section class="features-section">
+        <div class="container">
+            <div class="section-header text-center">
+                <h2 class="section-title">Pourquoi choisir Real Estate ?</h2>
+                <p class="section-subtitle">La plateforme immobilière de référence combinant rigueur, clarté et modernité</p>
+            </div>
+
+            <div class="features-grid">
+                <!-- Atout 1 -->
+                <div class="feature-box">
+                    <div class="feature-icon-wrapper">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ff6d00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="feature-heading">Annonces 100% Vérifiées</h3>
+                    <p class="feature-description">
+                        Tous les titres fonciers, conformités et documents légaux sont minutieusement contrôlés par notre équipe d'experts.
+                    </p>
+                </div>
+
+                <!-- Atout 2 -->
+                <div class="feature-box">
+                    <div class="feature-icon-wrapper">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ff6d00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+                            <line x1="8" y1="2" x2="8" y2="18"></line>
+                            <line x1="16" y1="6" x2="16" y2="22"></line>
+                        </svg>
+                    </div>
+                    <h3 class="feature-heading">Recherche par Carte Interactive</h3>
+                    <p class="feature-description">
+                        Visualisez instantanément l'emplacement géographique exact, la proximité des écoles, commerces et transports.
+                    </p>
+                </div>
+
+                <!-- Atout 3 -->
+                <div class="feature-box">
+                    <div class="feature-icon-wrapper">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ff6d00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                    </div>
+                    <h3 class="feature-heading">Visites en Ligne & Rendez-vous</h3>
+                    <p class="feature-description">
+                        Planifiez vos visites en présentiel ou assistez à des visites virtuelles 3D immersives en un simple clic.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER MODERNE 3 COLONNES -->
+    <footer class="main-footer">
+        <div class="container">
+            <div class="footer-grid">
+                <!-- Colonne 1 : À propos -->
+                <div class="footer-col">
+                    <div class="footer-logo">
+                        <span class="logo-icon"></span>
+                        <span class="logo-text">Real <span class="logo-accent">Estate</span></span>
+                    </div>
+                    <p class="footer-about">
+                        Real Estate est la plateforme immobilière de nouvelle génération au Maroc. Notre mission est de simplifier l'achat, la vente et la location avec un service transparent, fiable et innovant.
+                    </p>
+                    <div class="social-links">
+                        <a href="#" class="social-icon" aria-label="Facebook">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
+                            </svg>
+                        </a>
+                        <a href="#" class="social-icon" aria-label="Instagram">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                            </svg>
+                        </a>
+                        <a href="#" class="social-icon" aria-label="LinkedIn">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
+                                <rect x="2" y="9" width="4" height="12"></rect>
+                                <circle cx="4" cy="4" r="2"></circle>
+                            </svg>
+                        </a>
+                        <a href="#" class="social-icon" aria-label="Twitter">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"></path>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Colonne 2 : Liens rapides -->
+                <div class="footer-col">
+                    <h4 class="footer-title">Liens Rapides</h4>
+                    <ul class="footer-links">
+                        <li><a href="#acheter">Acheter un bien</a></li>
+                        <li><a href="#louer">Louer un appartement</a></li>
+                        <li><a href="#publier">Déposer une annonce</a></li>
+                        <li><a href="#carte">Carte des biens</a></li>
+                        <li><a href="#estimation">Estimer mon bien immobilier</a></li>
+                        <li><a href="#guides">Guides & Conseils immobiliers</a></li>
+                    </ul>
+                </div>
+
+                <!-- Colonne 3 : Contact & Support -->
+                <div class="footer-col">
+                    <h4 class="footer-title">Contact & Support</h4>
+                    <ul class="contact-info">
+                        <li>Boulevard d'Anfa, Casablanca, Maroc</li>
+                        <li>+212 5 22 00 00 00</li>
+                        <li>contact@realestate.ma</li>
+                        <li>Du Lundi au Vendredi : 9h00 - 19h00</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Copyright bar -->
+            <div class="footer-bottom">
+                <p>&copy; 2026 Real Estate Maroc. Tous droits réservés. Inspiré des standards Zillow & Sarouty.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- CDN Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Script principal interactif -->
+    <script src="js/main.js"></script>
+</body>
+
+</html>
