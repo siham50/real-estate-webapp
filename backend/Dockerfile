@@ -1,6 +1,5 @@
-# ============================================
 # Étape 1 : Compilation et Build avec Maven et JDK 21
-# ============================================
+
 FROM eclipse-temurin:21-jdk-alpine AS build
 WORKDIR /app
 
@@ -14,9 +13,9 @@ COPY src ./src
 # Compilation et packaging de l'application
 RUN mvn clean package -DskipTests
 
-# ============================================
+
 # Étape 2 : Image d'exécution légère avec JRE 21
-# ============================================
+
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
