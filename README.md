@@ -38,7 +38,12 @@ real-estate-webapp/
 
 ---
 
-## ÉTAPE 1: Lancer la base de données MySQL et le Backend (Docker)
+## ÉTAPE 1: Lancer toute l'application avec Docker
+
+L'application est composée de **3 conteneurs Docker** orchestrés par `docker-compose` :
+- **MySQL 8** (base de données) → port `3307`
+- **Backend Spring Boot** (API REST) → port `8080`
+- **Frontend React + Nginx** (interface web) → port `8081`
 
 ### 1.1 Ouvrir un terminal à la racine du projet
 ```powershell
@@ -66,6 +71,7 @@ docker ps
 |---|---|---|---|
 | real_estate_mysql | mysql:8.0 | 0.0.0.0:3307->3306/tcp | Up |
 | real_estate_backend | real-estate-webapp-backend | 0.0.0.0:8080->8080/tcp | Up |
+|real_estate_frontend | real-estate-webapp-frontend | 0.0.0.0:8081->80/tcp | Up   |
 
 ### 1.5 Vérifier les logs du backend
 ```powershell
@@ -156,6 +162,8 @@ Cliquer sur **Send**.
 
 ## ÉTAPE 4: Lancer le Frontend React
 
+### Méthode 1: Développement (Frontend local (Vite))
+
 ### 4.1 Ouvrir un NOUVEAU terminal (garder le premier ouvert)
 ```powershell
 cd C:\Users\hp\Desktop\real-estate-webapp\frontend
@@ -180,6 +188,16 @@ npm run dev
 Ouvrir : `http://localhost:5173` (ou `http://localhost:5174`)
 
 ---
+
+### Méthode 2: Frontend Docker (Nginx)
+
+### 4.5 Lancer le conteneur frontend:
+```powershell
+docker compose up -d --build
+```
+
+### 4.6 Ouvrir le navigateur
+Ouvrir : `http://localhost:8081` 
 
 ## ÉTAPE 5: Récapitulatif des Preuves à Présenter
 
