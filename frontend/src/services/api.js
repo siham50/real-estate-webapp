@@ -28,4 +28,13 @@ export const fetchUsers = async () => {
   }
 };
 
+export const createUser = async (userData) => {
+  try {
+    const response = await api.post('/users', userData);
+    return { success: true, data: response.data };
+  } catch (error) {
+    return { success: false, error: error.response?.data?.message || error.message };
+  }
+};
+
 export default api;

@@ -286,7 +286,7 @@ real_estate_db
 - Onglet **Properties** : affiche la structure (colonnes, types, clés)
 - Onglet **ER Diagram** : schéma visuel de la base
 
-## Fonctionnalité : Affichage des Utilisateurs
+## Fonctionnalité : Affichage et création des Utilisateurs 
 
 Cette fonctionnalité permet de récupérer la liste des utilisateurs depuis la base de données MySQL et de l'afficher dans une page dédiée du frontend React.
 
@@ -294,7 +294,7 @@ Cette fonctionnalité permet de récupérer la liste des utilisateurs depuis la 
 
 Prouver que le flux complet **Frontend → Backend → Base de données** fonctionne en affichant les données réelles de la table `users`.
 
-### Endpoint exposé
+### Endpoint: afficher les utilisateurs
 
 | Méthode | Endpoint | Description |
 | :---: | :--- | :--- |
@@ -333,6 +333,31 @@ Navigateur : http://localhost:8081/users
    }
 ]
 ```
+
+
+### Endpoint : Créer un utilisateur
+
+| Méthode | Endpoint | Description |
+| :---: | :--- | :--- |
+| `POST` | `/api/users` | Crée un nouvel utilisateur dans la base de données |
+
+#### Requête
+
+**URL :** `http://localhost:8080/api/users`
+
+**Headers :**
+
+
+**Body (JSON) :**
+```json
+{
+  "firstName": "user9",
+  "lastName": "user9",
+  "email": "user9@example.com",
+  "password": "password123",
+  "phone": "+212600000001",
+  "role": "CLIENT"
+}
 
 ---
 
