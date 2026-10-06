@@ -1,24 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { fetchUsers } from '../services/api';
+import UserForm from './UserForm';
 
 const UserList = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const loadUsers = async () => {
-      setLoading(true);
-      setError(null);
-      const result = await fetchUsers();
-      if (result.success) {
-        setUsers(result.data);
-      } else {
-        setError(result.error);
-      }
-      setLoading(false);
-    };
+  const loadUsers = async () => {
+    setLoading(true);
+    setError(null);
+    const result = await fetchUsers();
+    if (result.success) {
+      setUsers(result.data);
+    } else {
+      setError(result.error);
+    }
+    setLoading(false);
+  };
 
+  useEffect(() => {
     loadUsers();
   }, []);
 
@@ -37,6 +38,8 @@ const UserList = () => {
 
   return (
     <section className="user-list">
+      <UserForm onUserCreated={loadUsers} />
+
       <h2 className="section-title">Liste des utilisateurs</h2>
 
       {loading && <p className="user-loading">Chargement...</p>}
