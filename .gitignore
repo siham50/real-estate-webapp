@@ -19,3 +19,5 @@ Thumbs.db
 *.log
 
 real_estate_project (2).pdf
+
+.env
