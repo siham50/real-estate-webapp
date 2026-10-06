@@ -19,11 +19,11 @@ RUN npm run build
 
 FROM nginx:alpine
 
-# Copier les fichiers compilés depuis l'étape 1
+# Copier la config Nginx personnalisée
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Copier les fichiers compilés 
 COPY --from=build /app/dist /usr/share/nginx/html
 
-# Exposer le port 80
 EXPOSE 80
-
-# Lancer Nginx
 CMD ["nginx", "-g", "daemon off;"]

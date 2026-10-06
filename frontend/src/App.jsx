@@ -1,19 +1,14 @@
 import React from 'react';
-import Header from './components/Header';
-import Hero from './components/Hero';
-import PropertyList from './components/PropertyList';
-import Footer from './components/Footer';
+import { Routes, Route } from 'react-router-dom';
+import HomePage from './pages/HomePage';
+import UsersPage from './pages/UsersPage';
 
 function App() {
   return (
-    <div className="app">
-      <Header />
-      <Hero />
-      <main>
-        <PropertyList />
-      </main>
-      <Footer />
-    </div>
+    <Routes>
+      <Route path="/" element={<HomePage />} />
+      <Route path="/users" element={<UsersPage />} />
+    </Routes>
   );
 }
 

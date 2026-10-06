@@ -355,3 +355,88 @@ img {
     grid-template-columns: 1fr;
   }
 }
+
+/* 7. LISTE DES UTILISATEURS */
+.user-list {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 24px 60px 24px;
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  margin-top: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.user-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #ffffff;
+}
+
+.user-table thead {
+  background-color: #1a237e;
+  color: #ffffff;
+}
+
+.user-table th,
+.user-table td {
+  padding: 14px 16px;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.user-table th {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.user-table tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+.badge-role {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.badge-client {
+  background-color: #e3f2fd;
+  color: #1565c0;
+}
+
+.badge-professional {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.badge-admin {
+  background-color: #ffebee;
+  color: #c62828;
+}
+
+.user-loading,
+.user-empty {
+  padding: 20px;
+  background-color: #ffffff;
+  border-radius: 8px;
+  color: #64748b;
+  margin-top: 20px;
+}
+
+.user-error {
+  padding: 14px 20px;
+  background-color: #fff1f2;
+  color: #9f1239;
+  border: 1px solid #fecdd3;
+  border-radius: 8px;
+  margin-top: 20px;
+}
+

@@ -1,10 +1,11 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 const Header = () => {
   return (
     <header className="header">
       <div className="header-container">
-        <a href="/" className="logo">
+        <Link to="/" className="logo">
           <svg
             className="logo-icon"
             width="24"
@@ -23,17 +24,20 @@ const Header = () => {
           <span className="logo-text">
             Real <span className="logo-accent">Estate</span>
           </span>
-        </a>
+        </Link>
         <nav className="nav">
-          <a href="#acheter" className="nav-link">
+          <Link to="/" className="nav-link">
             Acheter
-          </a>
+          </Link>
           <a href="#louer" className="nav-link">
             Louer
           </a>
           <a href="#nouveautes" className="nav-link">
             Nouveautés
           </a>
+          <Link to="/users" className="nav-link">
+            Utilisateurs
+          </Link>
           <a href="#publier" className="publish-btn">
             Publier une annonce
           </a>
