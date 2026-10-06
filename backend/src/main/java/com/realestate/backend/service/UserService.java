@@ -1,8 +1,11 @@
 package com.realestate.backend.service;
 
+import com.realestate.backend.entity.User;
 import com.realestate.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -12,5 +15,9 @@ public class UserService {
 
     public long countUsers() {
         return userRepository.count();
+    }
+
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
     }
 }
