@@ -90,7 +90,7 @@ Started RealEstateApplication in X.XXX seconds
 
 ### 2.1 Se connecter au conteneur MySQL et vérifier les tables
 ```powershell
-docker exec -it real_estate_mysql mysql -u root -proot -e "USE real_estate_db; SHOW TABLES; DESCRIBE users;"
+docker exec -it real_estate_mysql mysql -u <DB_USER> -p<DB_PASSWORD> -e "USE real_estate_db; SHOW TABLES; DESCRIBE users;"
 ```
 **Résultat attendu :**
 ```text
@@ -300,6 +300,7 @@ Prouver que le flux complet **Frontend → Backend → Base de données** foncti
 | :---: | :--- | :--- |
 | `GET` | `/api/users` | Récupère la liste complète des utilisateurs |
 
+
 Pour y accéder:
 
 Navigateur : http://localhost:8081/users
@@ -331,10 +332,9 @@ Navigateur : http://localhost:8081/users
       "createdAt": "2026-10-06T10:00:00"
    }
 ]
-
+```
 
 ---
-
 
 ## ÉTAPE 8: Commandes Utiles (Résumé)
 
