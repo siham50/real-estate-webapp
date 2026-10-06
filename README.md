@@ -358,6 +358,7 @@ Navigateur : http://localhost:8081/users
   "phone": "+212600000001",
   "role": "CLIENT"
 }
+```
 
 ---
 
