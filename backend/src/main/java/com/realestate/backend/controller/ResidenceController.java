@@ -1,5 +1,6 @@
 package com.realestate.backend.controller;
 
+import com.realestate.backend.dto.ResidenceDTO;
 import com.realestate.backend.entity.Residence;
 import com.realestate.backend.service.ResidenceService;
 import lombok.RequiredArgsConstructor;
@@ -17,12 +18,12 @@ public class ResidenceController {
     private final ResidenceService residenceService;
 
     @GetMapping
-    public ResponseEntity<List<Residence>> getAllResidences() {
+    public ResponseEntity<List<ResidenceDTO>> getAllResidences() {
         return ResponseEntity.ok(residenceService.getAllResidences());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Residence> getResidenceById(@PathVariable Long id) {
+    public ResponseEntity<ResidenceDTO> getResidenceById(@PathVariable Long id) {
         try {
             return ResponseEntity.ok(residenceService.getResidenceById(id));
         } catch (RuntimeException e) {
@@ -31,13 +32,13 @@ public class ResidenceController {
     }
 
     @PostMapping
-    public ResponseEntity<Residence> createResidence(@RequestBody Residence residence) {
-        Residence created = residenceService.createResidence(residence);
+    public ResponseEntity<ResidenceDTO> createResidence(@RequestBody Residence residence) {
+        ResidenceDTO created = residenceService.createResidence(residence);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Residence> updateResidence(@PathVariable Long id, @RequestBody Residence residence) {
+    public ResponseEntity<ResidenceDTO> updateResidence(@PathVariable Long id, @RequestBody Residence residence) {
         try {
             return ResponseEntity.ok(residenceService.updateResidence(id, residence));
         } catch (RuntimeException e) {

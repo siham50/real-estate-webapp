@@ -1,5 +1,7 @@
 package com.realestate.backend.service;
 
+import com.realestate.backend.dto.PropertyDTO;
+import com.realestate.backend.dto.mapper.DtoMapper;
 import com.realestate.backend.entity.Property;
 import com.realestate.backend.repository.PropertyRepository;
 import lombok.RequiredArgsConstructor;
@@ -13,21 +15,29 @@ public class PropertyService {
 
     private final PropertyRepository propertyRepository;
 
-    public List<Property> getAllProperties() {
-        return propertyRepository.findByIsDeletedFalse();
+    public List<PropertyDTO> getAllProperties() {
+        return propertyRepository.findByIsDeletedFalse().stream()
+                .map(DtoMapper::toPropertyDTO)
+                .toList();
     }
 
-    public Property getPropertyById(Long id) {
+    public PropertyDTO getPropertyById(Long id) {
+        Property property = findPropertyById(id);
+        return DtoMapper.toPropertyDTO(property);
+    }
+
+    public Property findPropertyById(Long id) {
         return propertyRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Property not found"));
     }
 
-    public Property createProperty(Property property) {
-        return propertyRepository.save(property);
+    public PropertyDTO createProperty(Property property) {
+        Property savedProperty = propertyRepository.save(property);
+        return DtoMapper.toPropertyDTO(savedProperty);
     }
 
-    public Property updateProperty(Long id, Property updatedProperty) {
-        Property existingProperty = getPropertyById(id);
+    public PropertyDTO updateProperty(Long id, Property updatedProperty) {
+        Property existingProperty = findPropertyById(id);
 
         if (updatedProperty.getTitle() != null) {
             existingProperty.setTitle(updatedProperty.getTitle());
@@ -69,11 +79,12 @@ public class PropertyService {
             existingProperty.setOwner(updatedProperty.getOwner());
         }
 
-        return propertyRepository.save(existingProperty);
+        Property savedProperty = propertyRepository.save(existingProperty);
+        return DtoMapper.toPropertyDTO(savedProperty);
     }
 
     public void deleteProperty(Long id) {
-        Property property = getPropertyById(id);
+        Property property = findPropertyById(id);
         property.setDeleted(true);
         propertyRepository.save(property);
     }

@@ -1,5 +1,7 @@
 package com.realestate.backend.service;
 
+import com.realestate.backend.dto.UserDTO;
+import com.realestate.backend.dto.mapper.DtoMapper;
 import com.realestate.backend.entity.User;
 import com.realestate.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -17,24 +19,32 @@ public class UserService {
         return userRepository.count();
     }
 
-    public List<User> getAllUsers() {
-        return userRepository.findAll();
+    public List<UserDTO> getAllUsers() {
+        return userRepository.findAll().stream()
+                .map(DtoMapper::toUserDTO)
+                .toList();
     }
 
-    public User getUserById(Long id) {
+    public UserDTO getUserById(Long id) {
+        User user = findUserById(id);
+        return DtoMapper.toUserDTO(user);
+    }
+
+    public User findUserById(Long id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
     }
 
-    public User createUser(User user) {
+    public UserDTO createUser(User user) {
         if (user.getEmail() != null && userRepository.existsByEmail(user.getEmail())) {
             throw new RuntimeException("Email already exists");
         }
-        return userRepository.save(user);
+        User savedUser = userRepository.save(user);
+        return DtoMapper.toUserDTO(savedUser);
     }
 
-    public User updateUser(Long id, User updatedUser) {
-        User existingUser = getUserById(id);
+    public UserDTO updateUser(Long id, User updatedUser) {
+        User existingUser = findUserById(id);
 
         if (updatedUser.getEmail() != null && !updatedUser.getEmail().equals(existingUser.getEmail())) {
             if (userRepository.existsByEmail(updatedUser.getEmail())) {
@@ -66,11 +76,12 @@ public class UserService {
         }
         existingUser.setActive(updatedUser.isActive());
 
-        return userRepository.save(existingUser);
+        User savedUser = userRepository.save(existingUser);
+        return DtoMapper.toUserDTO(savedUser);
     }
 
     public void deleteUser(Long id) {
-        User user = getUserById(id);
+        User user = findUserById(id);
         userRepository.delete(user);
     }
 }

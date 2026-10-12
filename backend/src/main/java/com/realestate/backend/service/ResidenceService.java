@@ -1,5 +1,7 @@
 package com.realestate.backend.service;
 
+import com.realestate.backend.dto.ResidenceDTO;
+import com.realestate.backend.dto.mapper.DtoMapper;
 import com.realestate.backend.entity.Residence;
 import com.realestate.backend.repository.ResidenceRepository;
 import lombok.RequiredArgsConstructor;
@@ -13,21 +15,29 @@ public class ResidenceService {
 
     private final ResidenceRepository residenceRepository;
 
-    public List<Residence> getAllResidences() {
-        return residenceRepository.findAll();
+    public List<ResidenceDTO> getAllResidences() {
+        return residenceRepository.findAll().stream()
+                .map(DtoMapper::toResidenceDTO)
+                .toList();
     }
 
-    public Residence getResidenceById(Long id) {
+    public ResidenceDTO getResidenceById(Long id) {
+        Residence residence = findResidenceById(id);
+        return DtoMapper.toResidenceDTO(residence);
+    }
+
+    public Residence findResidenceById(Long id) {
         return residenceRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Residence not found"));
     }
 
-    public Residence createResidence(Residence residence) {
-        return residenceRepository.save(residence);
+    public ResidenceDTO createResidence(Residence residence) {
+        Residence savedResidence = residenceRepository.save(residence);
+        return DtoMapper.toResidenceDTO(savedResidence);
     }
 
-    public Residence updateResidence(Long id, Residence updatedResidence) {
-        Residence existingResidence = getResidenceById(id);
+    public ResidenceDTO updateResidence(Long id, Residence updatedResidence) {
+        Residence existingResidence = findResidenceById(id);
 
         if (updatedResidence.getName() != null) {
             existingResidence.setName(updatedResidence.getName());
@@ -51,11 +61,12 @@ public class ResidenceService {
             existingResidence.setOwner(updatedResidence.getOwner());
         }
 
-        return residenceRepository.save(existingResidence);
+        Residence savedResidence = residenceRepository.save(existingResidence);
+        return DtoMapper.toResidenceDTO(savedResidence);
     }
 
     public void deleteResidence(Long id) {
-        Residence residence = getResidenceById(id);
+        Residence residence = findResidenceById(id);
         residenceRepository.delete(residence);
     }
 }

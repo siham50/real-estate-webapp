@@ -1,5 +1,6 @@
 package com.realestate.backend.controller;
 
+import com.realestate.backend.dto.PropertyDTO;
 import com.realestate.backend.entity.Property;
 import com.realestate.backend.service.PropertyService;
 import lombok.RequiredArgsConstructor;
@@ -17,12 +18,12 @@ public class PropertyController {
     private final PropertyService propertyService;
 
     @GetMapping
-    public ResponseEntity<List<Property>> getAllProperties() {
+    public ResponseEntity<List<PropertyDTO>> getAllProperties() {
         return ResponseEntity.ok(propertyService.getAllProperties());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Property> getPropertyById(@PathVariable Long id) {
+    public ResponseEntity<PropertyDTO> getPropertyById(@PathVariable Long id) {
         try {
             return ResponseEntity.ok(propertyService.getPropertyById(id));
         } catch (RuntimeException e) {
@@ -31,13 +32,13 @@ public class PropertyController {
     }
 
     @PostMapping
-    public ResponseEntity<Property> createProperty(@RequestBody Property property) {
-        Property created = propertyService.createProperty(property);
+    public ResponseEntity<PropertyDTO> createProperty(@RequestBody Property property) {
+        PropertyDTO created = propertyService.createProperty(property);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Property> updateProperty(@PathVariable Long id, @RequestBody Property property) {
+    public ResponseEntity<PropertyDTO> updateProperty(@PathVariable Long id, @RequestBody Property property) {
         try {
             return ResponseEntity.ok(propertyService.updateProperty(id, property));
         } catch (RuntimeException e) {
