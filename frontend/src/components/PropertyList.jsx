@@ -1,115 +1,152 @@
 import React, { useState, useEffect } from 'react';
-import { testBackend } from '../services/api';
+import { fetchProperties, deleteProperty } from '../services/api';
 
-const PROPERTIES = [
-  {
-    id: 1,
-    title: 'Villa Moderne avec Jardin',
-    city: 'Casablanca',
-    price: '2 500 000',
-    priceSuffix: 'DH',
-    type: 'sale',
-    badgeText: 'À VENDRE',
-    image:
-      'https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800&h=500&fit=crop',
-  },
-  {
-    id: 2,
-    title: 'Appartement Haut Standing',
-    city: 'Rabat',
-    price: '8 000',
-    priceSuffix: 'DH / mois',
-    type: 'rent',
-    badgeText: 'À LOUER',
-    image:
-      'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&h=500&fit=crop',
-  },
-  {
-    id: 3,
-    title: 'Terrain Constructible Idéal Projet',
-    city: 'Marrakech',
-    price: '1 200 000',
-    priceSuffix: 'DH',
-    type: 'sale',
-    badgeText: 'À VENDRE',
-    image:
-      'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=500&fit=crop',
-  },
-];
+const PropertyList = ({ onEdit, refreshTrigger = 0 }) => {
+  const [properties, setProperties] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [actionError, setActionError] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
 
-const PropertyList = () => {
-  const [backendStatus, setBackendStatus] = useState({
-    loading: true,
-    success: false,
-    message: '',
-  });
+  const loadProperties = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetchProperties();
+      const list = response.data || [];
+      setProperties(list);
+    } catch (err) {
+      setError(
+        err.response?.data?.message || err.message || 'Erreur lors du chargement des biens'
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const checkBackend = async () => {
-      const result = await testBackend();
-      if (result.success) {
-        setBackendStatus({
-          loading: false,
-          success: true,
-          message: typeof result.data === 'string' ? result.data : 'Backend opérationnel',
-        });
-      } else {
-        setBackendStatus({
-          loading: false,
-          success: false,
-          message: result.error || 'Connexion au backend échouée',
-        });
-      }
-    };
+    loadProperties();
+  }, [refreshTrigger]);
 
-    checkBackend();
-  }, []);
+  const handleDelete = async (property) => {
+    const confirmed = window.confirm(
+      `Êtes-vous sûr de vouloir supprimer le bien "${property.title}" ?`
+    );
+    if (!confirmed) return;
+
+    setActionError(null);
+    setDeletingId(property.id);
+    try {
+      await deleteProperty(property.id);
+      await loadProperties();
+    } catch (err) {
+      setActionError(
+        err.response?.data?.message || err.message || 'Erreur lors de la suppression'
+      );
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const formatPrice = (price) => {
+    if (price == null) return '-';
+    return Number(price).toLocaleString('fr-FR') + ' DH';
+  };
+
+  const getTypeLabel = (type) => {
+    const map = {
+      APARTMENT: 'Appartement',
+      VILLA: 'Villa',
+      HOUSE: 'Maison',
+      LAND: 'Terrain',
+      COMMERCIAL: 'Local Commercial',
+      OFFICE: 'Bureau',
+    };
+    return map[type] || type;
+  };
 
   return (
-    <section className="property-list">
-      {/* Bandeau statut backend */}
-      <div
-        className={`backend-status ${
-          backendStatus.loading
-            ? 'status-loading'
-            : backendStatus.success
-            ? 'status-success'
-            : 'status-error'
-        }`}
-      >
-        {backendStatus.loading ? (
-          <span>Vérification de la connexion au backend...</span>
-        ) : (
-          <span>Statut Backend : {backendStatus.message}</span>
-        )}
-      </div>
+    <section className="crud-list property-list">
+      {actionError && <div className="alert-error">{actionError}</div>}
 
-      <h2 className="section-title">Nos Dernières Annonces</h2>
+      {loading && <p className="user-loading">Chargement des biens immobiliers...</p>}
 
-      <div className="grid">
-        {PROPERTIES.map((property) => (
-          <article key={property.id} className="card">
-            <div className="card-image">
-              <img src={property.image} alt={property.title} loading="lazy" />
-              <span
-                className={`card-badge ${
-                  property.type === 'sale' ? 'badge-sale' : 'badge-rent'
-                }`}
-              >
-                {property.badgeText}
-              </span>
-            </div>
-            <div className="card-body">
-              <h3 className="card-title">{property.title}</h3>
-              <p className="card-city">{property.city}</p>
-              <p className="card-price">
-                {property.price}{' '}
-                <span className="price-suffix">{property.priceSuffix}</span>
-              </p>
-            </div>
-          </article>
-        ))}
-      </div>
+      {error && (
+        <p className="user-error">Erreur lors de la récupération : {error}</p>
+      )}
+
+      {!loading && !error && properties.length === 0 && (
+        <p className="user-empty">Aucun bien immobilier enregistré pour le moment.</p>
+      )}
+
+      {!loading && !error && properties.length > 0 && (
+        <div className="table-responsive">
+          <table className="crud-table property-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Titre</th>
+                <th>Type</th>
+                <th>Objectif</th>
+                <th>Prix</th>
+                <th>Surface</th>
+                <th>Ville</th>
+                <th>Résidence</th>
+                <th>Propriétaire</th>
+                <th className="th-actions">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {properties.map((property) => (
+                <tr key={property.id}>
+                  <td>{property.id}</td>
+                  <td className="font-semibold">{property.title}</td>
+                  <td>
+                    <span className="badge-type">{getTypeLabel(property.type)}</span>
+                  </td>
+                  <td>
+                    <span
+                      className={`badge-purpose ${
+                        property.purpose === 'SALE' ? 'badge-sale' : 'badge-rent'
+                      }`}
+                    >
+                      {property.purpose === 'SALE' ? 'Vente' : 'Location'}
+                    </span>
+                  </td>
+                  <td className="font-semibold price-cell">
+                    {formatPrice(property.price)}
+                  </td>
+                  <td>{property.surfaceArea ? `${property.surfaceArea} m²` : '-'}</td>
+                  <td>{property.city}</td>
+                  <td>{property.residence ? property.residence.name : '-'}</td>
+                  <td>
+                    {property.owner
+                      ? `${property.owner.firstName || ''} ${property.owner.lastName || ''}`
+                      : '-'}
+                  </td>
+                  <td className="td-actions">
+                    <button
+                      type="button"
+                      className="btn-action btn-edit"
+                      onClick={() => onEdit && onEdit(property)}
+                    >
+                      Modifier
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-action btn-delete"
+                      onClick={() => handleDelete(property)}
+                      disabled={deletingId === property.id}
+                    >
+                      {deletingId === property.id ? 'Suppression...' : 'Supprimer'}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </section>
   );
 };
