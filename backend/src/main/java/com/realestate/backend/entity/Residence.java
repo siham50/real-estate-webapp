@@ -1,6 +1,7 @@
 package com.realestate.backend.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -46,10 +47,12 @@ public class Residence {
     @Column(name = "longitude")
     private Double longitude;
 
+    @JsonProperty("isAvailable")
     @Builder.Default
     @Column(name = "is_available", nullable = false)
     private boolean isAvailable = true;
 
+    @JsonProperty("isDeleted")
     @Builder.Default
     @Column(name = "is_deleted", nullable = false)
     private boolean isDeleted = false;

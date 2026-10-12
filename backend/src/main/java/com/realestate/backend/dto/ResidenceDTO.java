@@ -1,5 +1,6 @@
 package com.realestate.backend.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -20,7 +21,12 @@ public class ResidenceDTO {
     private Double latitude;
     private Double longitude;
     private LocalDateTime createdAt;
+
+    @JsonProperty("isAvailable")
     private boolean isAvailable;
+
+    @JsonProperty("isDeleted")
     private boolean isDeleted;
+
     private UserSummaryDTO owner;
 }

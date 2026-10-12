@@ -1,6 +1,7 @@
 package com.realestate.backend.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.realestate.backend.entity.enums.PropertyPurpose;
 import com.realestate.backend.entity.enums.PropertyType;
 import com.realestate.backend.entity.enums.VerificationStatus;
@@ -73,10 +74,12 @@ public class Property {
     @Column(name = "verification_status", nullable = false)
     private VerificationStatus verificationStatus = VerificationStatus.PENDING;
 
+    @JsonProperty("isDeleted")
     @Builder.Default
     @Column(name = "is_deleted", nullable = false)
     private boolean isDeleted = false;
 
+    @JsonProperty("isAvailable")
     @Builder.Default
     @Column(name = "is_available", nullable = false)
     private boolean isAvailable = true;

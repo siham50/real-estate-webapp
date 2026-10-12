@@ -1,5 +1,6 @@
 package com.realestate.backend.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.realestate.backend.entity.enums.Role;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -19,7 +20,12 @@ public class UserDTO {
     private String email;
     private String phone;
     private Role role;
+
+    @JsonProperty("isIdentityVerified")
     private Boolean isIdentityVerified;
+
+    @JsonProperty("isActive")
     private boolean isActive;
+
     private LocalDateTime createdAt;
 }

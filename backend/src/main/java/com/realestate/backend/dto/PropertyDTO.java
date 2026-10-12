@@ -1,5 +1,6 @@
 package com.realestate.backend.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.realestate.backend.entity.enums.PropertyPurpose;
 import com.realestate.backend.entity.enums.PropertyType;
 import com.realestate.backend.entity.enums.VerificationStatus;
@@ -28,7 +29,11 @@ public class PropertyDTO {
     private Double latitude;
     private Double longitude;
     private VerificationStatus verificationStatus;
+
+    @JsonProperty("isDeleted")
     private boolean isDeleted;
+
+    @JsonProperty("isAvailable")
     private boolean isAvailable;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
