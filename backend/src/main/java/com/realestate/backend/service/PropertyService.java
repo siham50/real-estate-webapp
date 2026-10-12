@@ -3,7 +3,11 @@ package com.realestate.backend.service;
 import com.realestate.backend.dto.PropertyDTO;
 import com.realestate.backend.dto.mapper.DtoMapper;
 import com.realestate.backend.entity.Property;
+import com.realestate.backend.entity.Residence;
+import com.realestate.backend.entity.User;
 import com.realestate.backend.repository.PropertyRepository;
+import com.realestate.backend.repository.ResidenceRepository;
+import com.realestate.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -14,6 +18,8 @@ import java.util.List;
 public class PropertyService {
 
     private final PropertyRepository propertyRepository;
+    private final UserRepository userRepository;
+    private final ResidenceRepository residenceRepository;
 
     public List<PropertyDTO> getAllProperties() {
         return propertyRepository.findByIsDeletedFalse().stream()
@@ -32,6 +38,16 @@ public class PropertyService {
     }
 
     public PropertyDTO createProperty(Property property) {
+        if (property.getOwner() != null && property.getOwner().getId() != null) {
+            User owner = userRepository.findById(property.getOwner().getId())
+                    .orElseThrow(() -> new RuntimeException("Owner not found"));
+            property.setOwner(owner);
+        }
+        if (property.getResidence() != null && property.getResidence().getId() != null) {
+            Residence residence = residenceRepository.findById(property.getResidence().getId())
+                    .orElse(null);
+            property.setResidence(residence);
+        }
         Property savedProperty = propertyRepository.save(property);
         return DtoMapper.toPropertyDTO(savedProperty);
     }
@@ -73,10 +89,18 @@ public class PropertyService {
             existingProperty.setVerificationStatus(updatedProperty.getVerificationStatus());
         }
         if (updatedProperty.getResidence() != null) {
-            existingProperty.setResidence(updatedProperty.getResidence());
+            if (updatedProperty.getResidence().getId() != null) {
+                Residence residence = residenceRepository.findById(updatedProperty.getResidence().getId())
+                        .orElse(null);
+                existingProperty.setResidence(residence);
+            } else {
+                existingProperty.setResidence(null);
+            }
         }
-        if (updatedProperty.getOwner() != null) {
-            existingProperty.setOwner(updatedProperty.getOwner());
+        if (updatedProperty.getOwner() != null && updatedProperty.getOwner().getId() != null) {
+            User owner = userRepository.findById(updatedProperty.getOwner().getId())
+                    .orElseThrow(() -> new RuntimeException("Owner not found"));
+            existingProperty.setOwner(owner);
         }
 
         Property savedProperty = propertyRepository.save(existingProperty);

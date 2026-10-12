@@ -1,5 +1,6 @@
 package com.realestate.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.realestate.backend.entity.enums.PropertyPurpose;
 import com.realestate.backend.entity.enums.PropertyType;
 import com.realestate.backend.entity.enums.VerificationStatus;
@@ -26,11 +27,12 @@ public class Property {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "owner_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private User owner;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "residence_id", nullable = true)
     private Residence residence;
 

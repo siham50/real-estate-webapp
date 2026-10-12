@@ -1,5 +1,6 @@
 package com.realestate.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.realestate.backend.entity.enums.BookingStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -21,8 +22,9 @@ public class Booking {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "client_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private User client;
 
     @ManyToOne
