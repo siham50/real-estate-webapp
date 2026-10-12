@@ -46,6 +46,14 @@ public class Residence {
     @Column(name = "longitude")
     private Double longitude;
 
+    @Builder.Default
+    @Column(name = "is_available", nullable = false)
+    private boolean isAvailable = true;
+
+    @Builder.Default
+    @Column(name = "is_deleted", nullable = false)
+    private boolean isDeleted = false;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

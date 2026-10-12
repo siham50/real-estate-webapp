@@ -19,7 +19,8 @@ public class ResidenceService {
     private final UserRepository userRepository;
 
     public List<ResidenceDTO> getAllResidences() {
-        return residenceRepository.findAll().stream()
+        return residenceRepository.findByIsAvailableTrueAndIsDeletedFalse()
+                .stream()
                 .map(DtoMapper::toResidenceDTO)
                 .toList();
     }
@@ -76,7 +77,17 @@ public class ResidenceService {
     }
 
     public void deleteResidence(Long id) {
-        Residence residence = findResidenceById(id);
-        residenceRepository.delete(residence);
+        Residence residence = residenceRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Residence not found"));
+        residence.setDeleted(true);
+        residenceRepository.save(residence);
+    }
+
+    public ResidenceDTO toggleAvailability(Long id) {
+        Residence residence = residenceRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Residence not found"));
+        residence.setAvailable(!residence.isAvailable());
+        Residence updated = residenceRepository.save(residence);
+        return DtoMapper.toResidenceDTO(updated);
     }
 }

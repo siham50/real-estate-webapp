@@ -22,7 +22,7 @@ public class PropertyService {
     private final ResidenceRepository residenceRepository;
 
     public List<PropertyDTO> getAllProperties() {
-        return propertyRepository.findByIsDeletedFalse().stream()
+        return propertyRepository.findByIsAvailableTrueAndIsDeletedFalse().stream()
                 .map(DtoMapper::toPropertyDTO)
                 .toList();
     }
@@ -108,8 +108,17 @@ public class PropertyService {
     }
 
     public void deleteProperty(Long id) {
-        Property property = findPropertyById(id);
+        Property property = propertyRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Property not found"));
         property.setDeleted(true);
         propertyRepository.save(property);
+    }
+
+    public PropertyDTO toggleAvailability(Long id) {
+        Property property = propertyRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Property not found"));
+        property.setAvailable(!property.isAvailable());
+        Property updated = propertyRepository.save(property);
+        return DtoMapper.toPropertyDTO(updated);
     }
 }

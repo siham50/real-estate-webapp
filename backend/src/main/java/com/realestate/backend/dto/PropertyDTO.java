@@ -29,6 +29,7 @@ public class PropertyDTO {
     private Double longitude;
     private VerificationStatus verificationStatus;
     private boolean isDeleted;
+    private boolean isAvailable;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private UserSummaryDTO owner;

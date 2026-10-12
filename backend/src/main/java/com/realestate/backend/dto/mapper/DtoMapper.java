@@ -54,6 +54,8 @@ public class DtoMapper {
                 .latitude(residence.getLatitude())
                 .longitude(residence.getLongitude())
                 .createdAt(residence.getCreatedAt())
+                .isAvailable(residence.isAvailable())
+                .isDeleted(residence.isDeleted())
                 .owner(toUserSummaryDTO(residence.getOwner()))
                 .build();
     }
@@ -87,6 +89,7 @@ public class DtoMapper {
                 .longitude(property.getLongitude())
                 .verificationStatus(property.getVerificationStatus())
                 .isDeleted(property.isDeleted())
+                .isAvailable(property.isAvailable())
                 .createdAt(property.getCreatedAt())
                 .updatedAt(property.getUpdatedAt())
                 .owner(toUserSummaryDTO(property.getOwner()))

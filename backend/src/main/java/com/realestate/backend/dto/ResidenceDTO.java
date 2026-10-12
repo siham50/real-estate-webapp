@@ -20,5 +20,7 @@ public class ResidenceDTO {
     private Double latitude;
     private Double longitude;
     private LocalDateTime createdAt;
+    private boolean isAvailable;
+    private boolean isDeleted;
     private UserSummaryDTO owner;
 }

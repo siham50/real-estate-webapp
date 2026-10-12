@@ -55,4 +55,13 @@ public class ResidenceController {
             return ResponseEntity.notFound().build();
         }
     }
+
+    @PatchMapping("/{id}/toggle-availability")
+    public ResponseEntity<ResidenceDTO> toggleAvailability(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(residenceService.toggleAvailability(id));
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
 }
