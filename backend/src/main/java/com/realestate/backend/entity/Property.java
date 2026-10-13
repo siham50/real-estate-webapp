@@ -34,8 +34,9 @@ public class Property {
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private User owner;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "residence_id", nullable = true)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Residence residence;
 
     @Column(name = "title", nullable = false, length = 150)
