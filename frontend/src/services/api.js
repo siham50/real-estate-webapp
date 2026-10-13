@@ -45,12 +45,48 @@ export const deleteUser = async (id) => api.delete(`/users/${id}`);
 export const fetchResidences = async () => api.get('/residences');
 export const createResidence = async (data) => api.post('/residences', data);
 export const updateResidence = async (id, data) => api.put(`/residences/${id}`, data);
-export const deleteResidence = async (id) => api.delete(`/residences/${id}`);
+
+// Toggle availability (masquer/afficher)
+export const toggleResidenceAvailability = async (id) => {
+  try {
+    const response = await api.patch(`/residences/${id}/toggle-availability`);
+    return { success: true, data: response.data };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+};
+
+// Delete (soft delete)
+export const deleteResidence = async (id) => {
+  try {
+    await api.delete(`/residences/${id}`);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+};
 
 // Properties
 export const fetchProperties = async () => api.get('/properties');
 export const createProperty = async (data) => api.post('/properties', data);
 export const updateProperty = async (id, data) => api.put(`/properties/${id}`, data);
-export const deleteProperty = async (id) => api.delete(`/properties/${id}`);
+
+export const togglePropertyAvailability = async (id) => {
+  try {
+    const response = await api.patch(`/properties/${id}/toggle-availability`);
+    return { success: true, data: response.data };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+};
+
+export const deleteProperty = async (id) => {
+  try {
+    await api.delete(`/properties/${id}`);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+};
 
 export default api;

@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { fetchResidences, deleteResidence } from '../services/api';
+import {
+  fetchResidences,
+  toggleResidenceAvailability,
+  deleteResidence,
+} from '../services/api';
 
 const ResidenceList = ({ onEdit, refreshTrigger = 0 }) => {
   const [residences, setResidences] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [actionError, setActionError] = useState(null);
-  const [deletingId, setDeletingId] = useState(null);
+  const [actionInProgressId, setActionInProgressId] = useState(null);
 
   const loadResidences = async () => {
     setLoading(true);
@@ -16,7 +20,11 @@ const ResidenceList = ({ onEdit, refreshTrigger = 0 }) => {
       const list = response.data || [];
       setResidences(list);
     } catch (err) {
-      setError(err.response?.data?.message || err.message || 'Erreur lors du chargement des résidences');
+      setError(
+        err.response?.data?.message ||
+          err.message ||
+          'Erreur lors du chargement des résidences'
+      );
     } finally {
       setLoading(false);
     }
@@ -26,6 +34,23 @@ const ResidenceList = ({ onEdit, refreshTrigger = 0 }) => {
     loadResidences();
   }, [refreshTrigger]);
 
+  const handleToggleAvailability = async (id) => {
+    setActionError(null);
+    setActionInProgressId(id);
+    try {
+      const result = await toggleResidenceAvailability(id);
+      if (result.success) {
+        await loadResidences();
+      } else {
+        setActionError(result.error || 'Erreur lors du changement de disponibilité');
+      }
+    } catch (err) {
+      setActionError(err.message || 'Erreur lors du changement de disponibilité');
+    } finally {
+      setActionInProgressId(null);
+    }
+  };
+
   const handleDelete = async (residence) => {
     const confirmed = window.confirm(
       `Êtes-vous sûr de vouloir supprimer la résidence "${residence.name}" ?`
@@ -33,16 +58,20 @@ const ResidenceList = ({ onEdit, refreshTrigger = 0 }) => {
     if (!confirmed) return;
 
     setActionError(null);
-    setDeletingId(residence.id);
+    setActionInProgressId(residence.id);
     try {
-      await deleteResidence(residence.id);
-      await loadResidences();
+      const result = await deleteResidence(residence.id);
+      if (result.success) {
+        await loadResidences();
+      } else {
+        setActionError(result.error || 'Erreur lors de la suppression');
+      }
     } catch (err) {
       setActionError(
-        err.response?.data?.message || err.message || 'Erreur lors de la suppression de la résidence'
+        err.response?.data?.message || err.message || 'Erreur lors de la suppression'
       );
     } finally {
-      setDeletingId(null);
+      setActionInProgressId(null);
     }
   };
 
@@ -69,47 +98,65 @@ const ResidenceList = ({ onEdit, refreshTrigger = 0 }) => {
                 <th>Nom</th>
                 <th>Ville</th>
                 <th>Adresse</th>
-                <th>Propriétaire</th>
-                <th>Biens associés</th>
+                <th>Statut</th>
                 <th className="th-actions">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {residences.map((residence) => (
-                <tr key={residence.id}>
-                  <td>{residence.id}</td>
-                  <td className="font-semibold">{residence.name}</td>
-                  <td>{residence.city}</td>
-                  <td>{residence.address}</td>
-                  <td>
-                    {residence.owner
-                      ? `${residence.owner.firstName || ''} ${residence.owner.lastName || ''} (ID: ${residence.owner.id})`
-                      : '-'}
-                  </td>
-                  <td>
-                    <span className="badge-count">
-                      {residence.properties ? residence.properties.length : 0}
-                    </span>
-                  </td>
-                  <td className="td-actions">
-                    <button
-                      type="button"
-                      className="btn-action btn-edit"
-                      onClick={() => onEdit && onEdit(residence)}
-                    >
-                      Modifier
-                    </button>
-                    <button
-                      type="button"
-                      className="btn-action btn-delete"
-                      onClick={() => handleDelete(residence)}
-                      disabled={deletingId === residence.id}
-                    >
-                      {deletingId === residence.id ? 'Suppression...' : 'Supprimer'}
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {residences.map((residence) => {
+                const isAvailable =
+                  residence.isAvailable !== undefined
+                    ? residence.isAvailable
+                    : residence.available !== undefined
+                    ? residence.available
+                    : true;
+
+                return (
+                  <tr key={residence.id}>
+                    <td>{residence.id}</td>
+                    <td className="font-semibold">{residence.name}</td>
+                    <td>{residence.city}</td>
+                    <td>{residence.address}</td>
+                    <td>
+                      <span
+                        className={`badge-status ${
+                          isAvailable ? 'badge-available' : 'badge-hidden'
+                        }`}
+                      >
+                        {isAvailable ? 'Disponible' : 'Masquée'}
+                      </span>
+                    </td>
+                    <td className="td-actions">
+                      <button
+                        type="button"
+                        className="btn-action btn-edit"
+                        onClick={() => onEdit && onEdit(residence)}
+                        disabled={actionInProgressId === residence.id}
+                      >
+                        Modifier
+                      </button>
+
+                      <button
+                        type="button"
+                        className="btn-action btn-toggle"
+                        onClick={() => handleToggleAvailability(residence.id)}
+                        disabled={actionInProgressId === residence.id}
+                      >
+                        {isAvailable ? 'Masquer' : 'Afficher'}
+                      </button>
+
+                      <button
+                        type="button"
+                        className="btn-action btn-delete"
+                        onClick={() => handleDelete(residence)}
+                        disabled={actionInProgressId === residence.id}
+                      >
+                        {actionInProgressId === residence.id ? 'Patientez...' : 'Supprimer'}
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

@@ -689,39 +689,65 @@ img {
 
 .btn-action {
   padding: 6px 12px;
+  border: none;
   border-radius: 6px;
-  font-size: 0.85rem;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.15s ease;
+  margin-right: 4px;
+  transition: all 0.3s;
 }
 
 .btn-edit {
-  background-color: #eff6ff;
-  color: #1d4ed8;
-  border: 1px solid #bfdbfe;
-  margin-right: 8px;
+  background-color: #1976d2;
+  color: white;
 }
 
 .btn-edit:hover {
-  background-color: #dbeafe;
-  color: #1e40af;
+  background-color: #1565c0;
+}
+
+.btn-toggle {
+  background-color: #ff9800;
+  color: white;
+}
+
+.btn-toggle:hover {
+  background-color: #f57c00;
 }
 
 .btn-delete {
-  background-color: #fef2f2;
-  color: #b91c1c;
-  border: 1px solid #fecaca;
+  background-color: #d32f2f;
+  color: white;
 }
 
 .btn-delete:hover:not(:disabled) {
-  background-color: #fee2e2;
-  color: #991b1b;
+  background-color: #c62828;
 }
 
-.btn-delete:disabled {
+.btn-delete:disabled,
+.btn-toggle:disabled,
+.btn-edit:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.badge-status {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: bold;
+  display: inline-block;
+}
+
+.badge-available {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.badge-hidden {
+  background-color: #eceff1;
+  color: #546e7a;
 }
 
 .font-semibold {

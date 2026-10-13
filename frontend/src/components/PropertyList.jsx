@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { fetchProperties, deleteProperty } from '../services/api';
+import {
+  fetchProperties,
+  togglePropertyAvailability,
+  deleteProperty,
+} from '../services/api';
 
 const PropertyList = ({ onEdit, refreshTrigger = 0 }) => {
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [actionError, setActionError] = useState(null);
-  const [deletingId, setDeletingId] = useState(null);
+  const [actionInProgressId, setActionInProgressId] = useState(null);
 
   const loadProperties = async () => {
     setLoading(true);
@@ -17,7 +21,9 @@ const PropertyList = ({ onEdit, refreshTrigger = 0 }) => {
       setProperties(list);
     } catch (err) {
       setError(
-        err.response?.data?.message || err.message || 'Erreur lors du chargement des biens'
+        err.response?.data?.message ||
+        err.message ||
+        'Erreur lors du chargement des biens'
       );
     } finally {
       setLoading(false);
@@ -28,6 +34,23 @@ const PropertyList = ({ onEdit, refreshTrigger = 0 }) => {
     loadProperties();
   }, [refreshTrigger]);
 
+  const handleToggleAvailability = async (id) => {
+    setActionError(null);
+    setActionInProgressId(id);
+    try {
+      const result = await togglePropertyAvailability(id);
+      if (result.success) {
+        await loadProperties();
+      } else {
+        setActionError(result.error || 'Erreur lors du changement de disponibilité');
+      }
+    } catch (err) {
+      setActionError(err.message || 'Erreur lors du changement de disponibilité');
+    } finally {
+      setActionInProgressId(null);
+    }
+  };
+
   const handleDelete = async (property) => {
     const confirmed = window.confirm(
       `Êtes-vous sûr de vouloir supprimer le bien "${property.title}" ?`
@@ -35,16 +58,20 @@ const PropertyList = ({ onEdit, refreshTrigger = 0 }) => {
     if (!confirmed) return;
 
     setActionError(null);
-    setDeletingId(property.id);
+    setActionInProgressId(property.id);
     try {
-      await deleteProperty(property.id);
-      await loadProperties();
+      const result = await deleteProperty(property.id);
+      if (result.success) {
+        await loadProperties();
+      } else {
+        setActionError(result.error || 'Erreur lors de la suppression');
+      }
     } catch (err) {
       setActionError(
         err.response?.data?.message || err.message || 'Erreur lors de la suppression'
       );
     } finally {
-      setDeletingId(null);
+      setActionInProgressId(null);
     }
   };
 
@@ -87,62 +114,71 @@ const PropertyList = ({ onEdit, refreshTrigger = 0 }) => {
                 <th>ID</th>
                 <th>Titre</th>
                 <th>Type</th>
-                <th>Objectif</th>
                 <th>Prix</th>
-                <th>Surface</th>
                 <th>Ville</th>
-                <th>Résidence</th>
-                <th>Propriétaire</th>
+                <th>Statut</th>
                 <th className="th-actions">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {properties.map((property) => (
-                <tr key={property.id}>
-                  <td>{property.id}</td>
-                  <td className="font-semibold">{property.title}</td>
-                  <td>
-                    <span className="badge-type">{getTypeLabel(property.type)}</span>
-                  </td>
-                  <td>
-                    <span
-                      className={`badge-purpose ${
-                        property.purpose === 'SALE' ? 'badge-sale' : 'badge-rent'
-                      }`}
-                    >
-                      {property.purpose === 'SALE' ? 'Vente' : 'Location'}
-                    </span>
-                  </td>
-                  <td className="font-semibold price-cell">
-                    {formatPrice(property.price)}
-                  </td>
-                  <td>{property.surfaceArea ? `${property.surfaceArea} m²` : '-'}</td>
-                  <td>{property.city}</td>
-                  <td>{property.residence ? property.residence.name : '-'}</td>
-                  <td>
-                    {property.owner
-                      ? `${property.owner.firstName || ''} ${property.owner.lastName || ''}`
-                      : '-'}
-                  </td>
-                  <td className="td-actions">
-                    <button
-                      type="button"
-                      className="btn-action btn-edit"
-                      onClick={() => onEdit && onEdit(property)}
-                    >
-                      Modifier
-                    </button>
-                    <button
-                      type="button"
-                      className="btn-action btn-delete"
-                      onClick={() => handleDelete(property)}
-                      disabled={deletingId === property.id}
-                    >
-                      {deletingId === property.id ? 'Suppression...' : 'Supprimer'}
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {properties.map((property) => {
+                const isAvailable =
+                  property.isAvailable !== undefined
+                    ? property.isAvailable
+                    : property.available !== undefined
+                      ? property.available
+                      : true;
+
+                return (
+                  <tr key={property.id}>
+                    <td>{property.id}</td>
+                    <td className="font-semibold">{property.title}</td>
+                    <td>
+                      <span className="badge-type">{getTypeLabel(property.type)}</span>
+                    </td>
+                    <td className="font-semibold price-cell">
+                      {formatPrice(property.price)}
+                    </td>
+                    <td>{property.city}</td>
+                    <td>
+                      <span
+                        className={`badge-status ${isAvailable ? 'badge-available' : 'badge-hidden'
+                          }`}
+                      >
+                        {isAvailable ? 'Disponible' : 'Masquée'}
+                      </span>
+                    </td>
+                    <td className="td-actions">
+                      <button
+                        type="button"
+                        className="btn-action btn-edit"
+                        onClick={() => onEdit && onEdit(property)}
+                        disabled={actionInProgressId === property.id}
+                      >
+                        Modifier
+                      </button>
+
+                      <button
+                        type="button"
+                        className="btn-action btn-toggle"
+                        onClick={() => handleToggleAvailability(property.id)}
+                        disabled={actionInProgressId === property.id}
+                      >
+                        {isAvailable ? 'Masquer' : 'Afficher'}
+                      </button>
+
+                      <button
+                        type="button"
+                        className="btn-action btn-delete"
+                        onClick={() => handleDelete(property)}
+                        disabled={actionInProgressId === property.id}
+                      >
+                        {actionInProgressId === property.id ? 'Patientez...' : 'Supprimer'}
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
