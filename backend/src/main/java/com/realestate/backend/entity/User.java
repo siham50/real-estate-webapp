@@ -1,5 +1,7 @@
 package com.realestate.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.realestate.backend.entity.enums.Role;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -30,6 +32,7 @@ public class User {
     @Column(name = "email", nullable = false, unique = true, length = 100)
     private String email;
 
+    @JsonIgnore
     @Column(name = "password", nullable = false, length = 255)
     private String password;
 
@@ -40,12 +43,14 @@ public class User {
     @Column(name = "role", nullable = false)
     private Role role;
 
+    @JsonProperty("isIdentityVerified")
     @Column(name = "is_identity_verified", nullable = true)
     private Boolean isIdentityVerified;
 
     @Column(name = "identity_document_url", nullable = true, length = 255)
     private String identityDocumentUrl;
 
+    @JsonProperty("isActive")
     @Builder.Default
     @Column(name = "is_active", nullable = false)
     private boolean isActive = true;

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { NavLink, Link } from 'react-router-dom';
 
 const Header = () => {
   return (
@@ -26,21 +26,31 @@ const Header = () => {
           </span>
         </Link>
         <nav className="nav">
-          <Link to="/" className="nav-link">
-            Acheter
-          </Link>
-          <a href="#louer" className="nav-link">
-            Louer
-          </a>
-          <a href="#nouveautes" className="nav-link">
-            Nouveautés
-          </a>
-          <Link to="/users" className="nav-link">
+          <NavLink
+            to="/"
+            end
+            className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}
+          >
+            Accueil
+          </NavLink>
+          <NavLink
+            to="/users"
+            className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}
+          >
             Utilisateurs
-          </Link>
-          <a href="#publier" className="publish-btn">
-            Publier une annonce
-          </a>
+          </NavLink>
+          <NavLink
+            to="/residences"
+            className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}
+          >
+            Résidences
+          </NavLink>
+          <NavLink
+            to="/properties"
+            className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}
+          >
+            Biens
+          </NavLink>
         </nav>
       </div>
     </header>
