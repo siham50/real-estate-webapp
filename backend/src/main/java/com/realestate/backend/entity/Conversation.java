@@ -1,6 +1,7 @@
 package com.realestate.backend.entity;
 
 import jakarta.persistence.*;
+import jakarta.persistence.FetchType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -37,7 +38,7 @@ public class Conversation {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @OneToMany(mappedBy = "conversation", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "conversation", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @Builder.Default
     private List<Message> messages = new ArrayList<>();
 

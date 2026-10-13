@@ -6,6 +6,7 @@ import com.realestate.backend.entity.enums.PropertyPurpose;
 import com.realestate.backend.entity.enums.PropertyType;
 import com.realestate.backend.entity.enums.VerificationStatus;
 import jakarta.persistence.*;
+import jakarta.persistence.FetchType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -90,11 +91,11 @@ public class Property {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @OneToMany(mappedBy = "property", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "property", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @Builder.Default
     private List<PropertyImage> images = new ArrayList<>();
 
-    @OneToMany(mappedBy = "property", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "property", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @Builder.Default
     private List<PropertyDocument> documents = new ArrayList<>();
 

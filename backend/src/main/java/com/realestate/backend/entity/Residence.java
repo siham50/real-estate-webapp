@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.realestate.backend.entity.enums.VerificationStatus;
 import jakarta.persistence.*;
+import jakarta.persistence.FetchType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -73,11 +74,11 @@ public class Residence {
     @Builder.Default
     private List<Property> properties = new ArrayList<>();
 
-    @OneToMany(mappedBy = "residence", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "residence", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @Builder.Default
     private List<ResidenceImage> images = new ArrayList<>();
 
-    @OneToMany(mappedBy = "residence", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "residence", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @Builder.Default
     private List<ResidenceDocument> documents = new ArrayList<>();
 
