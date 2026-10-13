@@ -66,6 +66,9 @@ public class ResidenceService {
         if (updatedResidence.getLongitude() != null) {
             existingResidence.setLongitude(updatedResidence.getLongitude());
         }
+        if (updatedResidence.getVerificationStatus() != null) {
+            existingResidence.setVerificationStatus(updatedResidence.getVerificationStatus());
+        }
         if (updatedResidence.getOwner() != null && updatedResidence.getOwner().getId() != null) {
             User owner = userRepository.findById(updatedResidence.getOwner().getId())
                     .orElseThrow(() -> new RuntimeException("Owner not found"));

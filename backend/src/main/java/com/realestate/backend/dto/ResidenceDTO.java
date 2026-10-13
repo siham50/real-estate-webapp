@@ -1,12 +1,14 @@
 package com.realestate.backend.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.realestate.backend.entity.enums.VerificationStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -21,6 +23,7 @@ public class ResidenceDTO {
     private Double latitude;
     private Double longitude;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
     @JsonProperty("isAvailable")
     private boolean isAvailable;
@@ -28,5 +31,8 @@ public class ResidenceDTO {
     @JsonProperty("isDeleted")
     private boolean isDeleted;
 
+    private VerificationStatus verificationStatus;
     private UserSummaryDTO owner;
+    private List<ResidenceImageDTO> images;
+    private List<ResidenceDocumentDTO> documents;
 }

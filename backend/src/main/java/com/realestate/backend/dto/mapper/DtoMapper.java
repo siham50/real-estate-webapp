@@ -2,8 +2,14 @@ package com.realestate.backend.dto.mapper;
 
 import com.realestate.backend.dto.*;
 import com.realestate.backend.entity.Property;
+import com.realestate.backend.entity.PropertyDocument;
 import com.realestate.backend.entity.Residence;
+import com.realestate.backend.entity.ResidenceDocument;
+import com.realestate.backend.entity.ResidenceImage;
 import com.realestate.backend.entity.User;
+
+import java.util.Collections;
+import java.util.List;
 
 public class DtoMapper {
 
@@ -41,6 +47,37 @@ public class DtoMapper {
                 .build();
     }
 
+    public static ResidenceDocumentDTO toResidenceDocumentDTO(ResidenceDocument doc) {
+        if (doc == null) {
+            return null;
+        }
+        return ResidenceDocumentDTO.builder()
+                .id(doc.getId())
+                .documentUrl(doc.getDocumentUrl())
+                .uploadedAt(doc.getUploadedAt())
+                .build();
+    }
+
+    public static ResidenceImageDTO toResidenceImageDTO(ResidenceImage img) {
+        if (img == null) return null;
+        return ResidenceImageDTO.builder()
+                .id(img.getId())
+                .imageUrl(img.getImageUrl())
+                .isPrimary(img.isPrimary())
+                .build();
+    }
+
+    public static PropertyDocumentDTO toPropertyDocumentDTO(PropertyDocument doc) {
+        if (doc == null) {
+            return null;
+        }
+        return PropertyDocumentDTO.builder()
+                .id(doc.getId())
+                .documentUrl(doc.getDocumentUrl())
+                .uploadedAt(doc.getUploadedAt())
+                .build();
+    }
+
     public static ResidenceDTO toResidenceDTO(Residence residence) {
         if (residence == null) {
             return null;
@@ -54,9 +91,21 @@ public class DtoMapper {
                 .latitude(residence.getLatitude())
                 .longitude(residence.getLongitude())
                 .createdAt(residence.getCreatedAt())
+                .updatedAt(residence.getUpdatedAt())
                 .isAvailable(residence.isAvailable())
                 .isDeleted(residence.isDeleted())
+                .verificationStatus(residence.getVerificationStatus())
                 .owner(toUserSummaryDTO(residence.getOwner()))
+                .images(residence.getImages() != null
+                        ? residence.getImages().stream()
+                                .map(DtoMapper::toResidenceImageDTO)
+                                .toList()
+                        : List.of())
+                .documents(residence.getDocuments() != null
+                        ? residence.getDocuments().stream()
+                                .map(DtoMapper::toResidenceDocumentDTO)
+                                .toList()
+                        : Collections.emptyList())
                 .build();
     }
 
@@ -94,6 +143,11 @@ public class DtoMapper {
                 .updatedAt(property.getUpdatedAt())
                 .owner(toUserSummaryDTO(property.getOwner()))
                 .residence(toResidenceSummaryDTO(property.getResidence()))
+                .documents(property.getDocuments() != null
+                        ? property.getDocuments().stream()
+                                .map(DtoMapper::toPropertyDocumentDTO)
+                                .toList()
+                        : List.of())
                 .build();
     }
 }

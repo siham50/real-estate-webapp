@@ -37,7 +37,4 @@ public class AgencyProfile {
     @Builder.Default
     @Column(name = "is_verified", nullable = false)
     private boolean isVerified = false;
-
-    @Column(name = "professional_type", length = 50)
-    private String professionalType;
 }

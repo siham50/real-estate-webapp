@@ -2,6 +2,7 @@ package com.realestate.backend.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.realestate.backend.entity.enums.VerificationStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -57,17 +58,39 @@ public class Residence {
     @Column(name = "is_deleted", nullable = false)
     private boolean isDeleted = false;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "verification_status", nullable = false)
+    @Builder.Default
+    private VerificationStatus verificationStatus = VerificationStatus.PENDING;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "residence", cascade = CascadeType.ALL)
     @Builder.Default
     private List<Property> properties = new ArrayList<>();
+
+    @OneToMany(mappedBy = "residence", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<ResidenceImage> images = new ArrayList<>();
+
+    @OneToMany(mappedBy = "residence", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<ResidenceDocument> documents = new ArrayList<>();
 
     @PrePersist
     protected void onCreate() {
         if (this.createdAt == null) {
             this.createdAt = LocalDateTime.now();
         }
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
     }
 }
