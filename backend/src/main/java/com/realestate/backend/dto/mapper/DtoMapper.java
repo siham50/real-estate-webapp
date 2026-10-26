@@ -5,9 +5,11 @@ import com.realestate.backend.entity.Availability;
 import com.realestate.backend.entity.Booking;
 import com.realestate.backend.entity.Property;
 import com.realestate.backend.entity.PropertyDocument;
+import com.realestate.backend.entity.Report;
 import com.realestate.backend.entity.Residence;
 import com.realestate.backend.entity.ResidenceDocument;
 import com.realestate.backend.entity.ResidenceImage;
+import com.realestate.backend.entity.Review;
 import com.realestate.backend.entity.User;
 
 import java.util.Collections;
@@ -181,5 +183,35 @@ public class DtoMapper {
                 .updatedAt(booking.getUpdatedAt())
                 .build();
     }
+
+    public static ReviewDTO toReviewDTO(Review review) {
+        if (review == null) {
+            return null;
+        }
+        return ReviewDTO.builder()
+                .id(review.getId())
+                .bookingId(review.getBooking() != null ? review.getBooking().getId() : null)
+                .client(toUserSummaryDTO(review.getClient()))
+                .targetUser(toUserSummaryDTO(review.getTargetUser()))
+                .rating(review.getRating())
+                .comment(review.getComment())
+                .createdAt(review.getCreatedAt())
+                .build();
+    }
+
+    public static ReportDTO toReportDTO(Report report) {
+        if (report == null) {
+            return null;
+        }
+        return ReportDTO.builder()
+                .id(report.getId())
+                .reporter(toUserSummaryDTO(report.getReporter()))
+                .reportedUser(toUserSummaryDTO(report.getReportedUser()))
+                .reason(report.getReason())
+                .status(report.getStatus())
+                .createdAt(report.getCreatedAt())
+                .build();
+    }
 }
+
 

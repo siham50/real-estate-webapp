@@ -1,5 +1,6 @@
 package com.realestate.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.realestate.backend.entity.enums.ReportStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -21,12 +22,14 @@ public class Report {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "reporter_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private User reporter;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "reported_user_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private User reportedUser;
 
     @Column(name = "reason", columnDefinition = "TEXT", nullable = false)
@@ -39,6 +42,26 @@ public class Report {
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @Transient
+    private Long reporterId;
+
+    @Transient
+    private Long reportedUserId;
+
+    public Long getResolvedReporterId() {
+        if (reporter != null && reporter.getId() != null) {
+            return reporter.getId();
+        }
+        return reporterId;
+    }
+
+    public Long getResolvedReportedUserId() {
+        if (reportedUser != null && reportedUser.getId() != null) {
+            return reportedUser.getId();
+        }
+        return reportedUserId;
+    }
 
     @PrePersist
     protected void onCreate() {
