@@ -268,6 +268,15 @@ public class DtoMapper {
                 .createdAt(notification.getCreatedAt())
                 .build();
     }
+
+    public static AdminStatsDTO toAdminStatsDTO(long totalUsers, long totalProperties, long totalBookings, long pendingReports) {
+        return AdminStatsDTO.builder()
+                .totalUsers(totalUsers)
+                .totalProperties(totalProperties)
+                .totalBookings(totalBookings)
+                .pendingReports(pendingReports)
+                .build();
+    }
 }
 
 
