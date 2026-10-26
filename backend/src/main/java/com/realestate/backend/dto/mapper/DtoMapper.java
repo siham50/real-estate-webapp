@@ -3,6 +3,8 @@ package com.realestate.backend.dto.mapper;
 import com.realestate.backend.dto.*;
 import com.realestate.backend.entity.Availability;
 import com.realestate.backend.entity.Booking;
+import com.realestate.backend.entity.Conversation;
+import com.realestate.backend.entity.Message;
 import com.realestate.backend.entity.Property;
 import com.realestate.backend.entity.PropertyDocument;
 import com.realestate.backend.entity.Report;
@@ -210,6 +212,45 @@ public class DtoMapper {
                 .reason(report.getReason())
                 .status(report.getStatus())
                 .createdAt(report.getCreatedAt())
+                .build();
+    }
+
+    public static MessageDTO toMessageDTO(Message message) {
+        if (message == null) {
+            return null;
+        }
+        return MessageDTO.builder()
+                .id(message.getId())
+                .conversationId(message.getConversation() != null ? message.getConversation().getId() : null)
+                .sender(toUserSummaryDTO(message.getSender()))
+                .content(message.getContent())
+                .timestamp(message.getTimestamp())
+                .isRead(message.isRead())
+                .build();
+    }
+
+    public static ConversationDTO toConversationDTO(Conversation conversation) {
+        if (conversation == null) {
+            return null;
+        }
+        List<MessageDTO> messageDTOs = conversation.getMessages() != null
+                ? conversation.getMessages().stream()
+                        .map(DtoMapper::toMessageDTO)
+                        .toList()
+                : Collections.emptyList();
+
+        MessageDTO lastMessage = messageDTOs.isEmpty() ? null : messageDTOs.get(messageDTOs.size() - 1);
+        long unreadCount = messageDTOs.stream().filter(m -> !m.isRead()).count();
+
+        return ConversationDTO.builder()
+                .id(conversation.getId())
+                .user1(toUserSummaryDTO(conversation.getUser1()))
+                .user2(toUserSummaryDTO(conversation.getUser2()))
+                .property(toPropertyDTO(conversation.getProperty()))
+                .createdAt(conversation.getCreatedAt())
+                .messages(messageDTOs)
+                .lastMessage(lastMessage)
+                .unreadCount(unreadCount)
                 .build();
     }
 }
