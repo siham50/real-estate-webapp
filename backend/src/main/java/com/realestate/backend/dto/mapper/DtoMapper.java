@@ -1,6 +1,8 @@
 package com.realestate.backend.dto.mapper;
 
 import com.realestate.backend.dto.*;
+import com.realestate.backend.entity.Availability;
+import com.realestate.backend.entity.Booking;
 import com.realestate.backend.entity.Property;
 import com.realestate.backend.entity.PropertyDocument;
 import com.realestate.backend.entity.Residence;
@@ -150,4 +152,34 @@ public class DtoMapper {
                         : List.of())
                 .build();
     }
+
+    public static AvailabilityDTO toAvailabilityDTO(Availability availability) {
+        if (availability == null) {
+            return null;
+        }
+        return AvailabilityDTO.builder()
+                .id(availability.getId())
+                .user(toUserSummaryDTO(availability.getUser()))
+                .date(availability.getDate())
+                .startTime(availability.getStartTime())
+                .endTime(availability.getEndTime())
+                .isBooked(availability.isBooked())
+                .build();
+    }
+
+    public static BookingDTO toBookingDTO(Booking booking) {
+        if (booking == null) {
+            return null;
+        }
+        return BookingDTO.builder()
+                .id(booking.getId())
+                .client(toUserSummaryDTO(booking.getClient()))
+                .property(toPropertyDTO(booking.getProperty()))
+                .availability(toAvailabilityDTO(booking.getAvailability()))
+                .status(booking.getStatus())
+                .createdAt(booking.getCreatedAt())
+                .updatedAt(booking.getUpdatedAt())
+                .build();
+    }
 }
+

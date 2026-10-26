@@ -1,0 +1,25 @@
+package com.realestate.backend.dto;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDate;
+import java.time.LocalTime;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class AvailabilityDTO {
+    private Long id;
+    private UserSummaryDTO user;
+    private LocalDate date;
+    private LocalTime startTime;
+    private LocalTime endTime;
+
+    @JsonProperty("isBooked")
+    private boolean isBooked;
+}
