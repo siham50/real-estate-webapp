@@ -5,6 +5,7 @@ import com.realestate.backend.entity.Availability;
 import com.realestate.backend.entity.Booking;
 import com.realestate.backend.entity.Conversation;
 import com.realestate.backend.entity.Message;
+import com.realestate.backend.entity.Notification;
 import com.realestate.backend.entity.Property;
 import com.realestate.backend.entity.PropertyDocument;
 import com.realestate.backend.entity.Report;
@@ -251,6 +252,20 @@ public class DtoMapper {
                 .messages(messageDTOs)
                 .lastMessage(lastMessage)
                 .unreadCount(unreadCount)
+                .build();
+    }
+
+    public static NotificationDTO toNotificationDTO(Notification notification) {
+        if (notification == null) {
+            return null;
+        }
+        return NotificationDTO.builder()
+                .id(notification.getId())
+                .user(toUserSummaryDTO(notification.getUser()))
+                .message(notification.getMessage())
+                .type(notification.getType())
+                .isRead(notification.isRead())
+                .createdAt(notification.getCreatedAt())
                 .build();
     }
 }
