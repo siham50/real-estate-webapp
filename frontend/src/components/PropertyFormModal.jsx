@@ -59,6 +59,8 @@ const PropertyFormModal = ({ onClose, onCreated, residences }) => {
         longitude: formData.longitude !== '' ? parseFloat(formData.longitude) : null,
         owner: { id: user.id },
         residence: formData.residenceId ? { id: parseInt(formData.residenceId) } : null,
+        isAvailable: true,
+        isDeleted: false,
       };
       const created = await createProperty(payload);
       onCreated(created);

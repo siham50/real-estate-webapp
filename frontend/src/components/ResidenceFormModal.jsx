@@ -35,6 +35,8 @@ const ResidenceFormModal = ({ onClose, onCreated }) => {
         latitude: formData.latitude !== '' ? parseFloat(formData.latitude) : null,
         longitude: formData.longitude !== '' ? parseFloat(formData.longitude) : null,
         owner: { id: user.id },
+        isAvailable: true,
+        isDeleted: false,
       };
       const created = await createResidence(payload);
       onCreated(created);

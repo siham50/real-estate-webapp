@@ -56,7 +56,10 @@ const Header = () => {
             Accueil
           </NavLink>
           <a href="/#annonces" className="urbanet-nav-link">
-            Annonces
+            Biens
+          </a>
+          <a href="/#residences" className="urbanet-nav-link">
+            Résidences
           </a>
         </nav>
 
