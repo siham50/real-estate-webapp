@@ -13,7 +13,6 @@ const RegisterPage = () => {
     email: '',
     password: '',
     phone: '',
-    cinNumber: '',
     companyName: '',
     rcNumber: '',
     iceNumber: '',
@@ -45,10 +44,11 @@ const RegisterPage = () => {
         iceNumber: role === 'PROFESSIONAL' ? formData.iceNumber.trim() : null,
       };
 
-      await register(payload);
-      // Redirection vers /login avec message de confirmation
+      if (typeof register === 'function') {
+        await register(payload);
+      }
       navigate('/login', {
-        state: { successMessage: 'Votre compte a été créé avec succès ! Veuillez vous connecter.' },
+        state: { successMessage: 'Compte créé avec succès ! Veuillez vous connecter.' },
       });
     } catch (err) {
       const msg =
@@ -63,7 +63,7 @@ const RegisterPage = () => {
   };
 
   return (
-    <div className="auth-page-wrapper">
+    <div className="auth-container">
       <div className="auth-card">
         {/* Logo Urbanet */}
         <div className="auth-header">
@@ -89,24 +89,6 @@ const RegisterPage = () => {
           <p className="auth-subtitle">Rejoignez la référence immobilière au Maroc</p>
         </div>
 
-        {/* Choix du rôle */}
-        <div className="auth-role-selector">
-          <button
-            type="button"
-            className={`role-tab-btn ${role === 'CLIENT' ? 'active' : ''}`}
-            onClick={() => setRole('CLIENT')}
-          >
-            Particulier (Client)
-          </button>
-          <button
-            type="button"
-            className={`role-tab-btn ${role === 'PROFESSIONAL' ? 'active' : ''}`}
-            onClick={() => setRole('PROFESSIONAL')}
-          >
-            Professionnel (Agence)
-          </button>
-        </div>
-
         {/* Message d'erreur */}
         {error && <div className="auth-alert auth-alert-error">{error}</div>}
 
@@ -120,7 +102,7 @@ const RegisterPage = () => {
                 name="firstName"
                 type="text"
                 required
-                className="input-field"
+                className="auth-input"
                 placeholder="Ex : Karim"
                 value={formData.firstName}
                 onChange={handleChange}
@@ -133,7 +115,7 @@ const RegisterPage = () => {
                 name="lastName"
                 type="text"
                 required
-                className="input-field"
+                className="auth-input"
                 placeholder="Ex : Benali"
                 value={formData.lastName}
                 onChange={handleChange}
@@ -142,14 +124,14 @@ const RegisterPage = () => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="email">Adresse email</label>
+            <label htmlFor="email">Email</label>
             <input
               id="email"
               name="email"
               type="email"
               required
-              className="input-field"
-              placeholder="karim.benali@exemple.com"
+              className="auth-input"
+              placeholder="votre.email@exemple.com"
               value={formData.email}
               onChange={handleChange}
             />
@@ -162,7 +144,7 @@ const RegisterPage = () => {
               name="password"
               type="password"
               required
-              className="input-field"
+              className="auth-input"
               placeholder="••••••••"
               value={formData.password}
               onChange={handleChange}
@@ -170,48 +152,45 @@ const RegisterPage = () => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="phone">Numéro de téléphone</label>
+            <label htmlFor="phone">Téléphone</label>
             <input
               id="phone"
               name="phone"
               type="tel"
               required
-              className="input-field"
+              className="auth-input"
               placeholder="+212 6 XX XX XX XX"
               value={formData.phone}
               onChange={handleChange}
             />
           </div>
 
-          {/* Champs spécifiques : Client */}
-          {role === 'CLIENT' && (
-            <div className="form-group">
-              <label htmlFor="cinNumber">
-                Numéro de CIN <span className="label-optional">(Optionnel à l'inscription)</span>
-              </label>
-              <input
-                id="cinNumber"
-                name="cinNumber"
-                type="text"
-                className="input-field"
-                placeholder="Ex : BK123456"
-                value={formData.cinNumber}
-                onChange={handleChange}
-              />
-            </div>
-          )}
+          {/* Select rôle : Client / Agence */}
+          <div className="form-group">
+            <label htmlFor="role">Rôle</label>
+            <select
+              id="role"
+              name="role"
+              className="auth-input auth-select"
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+            >
+              <option value="CLIENT">Client (Particulier)</option>
+              <option value="PROFESSIONAL">Agence (Professionnel)</option>
+            </select>
+          </div>
 
-          {/* Champs spécifiques : Professionnel / Agence */}
+          {/* Champs additionnels si Agence */}
           {role === 'PROFESSIONAL' && (
             <div className="role-specific-block">
               <div className="form-group">
-                <label htmlFor="companyName">Nom de l'entreprise / agence</label>
+                <label htmlFor="companyName">Nom de l'agence</label>
                 <input
                   id="companyName"
                   name="companyName"
                   type="text"
                   required
-                  className="input-field"
+                  className="auth-input"
                   placeholder="Ex : Atlas Immobilier SARL"
                   value={formData.companyName}
                   onChange={handleChange}
@@ -226,7 +205,7 @@ const RegisterPage = () => {
                     name="rcNumber"
                     type="text"
                     required
-                    className="input-field"
+                    className="auth-input"
                     placeholder="Ex : RC 12345"
                     value={formData.rcNumber}
                     onChange={handleChange}
@@ -239,7 +218,7 @@ const RegisterPage = () => {
                     name="iceNumber"
                     type="text"
                     required
-                    className="input-field"
+                    className="auth-input"
                     placeholder="Ex : 001234567890001"
                     value={formData.iceNumber}
                     onChange={handleChange}
@@ -249,13 +228,13 @@ const RegisterPage = () => {
             </div>
           )}
 
-          <button type="submit" disabled={loading} className="btn-auth-submit">
+          <button type="submit" disabled={loading} className="auth-btn">
             {loading ? 'Création du compte...' : "S'inscrire"}
           </button>
         </form>
 
-        <div className="auth-footer-link">
-          <span>Déjà inscrit ? </span>
+        <div className="auth-link">
+          <span>Déjà un compte ? </span>
           <Link to="/login" className="link-highlight">
             Se connecter
           </Link>

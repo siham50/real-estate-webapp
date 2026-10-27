@@ -7,7 +7,7 @@ const Header = () => {
   const navigate = useNavigate();
 
   const handleProfileClick = () => {
-    if (user?.role === 'PROFESSIONAL') {
+    if (user?.role === 'PROFESSIONAL' || user?.role === 'AGENCE') {
       navigate('/profile/agency');
     } else {
       navigate('/profile/client');
@@ -17,7 +17,7 @@ const Header = () => {
   return (
     <header className="urbanet-header">
       <div className="urbanet-header-container">
-        {/* Logo */}
+        {/* Logo Urbanet vers / */}
         <Link to="/" className="urbanet-logo">
           <div className="urbanet-logo-badge">
             <svg
@@ -37,7 +37,7 @@ const Header = () => {
           <span className="urbanet-logo-title">Urbanet</span>
         </Link>
 
-        {/* Center Nav */}
+        {/* Navigation centrale */}
         <nav className="urbanet-nav">
           <NavLink
             to="/"
@@ -48,12 +48,12 @@ const Header = () => {
           >
             Accueil
           </NavLink>
-          <a href="/#annonces" className="urbanet-nav-link">
+          <Link to="/#annonces" className="urbanet-nav-link">
             Annonces
-          </a>
+          </Link>
         </nav>
 
-        {/* Right Actions */}
+        {/* Actions à droite */}
         <div className="urbanet-header-actions">
           <button type="button" className="urbanet-icon-btn" aria-label="Recherche">
             <svg
@@ -83,7 +83,7 @@ const Header = () => {
                 </div>
                 <span className="header-user-name">{user.firstName}</span>
                 <span className="header-user-role-badge">
-                  {user.role === 'PROFESSIONAL' ? 'Agence' : 'Client'}
+                  {user.role === 'PROFESSIONAL' || user.role === 'AGENCE' ? 'Agence' : 'Client'}
                 </span>
               </button>
               <button

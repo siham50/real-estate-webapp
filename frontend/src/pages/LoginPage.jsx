@@ -12,7 +12,6 @@ const LoginPage = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Message transmis depuis la page d'inscription ou redirection
   const successMessage = location.state?.successMessage;
 
   const handleSubmit = async (e) => {
@@ -21,12 +20,15 @@ const LoginPage = () => {
     setLoading(true);
 
     try {
-      const loggedUser = await login(email.trim(), password);
-      // Redirection selon le rôle
-      if (loggedUser.role === 'PROFESSIONAL') {
-        navigate('/profile/agency');
+      if (typeof login === 'function') {
+        const loggedUser = await login(email.trim(), password);
+        if (loggedUser?.role === 'PROFESSIONAL' || loggedUser?.role === 'AGENCE') {
+          navigate('/profile/agency');
+        } else {
+          navigate('/profile/client');
+        }
       } else {
-        navigate('/profile/client');
+        navigate('/');
       }
     } catch (err) {
       const msg =
@@ -41,7 +43,7 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="auth-page-wrapper">
+    <div className="auth-container">
       <div className="auth-card">
         {/* Logo Urbanet */}
         <div className="auth-header">
@@ -63,11 +65,11 @@ const LoginPage = () => {
             </div>
             <span className="urbanet-logo-title">Urbanet</span>
           </Link>
-          <h1 className="auth-title">Connexion</h1>
+          <h1 className="auth-title">Se connecter</h1>
           <p className="auth-subtitle">Accédez à votre espace Urbanet</p>
         </div>
 
-        {/* Message de succès (ex: après inscription) */}
+        {/* Message de succès */}
         {successMessage && <div className="auth-alert auth-alert-success">{successMessage}</div>}
 
         {/* Message d'erreur */}
@@ -76,12 +78,12 @@ const LoginPage = () => {
         {/* Formulaire */}
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
-            <label htmlFor="login-email">Adresse email</label>
+            <label htmlFor="email">Email</label>
             <input
-              id="login-email"
+              id="email"
               type="email"
               required
-              className="input-field"
+              className="auth-input"
               placeholder="votre.email@exemple.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -89,29 +91,27 @@ const LoginPage = () => {
           </div>
 
           <div className="form-group">
-            <div className="form-label-with-link">
-              <label htmlFor="login-password">Mot de passe</label>
-            </div>
+            <label htmlFor="password">Mot de passe</label>
             <input
-              id="login-password"
+              id="password"
               type="password"
               required
-              className="input-field"
+              className="auth-input"
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
 
-          <button type="submit" disabled={loading} className="btn-auth-submit">
+          <button type="submit" disabled={loading} className="auth-btn">
             {loading ? 'Connexion en cours...' : 'Se connecter'}
           </button>
         </form>
 
-        <div className="auth-footer-link">
+        <div className="auth-link">
           <span>Pas encore de compte ? </span>
           <Link to="/register" className="link-highlight">
-            Créer un compte
+            S'inscrire
           </Link>
         </div>
       </div>
