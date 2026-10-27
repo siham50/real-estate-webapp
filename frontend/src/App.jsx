@@ -6,6 +6,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ClientProfilePage from './pages/ClientProfilePage';
 import AgencyProfilePage from './pages/AgencyProfilePage';
+import AgencyDashboard from './pages/AgencyDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -31,9 +32,18 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/agency/dashboard"
+          element={
+            <ProtectedRoute requiredRole="PROFESSIONAL">
+              <AgencyDashboard />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </AuthProvider>
   );
 }
 
 export default App;
+

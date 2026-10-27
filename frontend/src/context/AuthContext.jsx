@@ -1,73 +1,100 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { login as apiLogin, register as apiRegister, getUserProfile } from '../services/api';
 
-const AuthContext = createContext(null);
+const AuthContext = createContext({
+  user: null,
+  token: null,
+  isAuthenticated: false,
+  loading: false,
+  login: async () => {},
+  register: async () => {},
+  logout: () => {},
+  updateUserState: () => {},
+});
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
     try {
       const stored = localStorage.getItem('urbanet_user');
-      return stored ? JSON.parse(stored) : null;
+      if (!stored || stored === 'undefined' || stored === 'null') return null;
+      const parsed = JSON.parse(stored);
+      // On ne valide que si l'objet contient un identifiant utilisateur
+      return parsed && parsed.id ? parsed : null;
     } catch (e) {
       return null;
     }
   });
-  const [loading, setLoading] = useState(true);
 
+  const [token, setToken] = useState(() => {
+    try {
+      return localStorage.getItem('urbanet_token') || null;
+    } catch (e) {
+      return null;
+    }
+  });
+
+  const [loading, setLoading] = useState(false);
+
+  // Synchronisation optionnelle avec le backend au montage
   useEffect(() => {
-    const initAuth = async () => {
-      try {
-        const stored = localStorage.getItem('urbanet_user');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (parsed?.id) {
-            // Optionnel : synchroniser avec les données fraîches du backend
-            try {
-              const freshData = await getUserProfile(parsed.id);
-              const merged = { ...parsed, ...freshData };
-              setUser(merged);
-              localStorage.setItem('urbanet_user', JSON.stringify(merged));
-            } catch (err) {
-              // Si le backend est indisponible temporairement, on garde les infos locales
-              setUser(parsed);
-            }
-          }
+    const syncProfile = async () => {
+      if (user?.id) {
+        try {
+          const freshData = await getUserProfile(user.id);
+          const merged = { ...user, ...freshData };
+          setUser(merged);
+          localStorage.setItem('urbanet_user', JSON.stringify(merged));
+        } catch (err) {
+          // Conserve l'état local en cas d'indisponibilité temporaire
         }
-      } catch (err) {
-        console.error('Erreur initialisation auth:', err);
-      } finally {
-        setLoading(false);
       }
     };
 
-    initAuth();
+    syncProfile();
   }, []);
 
-  const login = async (email, password) => {
-    const authData = await apiLogin(email, password);
-    // authData = { id, email, firstName, role, message }
-    let fullUser = authData;
+  const login = async (data) => {
+    setLoading(true);
     try {
-      if (authData.id) {
-        const profile = await getUserProfile(authData.id);
-        fullUser = { ...authData, ...profile };
+      const response = await apiLogin(data);
+      let fullUser = response;
+      if (response?.id) {
+        try {
+          const profile = await getUserProfile(response.id);
+          fullUser = { ...response, ...profile };
+        } catch (err) {
+          // Fallback sur la réponse directe
+        }
       }
-    } catch (err) {
-      console.warn('Impossible de charger le profil complet après login:', err);
-    }
 
-    setUser(fullUser);
-    localStorage.setItem('urbanet_user', JSON.stringify(fullUser));
-    return fullUser;
+      setUser(fullUser);
+      localStorage.setItem('urbanet_user', JSON.stringify(fullUser));
+
+      if (response?.token) {
+        setToken(response.token);
+        localStorage.setItem('urbanet_token', response.token);
+      }
+
+      return fullUser;
+    } finally {
+      setLoading(false);
+    }
   };
 
   const register = async (data) => {
-    return await apiRegister(data);
+    setLoading(true);
+    try {
+      return await apiRegister(data);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const logout = () => {
     setUser(null);
+    setToken(null);
     localStorage.removeItem('urbanet_user');
+    localStorage.removeItem('urbanet_token');
   };
 
   const updateUserState = (updatedData) => {
@@ -82,7 +109,8 @@ export const AuthProvider = ({ children }) => {
     <AuthContext.Provider
       value={{
         user,
-        isAuthenticated: !!user,
+        token,
+        isAuthenticated: Boolean(user && user.id),
         loading,
         login,
         register,

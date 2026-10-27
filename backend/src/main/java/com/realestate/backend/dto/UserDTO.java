@@ -24,6 +24,8 @@ public class UserDTO {
     @JsonProperty("isIdentityVerified")
     private Boolean isIdentityVerified;
 
+    private String identityDocumentUrl;
+
     @JsonProperty("isActive")
     private boolean isActive;
 

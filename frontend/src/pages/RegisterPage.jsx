@@ -6,13 +6,13 @@ const RegisterPage = () => {
   const navigate = useNavigate();
   const { register } = useAuth();
 
-  const [role, setRole] = useState('CLIENT'); // 'CLIENT' ou 'PROFESSIONAL'
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     email: '',
     password: '',
     phone: '',
+    role: 'CLIENT', // "CLIENT" ou "PROFESSIONAL"
     companyName: '',
     rcNumber: '',
     iceNumber: '',
@@ -23,7 +23,10 @@ const RegisterPage = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -32,31 +35,27 @@ const RegisterPage = () => {
     setLoading(true);
 
     try {
+      // Préparation du payload avec rôle exact attendu par le backend
       const payload = {
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
         email: formData.email.trim(),
         password: formData.password,
         phone: formData.phone.trim(),
-        role: role,
-        companyName: role === 'PROFESSIONAL' ? formData.companyName.trim() : null,
-        rcNumber: role === 'PROFESSIONAL' ? formData.rcNumber.trim() : null,
-        iceNumber: role === 'PROFESSIONAL' ? formData.iceNumber.trim() : null,
+        role: formData.role, // "CLIENT" ou "PROFESSIONAL"
+        companyName: formData.role === 'PROFESSIONAL' ? formData.companyName.trim() : null,
+        rcNumber: formData.role === 'PROFESSIONAL' ? formData.rcNumber.trim() : null,
+        iceNumber: formData.role === 'PROFESSIONAL' ? formData.iceNumber.trim() : null,
       };
 
-      if (typeof register === 'function') {
-        await register(payload);
-      }
+      await register(payload);
+
+      // Redirection vers /login avec confirmation
       navigate('/login', {
         state: { successMessage: 'Compte créé avec succès ! Veuillez vous connecter.' },
       });
     } catch (err) {
-      const msg =
-        err.response?.data?.message ||
-        err.response?.data?.error ||
-        err.message ||
-        "Une erreur est survenue lors de l'inscription.";
-      setError(msg);
+      setError(err.message || "Une erreur est survenue lors de l'inscription.");
     } finally {
       setLoading(false);
     }
@@ -65,7 +64,7 @@ const RegisterPage = () => {
   return (
     <div className="auth-container">
       <div className="auth-card">
-        {/* Logo Urbanet */}
+        {/* En-tête avec logo Urbanet */}
         <div className="auth-header">
           <Link to="/" className="urbanet-logo auth-logo-center">
             <div className="urbanet-logo-badge">
@@ -86,13 +85,13 @@ const RegisterPage = () => {
             <span className="urbanet-logo-title">Urbanet</span>
           </Link>
           <h1 className="auth-title">Créer un compte</h1>
-          <p className="auth-subtitle">Rejoignez la référence immobilière au Maroc</p>
+          <p className="auth-subtitle">Rejoignez la plateforme immobilière Urbanet</p>
         </div>
 
-        {/* Message d'erreur */}
+        {/* Bandeau d'erreur rouge */}
         {error && <div className="auth-alert auth-alert-error">{error}</div>}
 
-        {/* Formulaire */}
+        {/* Formulaire d'inscription */}
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-row-2">
             <div className="form-group">
@@ -165,26 +164,26 @@ const RegisterPage = () => {
             />
           </div>
 
-          {/* Select rôle : Client / Agence */}
+          {/* Sélecteur de rôle strict : CLIENT ou PROFESSIONAL */}
           <div className="form-group">
-            <label htmlFor="role">Rôle</label>
+            <label htmlFor="role">Type de compte</label>
             <select
               id="role"
               name="role"
               className="auth-input auth-select"
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
+              value={formData.role}
+              onChange={handleChange}
             >
-              <option value="CLIENT">Client (Particulier)</option>
-              <option value="PROFESSIONAL">Agence (Professionnel)</option>
+              <option value="CLIENT">Client</option>
+              <option value="PROFESSIONAL">Professionnel (Agence)</option>
             </select>
           </div>
 
-          {/* Champs additionnels si Agence */}
-          {role === 'PROFESSIONAL' && (
+          {/* Champs dynamiques affichés si rôle = PROFESSIONAL */}
+          {formData.role === 'PROFESSIONAL' && (
             <div className="role-specific-block">
               <div className="form-group">
-                <label htmlFor="companyName">Nom de l'agence</label>
+                <label htmlFor="companyName">Nom de l'entreprise</label>
                 <input
                   id="companyName"
                   name="companyName"
@@ -229,7 +228,7 @@ const RegisterPage = () => {
           )}
 
           <button type="submit" disabled={loading} className="auth-btn">
-            {loading ? 'Création du compte...' : "S'inscrire"}
+            {loading ? 'Chargement...' : "S'inscrire"}
           </button>
         </form>
 

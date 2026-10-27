@@ -60,6 +60,7 @@ public class AuthService {
                     .companyName(request.getCompanyName() != null ? request.getCompanyName() : "")
                     .rcNumber(request.getRcNumber() != null ? request.getRcNumber() : "")
                     .iceNumber(request.getIceNumber() != null ? request.getIceNumber() : "")
+                    .documentUrl("")
                     .isVerified(false)
                     .build();
 

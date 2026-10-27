@@ -36,6 +36,7 @@ public class DtoMapper {
                 .phone(user.getPhone())
                 .role(user.getRole())
                 .isIdentityVerified(user.getIsIdentityVerified())
+                .identityDocumentUrl(user.getIdentityDocumentUrl())
                 .isActive(user.isActive())
                 .createdAt(user.getCreatedAt())
                 .build();

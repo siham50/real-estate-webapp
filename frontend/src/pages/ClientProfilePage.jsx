@@ -11,7 +11,9 @@ const ClientProfilePage = () => {
   const [lastName, setLastName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
-  const [cinDocUrl, setCinDocUrl] = useState('');
+  const [cinFile, setCinFile] = useState(null);
+  const [cinFilePreview, setCinFilePreview] = useState('');
+  const [cinDragOver, setCinDragOver] = useState(false);
 
   const [saving, setSaving] = useState(false);
   const [uploadingCin, setUploadingCin] = useState(false);
@@ -49,17 +51,54 @@ const ClientProfilePage = () => {
     }
   };
 
+  const handleCinFileChange = (file) => {
+    if (!file) return;
+
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+    if (!validTypes.includes(file.type)) {
+      setMessage({
+        type: 'error',
+        text: 'Format non supporté. Veuillez choisir une image (JPG, PNG, WEBP) ou un PDF.',
+      });
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setMessage({
+        type: 'error',
+        text: 'Le fichier dépasse la taille maximale autorisée (5 Mo).',
+      });
+      return;
+    }
+
+    setCinFile(file);
+    setMessage({ type: '', text: '' });
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setCinFilePreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleVerifyCin = async (e) => {
     e.preventDefault();
-    if (!cinDocUrl.trim()) return;
+    if (!cinFile || !cinFilePreview) {
+      setMessage({
+        type: 'error',
+        text: 'Veuillez sélectionner un fichier (image ou document) de CIN avant de transmettre.',
+      });
+      return;
+    }
 
     setUploadingCin(true);
     setMessage({ type: '', text: '' });
 
     try {
-      const updated = await verifyIdentity(user.id, cinDocUrl.trim());
+      const updated = await verifyIdentity(user.id, cinFilePreview);
       updateUserState(updated);
-      setCinDocUrl('');
+      setCinFile(null);
+      setCinFilePreview('');
       setMessage({
         type: 'success',
         text: 'Document CIN transmis avec succès. Vérification en attente de validation admin.',
@@ -208,21 +247,124 @@ const ClientProfilePage = () => {
                   La vérification de votre identité est obligatoire pour publier des annonces ou réserver des visites prioritaires en toute sécurité.
                 </p>
 
+                {user?.identityDocumentUrl && (
+                  <div className="current-cin-box">
+                    <span className="current-cin-title">Document transmis :</span>
+                    <div className="current-cin-preview-wrapper">
+                      {user.identityDocumentUrl.startsWith('data:image/') || user.identityDocumentUrl.startsWith('http') ? (
+                        <div className="current-cin-img-container">
+                          <img
+                            src={user.identityDocumentUrl}
+                            alt="Aperçu CIN transmis"
+                            className="current-cin-thumb"
+                          />
+                        </div>
+                      ) : (
+                        <div className="current-cin-pdf-badge">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                            <polyline points="14 2 14 8 20 8" />
+                          </svg>
+                          <span>Fichier enregistré</span>
+                        </div>
+                      )}
+                      <span className="current-cin-note">
+                        {user?.isIdentityVerified
+                          ? 'Votre document a été validé par un administrateur.'
+                          : 'Document en cours d’examen par l’équipe.'}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
                 {user?.isIdentityVerified !== true && (
                   <form onSubmit={handleVerifyCin} className="cin-upload-form">
                     <div className="form-group">
-                      <label>Lien / URL du document CIN</label>
-                      <input
-                        type="url"
-                        placeholder="https://exemple.com/ma-cin.pdf"
-                        className="input-field"
-                        value={cinDocUrl}
-                        onChange={(e) => setCinDocUrl(e.target.value)}
-                        required
-                      />
+                      <label>
+                        {user?.identityDocumentUrl ? 'Mettre à jour ou remplacer la CIN' : 'Document CIN (photo ou scan)'}
+                      </label>
+
+                      {/* Drop Zone */}
+                      <div
+                        className={`cin-dropzone ${cinDragOver ? 'cin-dropzone-active' : ''} ${cinFile ? 'cin-dropzone-filled' : ''}`}
+                        onClick={() => document.getElementById('cin-file-input').click()}
+                        onDragOver={(e) => { e.preventDefault(); setCinDragOver(true); }}
+                        onDragLeave={() => setCinDragOver(false)}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          setCinDragOver(false);
+                          const file = e.dataTransfer.files[0];
+                          if (file) handleCinFileChange(file);
+                        }}
+                      >
+                        <input
+                          id="cin-file-input"
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp,application/pdf"
+                          style={{ display: 'none' }}
+                          onChange={(e) => handleCinFileChange(e.target.files[0])}
+                        />
+
+                        {cinFile ? (
+                          /* Fichier sélectionné — prévisualisation */
+                          <div className="cin-file-preview">
+                            {cinFile.type.startsWith('image/') ? (
+                              <img
+                                src={cinFilePreview}
+                                alt="Aperçu CIN"
+                                className="cin-preview-img"
+                              />
+                            ) : (
+                              <div className="cin-pdf-icon">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                  <polyline points="14 2 14 8 20 8" />
+                                  <line x1="16" y1="13" x2="8" y2="13" />
+                                  <line x1="16" y1="17" x2="8" y2="17" />
+                                  <polyline points="10 9 9 9 8 9" />
+                                </svg>
+                              </div>
+                            )}
+                            <div className="cin-file-info">
+                              <span className="cin-file-name">{cinFile.name}</span>
+                              <span className="cin-file-size">{(cinFile.size / 1024).toFixed(1)} Ko</span>
+                            </div>
+                            <button
+                              type="button"
+                              className="cin-file-remove"
+                              onClick={(e) => { e.stopPropagation(); setCinFile(null); setCinFilePreview(''); }}
+                              title="Supprimer"
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <line x1="18" y1="6" x2="6" y2="18" />
+                                <line x1="6" y1="6" x2="18" y2="18" />
+                              </svg>
+                            </button>
+                          </div>
+                        ) : (
+                          /* Etat vide — invite à uploader */
+                          <div className="cin-dropzone-placeholder">
+                            <div className="cin-upload-icon">
+                              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="16 16 12 12 8 16" />
+                                <line x1="12" y1="12" x2="12" y2="21" />
+                                <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" />
+                              </svg>
+                            </div>
+                            <p className="cin-dropzone-title">Glissez votre CIN ici</p>
+                            <p className="cin-dropzone-hint">ou <span className="cin-browse-link">parcourir les fichiers</span></p>
+                            <p className="cin-dropzone-formats">JPG, PNG, WEBP ou PDF — max. 5 Mo</p>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <button type="submit" disabled={uploadingCin} className="btn-urbanet-secondary">
-                      {uploadingCin ? 'Envoi...' : 'Transmettre pour vérification'}
+
+                    <button
+                      type="submit"
+                      disabled={uploadingCin || !cinFile}
+                      className="btn-urbanet-secondary"
+                    >
+                      {uploadingCin ? 'Envoi en cours...' : 'Transmettre pour vérification'}
                     </button>
                   </form>
                 )}

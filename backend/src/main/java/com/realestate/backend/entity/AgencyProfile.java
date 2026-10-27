@@ -31,7 +31,7 @@ public class AgencyProfile {
     @Column(name = "ice_number", nullable = false, length = 50)
     private String iceNumber;
 
-    @Column(name = "document_url", nullable = true, length = 255)
+    @Column(name = "document_url", nullable = false, length = 255)
     private String documentUrl;
 
     @Builder.Default

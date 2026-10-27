@@ -12,6 +12,7 @@ const LoginPage = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Message transmis depuis la page d'inscription (ex : après inscription réussie)
   const successMessage = location.state?.successMessage;
 
   const handleSubmit = async (e) => {
@@ -20,23 +21,19 @@ const LoginPage = () => {
     setLoading(true);
 
     try {
-      if (typeof login === 'function') {
-        const loggedUser = await login(email.trim(), password);
-        if (loggedUser?.role === 'PROFESSIONAL' || loggedUser?.role === 'AGENCE') {
-          navigate('/profile/agency');
-        } else {
-          navigate('/profile/client');
-        }
+      const loggedUser = await login({
+        email: email.trim(),
+        password: password,
+      });
+
+      // Redirection selon le rôle reçu du backend
+      if (loggedUser?.role === 'PROFESSIONAL' || loggedUser?.role === 'AGENCE') {
+        navigate('/profile/agency');
       } else {
-        navigate('/');
+        navigate('/profile/client');
       }
     } catch (err) {
-      const msg =
-        err.response?.data?.message ||
-        err.response?.data?.error ||
-        err.message ||
-        'Identifiants incorrects ou compte inactif.';
-      setError(msg);
+      setError(err.message || 'Identifiants incorrects ou serveur indisponible.');
     } finally {
       setLoading(false);
     }
@@ -45,7 +42,7 @@ const LoginPage = () => {
   return (
     <div className="auth-container">
       <div className="auth-card">
-        {/* Logo Urbanet */}
+        {/* En-tête avec logo Urbanet */}
         <div className="auth-header">
           <Link to="/" className="urbanet-logo auth-logo-center">
             <div className="urbanet-logo-badge">
@@ -75,7 +72,7 @@ const LoginPage = () => {
         {/* Message d'erreur */}
         {error && <div className="auth-alert auth-alert-error">{error}</div>}
 
-        {/* Formulaire */}
+        {/* Formulaire de connexion */}
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
             <label htmlFor="email">Email</label>

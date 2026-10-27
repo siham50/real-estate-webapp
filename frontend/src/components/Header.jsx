@@ -1,10 +1,13 @@
 import React from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const Header = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+
+  // On considère l'utilisateur connecté uniquement s'il possède un id valide
+  const isLoggedIn = Boolean(user && user.id);
 
   const handleProfileClick = () => {
     if (user?.role === 'PROFESSIONAL' || user?.role === 'AGENCE') {
@@ -17,8 +20,12 @@ const Header = () => {
   return (
     <header className="urbanet-header">
       <div className="urbanet-header-container">
-        {/* Logo Urbanet vers / */}
-        <Link to="/" className="urbanet-logo">
+        {/* Logo Urbanet vers la racine / */}
+        <span
+          onClick={() => navigate('/')}
+          className="urbanet-logo"
+          style={{ cursor: 'pointer' }}
+        >
           <div className="urbanet-logo-badge">
             <svg
               width="18"
@@ -35,7 +42,7 @@ const Header = () => {
             </svg>
           </div>
           <span className="urbanet-logo-title">Urbanet</span>
-        </Link>
+        </span>
 
         {/* Navigation centrale */}
         <nav className="urbanet-nav">
@@ -48,9 +55,9 @@ const Header = () => {
           >
             Accueil
           </NavLink>
-          <Link to="/#annonces" className="urbanet-nav-link">
+          <a href="/#annonces" className="urbanet-nav-link">
             Annonces
-          </Link>
+          </a>
         </nav>
 
         {/* Actions à droite */}
@@ -71,8 +78,25 @@ const Header = () => {
             </svg>
           </button>
 
-          {user ? (
+          {isLoggedIn ? (
             <div className="urbanet-user-header-group">
+              {/* Bouton "Mon Espace Agence" uniquement pour les professionnels */}
+              {(user.role === 'PROFESSIONAL' || user.role === 'AGENCE') && (
+                <button
+                  type="button"
+                  className="agency-header-dashboard-btn"
+                  onClick={() => navigate('/agency/dashboard')}
+                  title="Tableau de bord agence"
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="7" height="7" />
+                    <rect x="14" y="3" width="7" height="7" />
+                    <rect x="14" y="14" width="7" height="7" />
+                    <rect x="3" y="14" width="7" height="7" />
+                  </svg>
+                  Mon Espace
+                </button>
+              )}
               <button
                 type="button"
                 onClick={handleProfileClick}
@@ -101,12 +125,20 @@ const Header = () => {
             </div>
           ) : (
             <>
-              <Link to="/login" className="urbanet-btn-outline">
+              <button
+                type="button"
+                className="urbanet-btn-outline"
+                onClick={() => navigate('/login')}
+              >
                 Se connecter
-              </Link>
-              <Link to="/register" className="urbanet-btn-primary">
+              </button>
+              <button
+                type="button"
+                className="urbanet-btn-primary"
+                onClick={() => navigate('/register')}
+              >
                 S'inscrire
-              </Link>
+              </button>
             </>
           )}
         </div>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import SearchBar from './SearchBar';
 
 const Hero = () => {
@@ -53,9 +54,9 @@ const Hero = () => {
                 <polyline points="12 5 19 12 12 19" />
               </svg>
             </a>
-            <button type="button" className="urbanet-hero-btn-secondary">
+            <Link to="/login" className="urbanet-hero-btn-secondary">
               Publier une annonce
-            </button>
+            </Link>
           </div>
         </div>
       </div>
