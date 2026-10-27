@@ -1,7 +1,19 @@
 import React from 'react';
-import { Link, NavLink } from 'react-router-dom';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const Header = () => {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleProfileClick = () => {
+    if (user?.role === 'PROFESSIONAL') {
+      navigate('/profile/agency');
+    } else {
+      navigate('/profile/client');
+    }
+  };
+
   return (
     <header className="urbanet-header">
       <div className="urbanet-header-container">
@@ -36,7 +48,7 @@ const Header = () => {
           >
             Accueil
           </NavLink>
-          <a href="#annonces" className="urbanet-nav-link">
+          <a href="/#annonces" className="urbanet-nav-link">
             Annonces
           </a>
         </nav>
@@ -58,12 +70,45 @@ const Header = () => {
               <line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
           </button>
-          <button type="button" className="urbanet-btn-outline">
-            Se connecter
-          </button>
-          <button type="button" className="urbanet-btn-primary">
-            S'inscrire
-          </button>
+
+          {user ? (
+            <div className="urbanet-user-header-group">
+              <button
+                type="button"
+                onClick={handleProfileClick}
+                className="urbanet-header-profile-btn"
+              >
+                <div className="header-avatar-circle">
+                  {user.firstName ? user.firstName.charAt(0).toUpperCase() : 'U'}
+                </div>
+                <span className="header-user-name">{user.firstName}</span>
+                <span className="header-user-role-badge">
+                  {user.role === 'PROFESSIONAL' ? 'Agence' : 'Client'}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={logout}
+                className="urbanet-btn-header-logout"
+                title="Se déconnecter"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <polyline points="16 17 21 12 16 7" />
+                  <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+              </button>
+            </div>
+          ) : (
+            <>
+              <Link to="/login" className="urbanet-btn-outline">
+                Se connecter
+              </Link>
+              <Link to="/register" className="urbanet-btn-primary">
+                S'inscrire
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </header>

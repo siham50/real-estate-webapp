@@ -7,6 +7,33 @@ const api = axios.create({
   },
 });
 
+// Authentification
+export const login = async (email, password) => {
+  const response = await api.post('/auth/login', { email, password });
+  return response.data;
+};
+
+export const register = async (data) => {
+  const response = await api.post('/auth/register', data);
+  return response.data;
+};
+
+// Utilisateurs / Profils
+export const getUserProfile = async (userId) => {
+  const response = await api.get(`/users/${userId}`);
+  return response.data;
+};
+
+export const updateUserProfile = async (userId, data) => {
+  const response = await api.put(`/users/${userId}`, data);
+  return response.data;
+};
+
+export const verifyIdentity = async (userId, documentUrl) => {
+  const response = await api.patch(`/users/${userId}/verify-identity`, { documentUrl });
+  return response.data;
+};
+
 export const testBackend = async () => {
   try {
     const response = await api.get('/test');
