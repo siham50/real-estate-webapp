@@ -33,24 +33,18 @@ const Header = () => {
           >
             Accueil
           </NavLink>
-          <NavLink
-            to="/users"
-            className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}
-          >
-            Utilisateurs
-          </NavLink>
-          <NavLink
-            to="/residences"
-            className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}
-          >
-            Résidences
-          </NavLink>
-          <NavLink
-            to="/properties"
-            className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}
-          >
-            Biens
-          </NavLink>
+          <a href="#acheter" className="nav-link">
+            Acheter
+          </a>
+          <a href="#louer" className="nav-link">
+            Louer
+          </a>
+          <a href="#nouveautes" className="nav-link">
+            Nouveautés
+          </a>
+          <a href="#publier" className="publish-btn">
+            Publier une annonce
+          </a>
         </nav>
       </div>
     </header>
