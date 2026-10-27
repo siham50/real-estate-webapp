@@ -1,39 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Header from '../components/Header';
 import Hero from '../components/Hero';
+import FeaturedProperties from '../components/FeaturedProperties';
+import Services from '../components/Services';
+import StatsBanner from '../components/StatsBanner';
+import CallToAction from '../components/CallToAction';
 import Footer from '../components/Footer';
-import { testBackend } from '../services/api';
 
 function HomePage() {
-  const [backendStatus, setBackendStatus] = useState('Vérification...');
-
-  useEffect(() => {
-    const checkBackend = async () => {
-      try {
-        const res = await testBackend();
-        setBackendStatus(res.success ? 'Opérationnel' : 'Erreur de connexion');
-      } catch (err) {
-        setBackendStatus('Non joignable');
-      }
-    };
-
-    checkBackend();
-  }, []);
-
   return (
-    <div className="page-wrapper">
+    <div className="urbanet-app-root">
       <Header />
-      <Hero />
-      <main className="home-main">
-        <section className="welcome-section">
-          <div className="welcome-container">
-            <h2>Bienvenue sur Real Estate</h2>
-            <p>La référence pour vos projets immobiliers : vente, location et investissement au Maroc.</p>
-            <div className={`status-badge ${backendStatus === 'Opérationnel' ? 'status-ok' : 'status-pending'}`}>
-              Backend API : {backendStatus}
-            </div>
-          </div>
-        </section>
+      <main className="urbanet-main">
+        <Hero />
+        <FeaturedProperties />
+        <Services />
+        <StatsBanner />
+        <CallToAction />
       </main>
       <Footer />
     </div>
