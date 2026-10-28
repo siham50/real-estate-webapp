@@ -1,5 +1,7 @@
 package com.realestate.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,8 +23,9 @@ public class Availability {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private User user;
 
     @Column(name = "date", nullable = false)
@@ -34,7 +37,19 @@ public class Availability {
     @Column(name = "end_time", nullable = false)
     private LocalTime endTime;
 
+    @JsonProperty("isBooked")
     @Builder.Default
     @Column(name = "is_booked", nullable = false)
     private boolean isBooked = false;
+
+    @Transient
+    private Long userId;
+
+    public Long getResolvedUserId() {
+        if (user != null && user.getId() != null) {
+            return user.getId();
+        }
+        return userId;
+    }
 }
+

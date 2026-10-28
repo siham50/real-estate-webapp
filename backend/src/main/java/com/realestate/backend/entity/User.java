@@ -47,7 +47,7 @@ public class User {
     @Column(name = "is_identity_verified", nullable = true)
     private Boolean isIdentityVerified;
 
-    @Column(name = "identity_document_url", nullable = true, length = 255)
+    @Column(name = "identity_document_url", nullable = true, columnDefinition = "LONGTEXT")
     private String identityDocumentUrl;
 
     @JsonProperty("isActive")

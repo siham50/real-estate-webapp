@@ -84,4 +84,27 @@ public class UserService {
         User user = findUserById(id);
         userRepository.delete(user);
     }
+
+    public UserDTO updateProfile(Long id, User profileData) {
+        User existingUser = findUserById(id);
+        if (profileData.getFirstName() != null) {
+            existingUser.setFirstName(profileData.getFirstName());
+        }
+        if (profileData.getLastName() != null) {
+            existingUser.setLastName(profileData.getLastName());
+        }
+        if (profileData.getPhone() != null) {
+            existingUser.setPhone(profileData.getPhone());
+        }
+        User savedUser = userRepository.save(existingUser);
+        return DtoMapper.toUserDTO(savedUser);
+    }
+
+    public UserDTO uploadIdentityDocument(Long id, String documentUrl) {
+        User existingUser = findUserById(id);
+        existingUser.setIdentityDocumentUrl(documentUrl);
+        existingUser.setIsIdentityVerified(false); // Passe isIdentityVerified en attente
+        User savedUser = userRepository.save(existingUser);
+        return DtoMapper.toUserDTO(savedUser);
+    }
 }

@@ -1,19 +1,49 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
 import HomePage from './pages/HomePage';
-import UsersPage from './pages/UsersPage';
-import ResidencesPage from './pages/ResidencesPage';
-import PropertiesPage from './pages/PropertiesPage';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import ClientProfilePage from './pages/ClientProfilePage';
+import AgencyProfilePage from './pages/AgencyProfilePage';
+import AgencyDashboard from './pages/AgencyDashboard';
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<HomePage />} />
-      <Route path="/users" element={<UsersPage />} />
-      <Route path="/residences" element={<ResidencesPage />} />
-      <Route path="/properties" element={<PropertiesPage />} />
-    </Routes>
+    <AuthProvider>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route
+          path="/profile/client"
+          element={
+            <ProtectedRoute requiredRole="CLIENT">
+              <ClientProfilePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile/agency"
+          element={
+            <ProtectedRoute requiredRole="PROFESSIONAL">
+              <AgencyProfilePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/agency/dashboard"
+          element={
+            <ProtectedRoute requiredRole="PROFESSIONAL">
+              <AgencyDashboard />
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
+    </AuthProvider>
   );
 }
 
 export default App;
+

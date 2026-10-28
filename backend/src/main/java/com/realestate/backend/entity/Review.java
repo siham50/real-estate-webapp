@@ -21,12 +21,14 @@ public class Review {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "booking_id", unique = true, nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Booking booking;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "client_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private User client;
 
     @ManyToOne(fetch = FetchType.EAGER)
@@ -42,6 +44,36 @@ public class Review {
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @Transient
+    private Long bookingId;
+
+    @Transient
+    private Long clientId;
+
+    @Transient
+    private Long targetUserId;
+
+    public Long getResolvedBookingId() {
+        if (booking != null && booking.getId() != null) {
+            return booking.getId();
+        }
+        return bookingId;
+    }
+
+    public Long getResolvedClientId() {
+        if (client != null && client.getId() != null) {
+            return client.getId();
+        }
+        return clientId;
+    }
+
+    public Long getResolvedTargetUserId() {
+        if (targetUser != null && targetUser.getId() != null) {
+            return targetUser.getId();
+        }
+        return targetUserId;
+    }
 
     @PrePersist
     protected void onCreate() {

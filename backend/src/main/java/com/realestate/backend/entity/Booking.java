@@ -27,12 +27,14 @@ public class Booking {
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private User client;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "property_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Property property;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "availability_id", unique = true, nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Availability availability;
 
     @Enumerated(EnumType.STRING)
@@ -45,6 +47,36 @@ public class Booking {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @Transient
+    private Long clientId;
+
+    @Transient
+    private Long propertyId;
+
+    @Transient
+    private Long availabilityId;
+
+    public Long getResolvedClientId() {
+        if (client != null && client.getId() != null) {
+            return client.getId();
+        }
+        return clientId;
+    }
+
+    public Long getResolvedPropertyId() {
+        if (property != null && property.getId() != null) {
+            return property.getId();
+        }
+        return propertyId;
+    }
+
+    public Long getResolvedAvailabilityId() {
+        if (availability != null && availability.getId() != null) {
+            return availability.getId();
+        }
+        return availabilityId;
+    }
 
     @PrePersist
     protected void onCreate() {
