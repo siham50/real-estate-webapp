@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import ClientBookings from '../components/client/ClientBookings';
 import { useAuth } from '../context/AuthContext';
 import { updateUserProfile, verifyIdentity, getUserProfile } from '../services/api';
 
@@ -386,7 +387,7 @@ const ClientProfilePage = () => {
                 <p className="action-card-desc">
                   Consultez, publiez et gérez vos biens immobiliers mis en vente ou en location.
                 </p>
-                <a href="#annonces" className="action-card-link">
+                <a href="/#annonces" className="action-card-link">
                   Gérer mes biens →
                 </a>
               </div>
@@ -407,11 +408,16 @@ const ClientProfilePage = () => {
                   Suivez vos demandes de visites programmées avec les vendeurs et agences.
                 </p>
                 <a href="#reservations" className="action-card-link">
-                  Voir mes rendez-vous →
+                  Voir mes rendez-vous ↓
                 </a>
               </div>
             </div>
           </div>
+
+          {/* Section Mes réservations */}
+          <section className="client-reservations-section">
+            <ClientBookings />
+          </section>
         </div>
       </main>
       <Footer />

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { getAllProperties, getAllResidences } from '../services/api';
 
-const DEFAULT_PROPERTIES = [
+export const DEFAULT_PROPERTIES = [
   {
     id: 1,
     tag: 'À vendre',
@@ -55,7 +56,7 @@ const DEFAULT_PROPERTIES = [
   },
 ];
 
-const TYPE_IMAGES = {
+export const TYPE_IMAGES = {
   VILLA: [
     'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=900&q=80',
     'https://images.unsplash.com/photo-1613977257363-707ba9348227?auto=format&fit=crop&w=900&q=80',
@@ -81,7 +82,7 @@ const TYPE_IMAGES = {
   ],
 };
 
-const TYPE_TRANSLATIONS = {
+export const TYPE_TRANSLATIONS = {
   VILLA: 'Villa',
   APARTMENT: 'Appartement',
   HOUSE: 'Maison',
@@ -401,13 +402,13 @@ const FeaturedProperties = ({ filterResidenceId }) => {
                       <span className="property-agency" title={`Annonce proposée par ${agency}`}>
                         {agency}
                       </span>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedProperty(item)}
+                      <Link
+                        to={`/properties/${item.id}`}
                         className="property-link property-link-btn"
+                        style={{ textDecoration: 'none' }}
                       >
                         Voir le bien →
-                      </button>
+                      </Link>
                     </div>
                   </div>
                 </article>

@@ -6,6 +6,8 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import AgencyResidenceList from '../components/AgencyResidenceList';
 import AgencyPropertyList from '../components/AgencyPropertyList';
+import AgencyBookings from '../components/agency/AgencyBookings';
+import AgencyAvailabilities from '../components/agency/AgencyAvailabilities';
 import ResidenceFormModal from '../components/ResidenceFormModal';
 import PropertyFormModal from '../components/PropertyFormModal';
 
@@ -13,7 +15,7 @@ const AgencyDashboard = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  const [activeTab, setActiveTab] = useState('residences');
+  const [activeTab, setActiveTab] = useState('residences'); // 'residences', 'properties', 'bookings', 'availabilities'
   const [residences, setResidences] = useState([]);
   const [properties, setProperties] = useState([]);
   const [loadingRes, setLoadingRes] = useState(true);
@@ -71,7 +73,7 @@ const AgencyDashboard = () => {
     setProperties((prev) => prev.filter((p) => p.id !== id));
   };
 
-  const isLoading = activeTab === 'residences' ? loadingRes : loadingProps;
+  const isLoading = (activeTab === 'residences' && loadingRes) || (activeTab === 'properties' && loadingProps);
 
   return (
     <div className="urbanet-app-root">
@@ -91,7 +93,7 @@ const AgencyDashboard = () => {
               <div>
                 <h1 className="agency-dashboard-title">Espace Agence</h1>
                 <p className="agency-dashboard-subtitle">
-                  Bienvenue, <strong>{user?.firstName}</strong> — gérez vos résidences et biens immobiliers.
+                  Bienvenue, <strong>{user?.firstName}</strong> — gérez vos résidences, biens, disponibilités et demandes de visites.
                 </p>
               </div>
             </div>
@@ -129,6 +131,7 @@ const AgencyDashboard = () => {
                 Mes Résidences
                 <span className="agency-tab-count">{residences.length}</span>
               </button>
+
               <button
                 type="button"
                 className={`agency-tab ${activeTab === 'properties' ? 'active' : ''}`}
@@ -141,22 +144,53 @@ const AgencyDashboard = () => {
                 Mes Biens
                 <span className="agency-tab-count">{properties.length}</span>
               </button>
+
+              <button
+                type="button"
+                className={`agency-tab ${activeTab === 'bookings' ? 'active' : ''}`}
+                onClick={() => setActiveTab('bookings')}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="16" y1="13" x2="8" y2="13" />
+                  <line x1="16" y1="17" x2="8" y2="17" />
+                  <polyline points="10 9 9 9 8 9" />
+                </svg>
+                Demandes de visites
+              </button>
+
+              <button
+                type="button"
+                className={`agency-tab ${activeTab === 'availabilities' ? 'active' : ''}`}
+                onClick={() => setActiveTab('availabilities')}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                  <line x1="16" y1="2" x2="16" y2="6" />
+                  <line x1="8" y1="2" x2="8" y2="6" />
+                  <line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+                Mes disponibilités
+              </button>
             </div>
 
-            <button
-              type="button"
-              className="agency-btn-add"
-              onClick={() => {
-                if (activeTab === 'residences') setShowResidenceModal(true);
-                else setShowPropertyModal(true);
-              }}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="12" y1="5" x2="12" y2="19" />
-                <line x1="5" y1="12" x2="19" y2="12" />
-              </svg>
-              {activeTab === 'residences' ? 'Ajouter une résidence' : 'Ajouter un bien'}
-            </button>
+            {(activeTab === 'residences' || activeTab === 'properties') && (
+              <button
+                type="button"
+                className="agency-btn-add"
+                onClick={() => {
+                  if (activeTab === 'residences') setShowResidenceModal(true);
+                  else setShowPropertyModal(true);
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                {activeTab === 'residences' ? 'Ajouter une résidence' : 'Ajouter un bien'}
+              </button>
+            )}
           </div>
 
           {/* Content Panel */}
@@ -166,16 +200,23 @@ const AgencyDashboard = () => {
                 <div className="agency-spinner" />
                 <p>Chargement en cours...</p>
               </div>
-            ) : activeTab === 'residences' ? (
-              <AgencyResidenceList
-                residences={residences}
-                onDeleted={handleResidenceDeleted}
-              />
             ) : (
-              <AgencyPropertyList
-                properties={properties}
-                onDeleted={handlePropertyDeleted}
-              />
+              <>
+                {activeTab === 'residences' && (
+                  <AgencyResidenceList
+                    residences={residences}
+                    onDeleted={handleResidenceDeleted}
+                  />
+                )}
+                {activeTab === 'properties' && (
+                  <AgencyPropertyList
+                    properties={properties}
+                    onDeleted={handlePropertyDeleted}
+                  />
+                )}
+                {activeTab === 'bookings' && <AgencyBookings />}
+                {activeTab === 'availabilities' && <AgencyAvailabilities />}
+              </>
             )}
           </div>
         </div>

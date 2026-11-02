@@ -131,6 +131,15 @@ export const getAllProperties = async () => {
   }
 };
 
+export const getPropertyById = async (id) => {
+  try {
+    const response = await api.get(`/properties/${id}`);
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || error.response?.data?.error || error.message);
+  }
+};
+
 export const getPropertiesByOwner = async (ownerId) => {
   try {
     const response = await api.get('/properties');
@@ -157,6 +166,122 @@ export const deleteProperty = async (id) => {
     throw new Error(error.response?.data?.message || error.response?.data?.error || error.message);
   }
 };
+
+// ─── Disponibilités & Réservations de Visite ──────────────────────────────────
+
+export const getAvailabilitiesByOwner = async (ownerId) => {
+  try {
+    // Tente d'abord /availabilities/owner/{ownerId}
+    const response = await api.get(`/availabilities/owner/${ownerId}`);
+    return response.data;
+  } catch (error) {
+    try {
+      // Fallback sur /availabilities/user/{userId}
+      const fallback = await api.get(`/availabilities/user/${ownerId}`);
+      return fallback.data;
+    } catch {
+      throw new Error(error.response?.data?.message || error.response?.data?.error || error.message);
+    }
+  }
+};
+
+export const createAvailability = async (data) => {
+  try {
+    const response = await api.post('/availabilities', data);
+    return response.data;
+  } catch (error) {
+    throw new Error(
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      error.message ||
+      'Impossible de créer le créneau de disponibilité.'
+    );
+  }
+};
+
+export const deleteAvailability = async (id) => {
+  try {
+    await api.delete(`/availabilities/${id}`);
+  } catch (error) {
+    throw new Error(
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      error.message ||
+      'Impossible de supprimer ce créneau.'
+    );
+  }
+};
+
+export const createBooking = async (data) => {
+  try {
+    const response = await api.post('/bookings', data);
+    return response.data;
+  } catch (error) {
+    throw new Error(
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      error.message ||
+      'Impossible de réserver ce créneau.'
+    );
+  }
+};
+
+export const getClientBookings = async (clientId) => {
+  try {
+    const response = await api.get(`/bookings/client/${clientId}`);
+    return response.data;
+  } catch (error) {
+    throw new Error(
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      error.message ||
+      'Impossible de charger vos réservations.'
+    );
+  }
+};
+
+export const getOwnerBookings = async (ownerId) => {
+  try {
+    const response = await api.get(`/bookings/owner/${ownerId}`);
+    return response.data;
+  } catch (error) {
+    throw new Error(
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      error.message ||
+      'Impossible de charger les réservations.'
+    );
+  }
+};
+
+export const updateBookingStatus = async (bookingId, status) => {
+  try {
+    const response = await api.patch(`/bookings/${bookingId}/status?status=${status}`);
+    return response.data;
+  } catch (error) {
+    throw new Error(
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      error.message ||
+      'Impossible de mettre à jour le statut de la visite.'
+    );
+  }
+};
+
+export const createReview = async (data) => {
+  try {
+    const response = await api.post('/reviews', data);
+    return response.data;
+  } catch (error) {
+    throw new Error(
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      error.message ||
+      "Impossible d'enregistrer l'avis."
+    );
+  }
+};
+
 
 // ─── Administration ──────────────────────────────────────────────────────────
 

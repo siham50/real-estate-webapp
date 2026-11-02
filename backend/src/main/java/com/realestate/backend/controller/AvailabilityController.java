@@ -29,8 +29,8 @@ public class AvailabilityController {
         }
     }
 
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<List<AvailabilityDTO>> getAvailabilitiesByUser(@PathVariable Long userId) {
+    @GetMapping({"/user/{userId}", "/owner/{userId}"})
+    public ResponseEntity<List<AvailabilityDTO>> getAvailabilitiesByUser(@PathVariable("userId") Long userId) {
         return ResponseEntity.ok(availabilityService.getAvailabilitiesByUserId(userId));
     }
 
