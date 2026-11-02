@@ -64,4 +64,19 @@ public class PropertyController {
             return ResponseEntity.notFound().build();
         }
     }
+
+    @GetMapping("/all")
+    public ResponseEntity<List<PropertyDTO>> getAllPropertiesAdmin() {
+        return ResponseEntity.ok(propertyService.getAllPropertiesAdmin());
+    }
+
+    @DeleteMapping("/{id}/hard")
+    public ResponseEntity<Void> hardDeleteProperty(@PathVariable Long id) {
+        try {
+            propertyService.hardDeleteProperty(id);
+            return ResponseEntity.noContent().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
 }

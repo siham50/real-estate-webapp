@@ -2,6 +2,7 @@ package com.realestate.backend.controller;
 
 import com.realestate.backend.dto.ReportDTO;
 import com.realestate.backend.entity.Report;
+import com.realestate.backend.entity.enums.ReportStatus;
 import com.realestate.backend.service.ReportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -32,5 +33,21 @@ public class ReportController {
     @GetMapping
     public ResponseEntity<List<ReportDTO>> getAllReports() {
         return ResponseEntity.ok(reportService.getAllReports());
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<List<ReportDTO>> getAllReportsAdmin() {
+        return ResponseEntity.ok(reportService.getAllReports());
+    }
+
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<ReportDTO> updateReportStatus(
+            @PathVariable Long id,
+            @RequestParam("status") ReportStatus status) {
+        try {
+            return ResponseEntity.ok(reportService.updateReportStatus(id, status));
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 }

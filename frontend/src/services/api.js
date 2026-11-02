@@ -158,6 +158,107 @@ export const deleteProperty = async (id) => {
   }
 };
 
+// ─── Administration ──────────────────────────────────────────────────────────
+
+export const getAdminStats = async () => {
+  try {
+    const response = await api.get('/admin/stats');
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || error.response?.data?.error || error.message);
+  }
+};
+
+export const getAllUsersAdmin = async () => {
+  try {
+    const response = await api.get('/users');
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || error.response?.data?.error || error.message);
+  }
+};
+
+export const getAllPropertiesAdmin = async () => {
+  try {
+    const response = await api.get('/properties/all');
+    return response.data;
+  } catch (error) {
+    // Fallback vers /properties si /properties/all n'est pas mappé
+    try {
+      const fallback = await api.get('/properties');
+      return fallback.data;
+    } catch {
+      throw new Error(error.response?.data?.message || error.response?.data?.error || error.message);
+    }
+  }
+};
+
+export const getAllReportsAdmin = async () => {
+  try {
+    const response = await api.get('/reports/all');
+    return response.data;
+  } catch (error) {
+    // Fallback vers /reports si /reports/all n'est pas mappé
+    try {
+      const fallback = await api.get('/reports');
+      return fallback.data;
+    } catch {
+      throw new Error(error.response?.data?.message || error.response?.data?.error || error.message);
+    }
+  }
+};
+
+export const toggleUserStatus = async (id, isActive) => {
+  try {
+    const response = await api.patch(`/admin/users/${id}/status?isActive=${isActive}`);
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || error.response?.data?.error || error.message);
+  }
+};
+
+export const verifyUser = async (id) => {
+  try {
+    const response = await api.patch(`/admin/verify/${id}`);
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || error.response?.data?.error || error.message);
+  }
+};
+
+export const togglePropertyAvailability = async (id) => {
+  try {
+    const response = await api.patch(`/properties/${id}/toggle-availability`);
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || error.response?.data?.error || error.message);
+  }
+};
+
+export const hardDeleteProperty = async (id) => {
+  try {
+    const response = await api.delete(`/properties/${id}/hard`);
+    return response.data;
+  } catch (error) {
+    // Fallback vers /properties/{id} si /hard n'est pas encore redéployé
+    try {
+      const fallback = await api.delete(`/properties/${id}`);
+      return fallback.data;
+    } catch {
+      throw new Error(error.response?.data?.message || error.response?.data?.error || error.message);
+    }
+  }
+};
+
+export const updateReportStatus = async (id, status) => {
+  try {
+    const response = await api.patch(`/reports/${id}/status?status=${status}`);
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || error.response?.data?.error || error.message);
+  }
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const testBackend = async () => {

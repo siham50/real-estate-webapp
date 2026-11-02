@@ -7,6 +7,11 @@ import RegisterPage from './pages/RegisterPage';
 import ClientProfilePage from './pages/ClientProfilePage';
 import AgencyProfilePage from './pages/AgencyProfilePage';
 import AgencyDashboard from './pages/AgencyDashboard';
+import AdminDashboard from './pages/AdminDashboard';
+import AdminStats from './components/admin/AdminStats';
+import AdminUsers from './components/admin/AdminUsers';
+import AdminProperties from './components/admin/AdminProperties';
+import AdminReports from './components/admin/AdminReports';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -40,6 +45,14 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        {/* Routes Espace Administrateur */}
+        <Route path="/admin" element={<AdminDashboard />}>
+          <Route index element={<AdminStats />} />
+          <Route path="users" element={<AdminUsers />} />
+          <Route path="properties" element={<AdminProperties />} />
+          <Route path="reports" element={<AdminReports />} />
+        </Route>
       </Routes>
     </AuthProvider>
   );

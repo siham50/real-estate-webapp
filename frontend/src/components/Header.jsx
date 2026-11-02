@@ -10,7 +10,9 @@ const Header = () => {
   const isLoggedIn = Boolean(user && user.id);
 
   const handleProfileClick = () => {
-    if (user?.role === 'PROFESSIONAL' || user?.role === 'AGENCE') {
+    if (user?.role === 'ADMIN') {
+      navigate('/admin');
+    } else if (user?.role === 'PROFESSIONAL' || user?.role === 'AGENCE') {
       navigate('/profile/agency');
     } else {
       navigate('/profile/client');
@@ -98,6 +100,24 @@ const Header = () => {
                     <rect x="3" y="14" width="7" height="7" />
                   </svg>
                   Mon Espace
+                </button>
+              )}
+
+              {/* Bouton "Administration" pour les admins */}
+              {user.role === 'ADMIN' && (
+                <button
+                  type="button"
+                  className="agency-header-dashboard-btn"
+                  onClick={() => navigate('/admin')}
+                  title="Tableau de bord administrateur"
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="7" height="7" />
+                    <rect x="14" y="3" width="7" height="7" />
+                    <rect x="14" y="14" width="7" height="7" />
+                    <rect x="3" y="14" width="7" height="7" />
+                  </svg>
+                  Admin
                 </button>
               )}
               <button

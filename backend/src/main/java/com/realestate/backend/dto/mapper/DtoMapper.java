@@ -1,6 +1,7 @@
 package com.realestate.backend.dto.mapper;
 
 import com.realestate.backend.dto.*;
+import com.realestate.backend.dto.AdminStatsDTO;
 import com.realestate.backend.entity.Availability;
 import com.realestate.backend.entity.Booking;
 import com.realestate.backend.entity.Conversation;

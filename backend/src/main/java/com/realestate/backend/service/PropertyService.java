@@ -121,4 +121,16 @@ public class PropertyService {
         Property updated = propertyRepository.save(property);
         return DtoMapper.toPropertyDTO(updated);
     }
+
+    public List<PropertyDTO> getAllPropertiesAdmin() {
+        return propertyRepository.findAll().stream()
+                .map(DtoMapper::toPropertyDTO)
+                .toList();
+    }
+
+    public void hardDeleteProperty(Long id) {
+        Property property = propertyRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Property not found"));
+        propertyRepository.delete(property);
+    }
 }

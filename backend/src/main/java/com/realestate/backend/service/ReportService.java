@@ -56,4 +56,12 @@ public class ReportService {
                 .map(DtoMapper::toReportDTO)
                 .toList();
     }
+
+    public ReportDTO updateReportStatus(Long id, ReportStatus status) {
+        Report report = reportRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Signalement introuvable avec l'id : " + id));
+        report.setStatus(status);
+        Report savedReport = reportRepository.save(report);
+        return DtoMapper.toReportDTO(savedReport);
+    }
 }
