@@ -55,12 +55,13 @@ public class AuthService {
 
         // Si professionnel, création de son AgencyProfile
         if (role == Role.PROFESSIONAL) {
+            String docUrl = request.getDocumentUrl() != null ? request.getDocumentUrl() : "";
             AgencyProfile agencyProfile = AgencyProfile.builder()
                     .user(savedUser)
                     .companyName(request.getCompanyName() != null ? request.getCompanyName() : "")
                     .rcNumber(request.getRcNumber() != null ? request.getRcNumber() : "")
                     .iceNumber(request.getIceNumber() != null ? request.getIceNumber() : "")
-                    .documentUrl("")
+                    .documentUrl(docUrl)
                     .isVerified(false)
                     .build();
 

@@ -22,4 +22,5 @@ public class RegisterRequest {
     private String companyName;
     private String rcNumber;
     private String iceNumber;
+    private String documentUrl;
 }

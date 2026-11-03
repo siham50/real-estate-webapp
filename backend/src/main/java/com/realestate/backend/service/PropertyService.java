@@ -2,15 +2,20 @@ package com.realestate.backend.service;
 
 import com.realestate.backend.dto.PropertyDTO;
 import com.realestate.backend.dto.mapper.DtoMapper;
+import com.realestate.backend.entity.AgencyProfile;
 import com.realestate.backend.entity.Property;
+import com.realestate.backend.entity.PropertyDocument;
 import com.realestate.backend.entity.Residence;
 import com.realestate.backend.entity.User;
+import com.realestate.backend.entity.enums.Role;
+import com.realestate.backend.repository.AgencyProfileRepository;
 import com.realestate.backend.repository.PropertyRepository;
 import com.realestate.backend.repository.ResidenceRepository;
 import com.realestate.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -20,6 +25,7 @@ public class PropertyService {
     private final PropertyRepository propertyRepository;
     private final UserRepository userRepository;
     private final ResidenceRepository residenceRepository;
+    private final AgencyProfileRepository agencyProfileRepository;
 
     public List<PropertyDTO> getAllProperties() {
         return propertyRepository.findByIsAvailableTrueAndIsDeletedFalse().stream()
@@ -43,11 +49,39 @@ public class PropertyService {
                     .orElseThrow(() -> new RuntimeException("Owner not found"));
             property.setOwner(owner);
         }
+
+        if (property.getOwner() != null) {
+            User owner = property.getOwner();
+            if (owner.getRole() == Role.PROFESSIONAL) {
+                AgencyProfile agencyProfile = agencyProfileRepository.findByUserId(owner.getId())
+                        .orElseThrow(() -> new RuntimeException("Votre compte agence doit être vérifié par un administrateur avant de publier."));
+                if (!agencyProfile.isVerified()) {
+                    throw new RuntimeException("Votre compte agence doit être vérifié par un administrateur avant de publier.");
+                }
+            } else if (owner.getRole() == Role.CLIENT) {
+                if (!Boolean.TRUE.equals(owner.getIsIdentityVerified())) {
+                    throw new RuntimeException("Vous devez faire vérifier votre CIN avant de publier.");
+                }
+            }
+        }
+
         if (property.getResidence() != null && property.getResidence().getId() != null) {
             Residence residence = residenceRepository.findById(property.getResidence().getId())
                     .orElse(null);
             property.setResidence(residence);
         }
+
+        if (property.getDocumentUrl() != null && !property.getDocumentUrl().isBlank()) {
+            PropertyDocument doc = PropertyDocument.builder()
+                    .property(property)
+                    .documentUrl(property.getDocumentUrl())
+                    .build();
+            if (property.getDocuments() == null) {
+                property.setDocuments(new ArrayList<>());
+            }
+            property.getDocuments().add(doc);
+        }
+
         Property savedProperty = propertyRepository.save(property);
         return DtoMapper.toPropertyDTO(savedProperty);
     }

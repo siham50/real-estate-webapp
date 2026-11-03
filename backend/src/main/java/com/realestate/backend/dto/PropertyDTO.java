@@ -40,5 +40,6 @@ public class PropertyDTO {
     private LocalDateTime updatedAt;
     private UserSummaryDTO owner;
     private ResidenceSummaryDTO residence;
+    private String documentUrl;
     private List<PropertyDocumentDTO> documents;
 }

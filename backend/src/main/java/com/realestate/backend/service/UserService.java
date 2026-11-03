@@ -107,4 +107,12 @@ public class UserService {
         User savedUser = userRepository.save(existingUser);
         return DtoMapper.toUserDTO(savedUser);
     }
+
+    public UserDTO uploadCin(Long id, String cinUrl) {
+        User existingUser = findUserById(id);
+        existingUser.setIdentityDocumentUrl(cinUrl);
+        existingUser.setIsIdentityVerified(false); // En attente de validation admin
+        User savedUser = userRepository.save(existingUser);
+        return DtoMapper.toUserDTO(savedUser);
+    }
 }

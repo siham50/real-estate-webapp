@@ -82,6 +82,42 @@ export const verifyIdentity = async (userId, documentUrl) => {
   }
 };
 
+export const uploadCin = async (userId, cinUrl) => {
+  try {
+    const response = await api.patch(`/users/${userId}/upload-cin`, { cinUrl });
+    return response.data;
+  } catch (error) {
+    const errorMessage =
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      error.message ||
+      "Une erreur est survenue lors de l'envoi de la CIN.";
+    throw new Error(errorMessage);
+  }
+};
+
+// ─── Upload de Fichiers ──────────────────────────────────────────────────────
+
+export const uploadFile = async (file) => {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await api.post('/files/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  } catch (error) {
+    const errorMessage =
+      error.response?.data?.message ||
+      error.response?.data ||
+      error.message ||
+      "Une erreur est survenue lors de l'upload du fichier.";
+    throw new Error(errorMessage);
+  }
+};
+
 // ─── Résidences ──────────────────────────────────────────────────────────────
 
 export const getAllResidences = async () => {

@@ -152,6 +152,7 @@ public class DtoMapper {
                 .updatedAt(property.getUpdatedAt())
                 .owner(toUserSummaryDTO(property.getOwner()))
                 .residence(toResidenceSummaryDTO(property.getResidence()))
+                .documentUrl(property.getDocumentUrl())
                 .documents(property.getDocuments() != null
                         ? property.getDocuments().stream()
                                 .map(DtoMapper::toPropertyDocumentDTO)

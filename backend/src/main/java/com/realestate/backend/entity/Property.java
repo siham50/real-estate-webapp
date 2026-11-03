@@ -23,6 +23,7 @@ import java.util.List;
 @Builder
 @Entity
 @Table(name = "properties")
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Property {
 
     @Id
@@ -70,6 +71,9 @@ public class Property {
 
     @Column(name = "longitude")
     private Double longitude;
+
+    @Column(name = "document_url", nullable = true, length = 255)
+    private String documentUrl;
 
     @Enumerated(EnumType.STRING)
     @Builder.Default

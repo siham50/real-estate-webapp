@@ -3,7 +3,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import ClientBookings from '../components/client/ClientBookings';
 import { useAuth } from '../context/AuthContext';
-import { updateUserProfile, verifyIdentity, getUserProfile } from '../services/api';
+import { updateUserProfile, uploadFile, uploadCin } from '../services/api';
 
 const ClientProfilePage = () => {
   const { user, updateUserState, logout } = useAuth();
@@ -84,7 +84,7 @@ const ClientProfilePage = () => {
 
   const handleVerifyCin = async (e) => {
     e.preventDefault();
-    if (!cinFile || !cinFilePreview) {
+    if (!cinFile) {
       setMessage({
         type: 'error',
         text: 'Veuillez sélectionner un fichier (image ou document) de CIN avant de transmettre.',
@@ -96,18 +96,21 @@ const ClientProfilePage = () => {
     setMessage({ type: '', text: '' });
 
     try {
-      const updated = await verifyIdentity(user.id, cinFilePreview);
+      // 1. Upload du fichier physique
+      const cinUrl = await uploadFile(cinFile);
+      // 2. Mise à jour de l'utilisateur via PATCH /api/users/{id}/upload-cin
+      const updated = await uploadCin(user.id, cinUrl);
       updateUserState(updated);
       setCinFile(null);
       setCinFilePreview('');
       setMessage({
         type: 'success',
-        text: 'Document CIN transmis avec succès. Vérification en attente de validation admin.',
+        text: "Document CIN transmis avec succès. En attente de validation par l'administrateur.",
       });
     } catch (err) {
       setMessage({
         type: 'error',
-        text: err.response?.data?.message || err.message || 'Erreur lors de l’envoi de la CIN.',
+        text: err.response?.data?.message || err.message || "Erreur lors de l'envoi de la CIN.",
       });
     } finally {
       setUploadingCin(false);
@@ -208,7 +211,7 @@ const ClientProfilePage = () => {
               </form>
             </div>
 
-            {/* Right: Mon Statut & Vérification CIN */}
+            {/* Right: Vérification d'identité */}
             <div className="profile-card">
               <div className="profile-card-header">
                 <div className="card-icon-badge">
@@ -218,8 +221,8 @@ const ClientProfilePage = () => {
                   </svg>
                 </div>
                 <div>
-                  <h2 className="card-section-title">Mon Statut</h2>
-                  <p className="card-section-desc">Niveau de confiance et vérification de compte</p>
+                  <h2 className="card-section-title">Vérification d'identité</h2>
+                  <p className="card-section-desc">Validation légale de votre Carte d'Identité Nationale</p>
                 </div>
               </div>
 
@@ -231,11 +234,11 @@ const ClientProfilePage = () => {
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                         <polyline points="20 6 9 17 4 12" />
                       </svg>
-                      Compte vérifié
+                      Identité vérifiée
                     </span>
                   ) : user?.identityDocumentUrl ? (
                     <span className="badge-status badge-pending">
-                      En attente de validation
+                      En attente de validation par l'administrateur
                     </span>
                   ) : (
                     <span className="badge-status badge-unverified">
@@ -272,7 +275,7 @@ const ClientProfilePage = () => {
                       <span className="current-cin-note">
                         {user?.isIdentityVerified
                           ? 'Votre document a été validé par un administrateur.'
-                          : 'Document en cours d’examen par l’équipe.'}
+                          : "En attente de validation par l'administrateur."}
                       </span>
                     </div>
                   </div>
@@ -354,7 +357,7 @@ const ClientProfilePage = () => {
                             </div>
                             <p className="cin-dropzone-title">Glissez votre CIN ici</p>
                             <p className="cin-dropzone-hint">ou <span className="cin-browse-link">parcourir les fichiers</span></p>
-                            <p className="cin-dropzone-formats">JPG, PNG, WEBP ou PDF — max. 5 Mo</p>
+                            <p className="cin-dropzone-formats">JPG, PNG, WEBP ou PDF — max. 10 Mo</p>
                           </div>
                         )}
                       </div>
@@ -365,7 +368,7 @@ const ClientProfilePage = () => {
                       disabled={uploadingCin || !cinFile}
                       className="btn-urbanet-secondary"
                     >
-                      {uploadingCin ? 'Envoi en cours...' : 'Transmettre pour vérification'}
+                      {uploadingCin ? 'Upload en cours...' : 'Envoyer ma CIN'}
                     </button>
                   </form>
                 )}

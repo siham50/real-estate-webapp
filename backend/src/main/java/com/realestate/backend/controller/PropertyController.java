@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/properties")
@@ -32,9 +33,16 @@ public class PropertyController {
     }
 
     @PostMapping
-    public ResponseEntity<PropertyDTO> createProperty(@RequestBody Property property) {
-        PropertyDTO created = propertyService.createProperty(property);
-        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    public ResponseEntity<?> createProperty(@RequestBody Property property) {
+        try {
+            PropertyDTO created = propertyService.createProperty(property);
+            return ResponseEntity.status(HttpStatus.CREATED).body(created);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "message", e.getMessage() != null ? e.getMessage() : "Erreur lors de la création du bien.",
+                    "error", e.getMessage() != null ? e.getMessage() : "Erreur lors de la création du bien."
+            ));
+        }
     }
 
     @PutMapping("/{id}")

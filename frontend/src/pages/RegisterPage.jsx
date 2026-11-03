@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { uploadFile } from '../services/api';
 
 const RegisterPage = () => {
   const navigate = useNavigate();
@@ -18,8 +19,10 @@ const RegisterPage = () => {
     iceNumber: '',
   });
 
+  const [legalDoc, setLegalDoc] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [statusText, setStatusText] = useState('');
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -33,8 +36,17 @@ const RegisterPage = () => {
     e.preventDefault();
     setError('');
     setLoading(true);
+    setStatusText('Upload en cours...');
 
     try {
+      let documentUrl = null;
+      if (formData.role === 'PROFESSIONAL' && legalDoc) {
+        setStatusText('Upload en cours...');
+        documentUrl = await uploadFile(legalDoc);
+      }
+
+      setStatusText("Inscription en cours...");
+
       // Préparation du payload avec rôle exact attendu par le backend
       const payload = {
         firstName: formData.firstName.trim(),
@@ -46,6 +58,7 @@ const RegisterPage = () => {
         companyName: formData.role === 'PROFESSIONAL' ? formData.companyName.trim() : null,
         rcNumber: formData.role === 'PROFESSIONAL' ? formData.rcNumber.trim() : null,
         iceNumber: formData.role === 'PROFESSIONAL' ? formData.iceNumber.trim() : null,
+        documentUrl: documentUrl,
       };
 
       await register(payload);
@@ -58,6 +71,7 @@ const RegisterPage = () => {
       setError(err.message || "Une erreur est survenue lors de l'inscription.");
     } finally {
       setLoading(false);
+      setStatusText('');
     }
   };
 
@@ -224,11 +238,26 @@ const RegisterPage = () => {
                   />
                 </div>
               </div>
+
+              <div className="form-group">
+                <label htmlFor="legalDoc">Documents légaux (RC / ICE / Justificatif)</label>
+                <input
+                  id="legalDoc"
+                  name="legalDoc"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,application/pdf"
+                  className="auth-input"
+                  onChange={(e) => setLegalDoc(e.target.files[0] || null)}
+                />
+                <small style={{ display: 'block', marginTop: '6px', color: '#6b7280', fontSize: '0.82rem' }}>
+                  Formats acceptés : PDF, JPG, PNG (max. 10 Mo)
+                </small>
+              </div>
             </div>
           )}
 
           <button type="submit" disabled={loading} className="auth-btn">
-            {loading ? 'Chargement...' : "S'inscrire"}
+            {loading ? (statusText || 'Upload en cours...') : "S'inscrire"}
           </button>
         </form>
 

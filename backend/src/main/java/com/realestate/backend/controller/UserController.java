@@ -87,4 +87,19 @@ public class UserController {
             return ResponseEntity.notFound().build();
         }
     }
+
+    @PatchMapping("/{id}/upload-cin")
+    public ResponseEntity<UserDTO> uploadCin(
+            @PathVariable Long id,
+            @RequestBody(required = false) Map<String, String> body) {
+        try {
+            String cinUrl = body != null ? body.get("cinUrl") : null;
+            if (cinUrl == null && body != null) {
+                cinUrl = body.getOrDefault("identityDocumentUrl", body.get("documentUrl"));
+            }
+            return ResponseEntity.ok(userService.uploadCin(id, cinUrl));
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
 }
