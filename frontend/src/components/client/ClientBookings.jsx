@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { getClientBookings, updateBookingStatus, createReview } from '../../services/api';
+import { getClientBookings, updateBookingStatus } from '../../services/api';
+import ReviewModal from './ReviewModal';
 
 const STATUS_CONFIG = {
   PENDING: { label: 'En attente', className: 'status-pill-pending' },
@@ -22,12 +23,7 @@ const ClientBookings = () => {
   const [filter, setFilter] = useState('ALL');
 
   // Modale Avis
-  const [activeReviewBooking, setActiveReviewBooking] = useState(null);
-  const [rating, setRating] = useState(5);
-  const [comment, setComment] = useState('');
-  const [reviewSubmitting, setReviewSubmitting] = useState(false);
-  const [reviewSuccessMsg, setReviewSuccessMsg] = useState('');
-  const [reviewErrorMsg, setReviewErrorMsg] = useState('');
+  const [selectedBookingForReview, setSelectedBookingForReview] = useState(null);
 
   const fetchBookings = useCallback(async () => {
     if (!user?.id) return;
@@ -66,41 +62,7 @@ const ClientBookings = () => {
     }
   };
 
-  // Soumission de l'avis
-  const handleSubmitReview = async (e) => {
-    e.preventDefault();
-    if (!activeReviewBooking) return;
-    setReviewSubmitting(true);
-    setReviewErrorMsg('');
-    setReviewSuccessMsg('');
 
-    try {
-      const targetUserId =
-        activeReviewBooking.property?.owner?.id ||
-        activeReviewBooking.property?.ownerId ||
-        1;
-
-      await createReview({
-        bookingId: activeReviewBooking.id,
-        clientId: user.id,
-        targetUserId,
-        rating,
-        comment: comment.trim(),
-      });
-
-      setReviewSuccessMsg('Merci ! Votre avis a été enregistré avec succès.');
-      setTimeout(() => {
-        setActiveReviewBooking(null);
-        setComment('');
-        setRating(5);
-        setReviewSuccessMsg('');
-      }, 1500);
-    } catch (err) {
-      setReviewErrorMsg(err.message || "Impossible d'enregistrer votre avis.");
-    } finally {
-      setReviewSubmitting(false);
-    }
-  };
 
   const formatDateDisplay = (dateStr) => {
     if (!dateStr) return 'Date à confirmer';
@@ -289,10 +251,10 @@ const ClientBookings = () => {
                   {booking.status === 'COMPLETED' && (
                     <button
                       type="button"
-                      onClick={() => setActiveReviewBooking(booking)}
+                      onClick={() => setSelectedBookingForReview(booking)}
                       className="btn-booking-review"
                     >
-                      ★ Laisser un avis
+                      ⭐ Laisser un avis
                     </button>
                   )}
 
@@ -313,90 +275,15 @@ const ClientBookings = () => {
         </div>
       )}
 
-      {/* Modale "Laisser un avis" */}
-      {activeReviewBooking && (
-        <div className="urbanet-modal-overlay" onClick={() => setActiveReviewBooking(null)}>
-          <div className="urbanet-modal-card" onClick={(e) => e.stopPropagation()}>
-            <div className="urbanet-modal-header">
-              <div>
-                <span className="modal-badge-review">⭐ Évaluation visite</span>
-                <h3 className="modal-title">Partagez votre expérience</h3>
-                <p className="modal-subtitle">
-                  Visite de : <strong>{activeReviewBooking.property?.title || 'Bien immobilier'}</strong>
-                </p>
-              </div>
-              <button
-                type="button"
-                className="modal-close-btn"
-                onClick={() => setActiveReviewBooking(null)}
-              >
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmitReview} className="modal-review-form">
-              {reviewErrorMsg && (
-                <div className="client-booking-alert-error mb-12">
-                  <span>⚠️ {reviewErrorMsg}</span>
-                </div>
-              )}
-              {reviewSuccessMsg && (
-                <div className="agency-alert-success mb-12">
-                  <span>✓ {reviewSuccessMsg}</span>
-                </div>
-              )}
-
-              {/* Sélection note étoiles */}
-              <div className="rating-select-group">
-                <label className="rating-label">Votre note globale :</label>
-                <div className="stars-row">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      type="button"
-                      onClick={() => setRating(star)}
-                      className={`star-btn ${star <= rating ? 'is-active' : ''}`}
-                    >
-                      ★
-                    </button>
-                  ))}
-                  <span className="rating-num-label">{rating} / 5</span>
-                </div>
-              </div>
-
-              {/* Commentaire */}
-              <div className="form-group-review">
-                <label htmlFor="review-comment">Votre commentaire (facultatif) :</label>
-                <textarea
-                  id="review-comment"
-                  rows={4}
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  placeholder="Comment s'est déroulée la visite ? Ponctualité, conformité du bien..."
-                  className="review-textarea"
-                />
-              </div>
-
-              <div className="modal-actions-row">
-                <button
-                  type="button"
-                  onClick={() => setActiveReviewBooking(null)}
-                  className="btn-modal-cancel"
-                >
-                  Fermer
-                </button>
-                <button
-                  type="submit"
-                  disabled={reviewSubmitting}
-                  className="urbanet-btn-primary btn-modal-submit"
-                >
-                  {reviewSubmitting ? 'Envoi en cours...' : 'Publier mon avis'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Modale Laisser un avis */}
+      <ReviewModal
+        booking={selectedBookingForReview}
+        isOpen={Boolean(selectedBookingForReview)}
+        onClose={() => setSelectedBookingForReview(null)}
+        onReviewAdded={() => {
+          fetchBookings();
+        }}
+      />
     </div>
   );
 };

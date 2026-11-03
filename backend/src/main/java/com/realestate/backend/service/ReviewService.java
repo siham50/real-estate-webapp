@@ -39,11 +39,11 @@ public class ReviewService {
 
         // Règle : Un avis n'est possible que si la réservation est COMPLETED
         if (booking.getStatus() != BookingStatus.COMPLETED) {
-            throw new IllegalStateException("Un avis ne peut être déposé que pour une réservation terminée (statut COMPLETED)");
+            throw new RuntimeException("Vous ne pouvez laisser un avis que si la visite est terminée.");
         }
 
         // Règle : Un seul avis par réservation
-        if (reviewRepository.existsByBookingId(bookingId)) {
+        if (reviewRepository.findByBookingId(bookingId).isPresent()) {
             throw new IllegalStateException("Un avis a déjà été publié pour cette réservation");
         }
 
@@ -85,5 +85,9 @@ public class ReviewService {
         return reviewRepository.findByTargetUserIdOrderByCreatedAtDesc(targetUserId).stream()
                 .map(DtoMapper::toReviewDTO)
                 .toList();
+    }
+
+    public List<ReviewDTO> getReviewsByTargetUser(Long targetUserId) {
+        return getReviewsByTargetUserId(targetUserId);
     }
 }

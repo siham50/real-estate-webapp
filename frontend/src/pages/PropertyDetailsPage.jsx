@@ -5,6 +5,7 @@ import {
   getPropertyById,
   getAvailabilitiesByOwner,
   createBooking,
+  getReviewsByTargetUser,
 } from '../services/api';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -27,6 +28,10 @@ const PropertyDetailsPage = () => {
   const [property, setProperty] = useState(null);
   const [loadingProperty, setLoadingProperty] = useState(true);
   const [propertyError, setPropertyError] = useState(null);
+
+  // État des avis sur le propriétaire
+  const [reviews, setReviews] = useState([]);
+  const [loadingReviews, setLoadingReviews] = useState(false);
 
   // État des créneaux de disponibilité
   const [availabilities, setAvailabilities] = useState([]);
@@ -125,6 +130,31 @@ const PropertyDetailsPage = () => {
       fetchAvailableSlots(ownerId);
     }
   }, [ownerId, isAuthenticated]);
+
+  // 3. Chargement des avis sur le propriétaire
+  useEffect(() => {
+    const fetchReviews = async () => {
+      if (!ownerId) return;
+      setLoadingReviews(true);
+      try {
+        const data = await getReviewsByTargetUser(ownerId);
+        setReviews(Array.isArray(data) ? data : []);
+      } catch (err) {
+        setReviews([]);
+      } finally {
+        setLoadingReviews(false);
+      }
+    };
+
+    fetchReviews();
+  }, [ownerId]);
+
+  // Moyenne des notes des avis
+  const averageRating = useMemo(() => {
+    if (!reviews || reviews.length === 0) return null;
+    const sum = reviews.reduce((acc, r) => acc + (r.rating || 0), 0);
+    return (sum / reviews.length).toFixed(1);
+  }, [reviews]);
 
   // Formatage du prix
   const formattedPrice = useMemo(() => {
@@ -414,6 +444,91 @@ const PropertyDetailsPage = () => {
                       </p>
                     </div>
                   </div>
+                </div>
+
+                {/* Section Avis sur le propriétaire */}
+                <div className="property-details-section-card reviews-section-card">
+                  <div className="reviews-section-header">
+                    <div>
+                      <h2 className="section-card-title">Avis sur le propriétaire</h2>
+                      <p className="reviews-subtitle">
+                        Retours d'expérience et notes laissés par les clients ayant visité les biens de {ownerName}.
+                      </p>
+                    </div>
+                    {averageRating && (
+                      <div className="average-rating-badge">
+                        <span className="avg-num">{averageRating} / 5</span>
+                        <span className="avg-star">⭐</span>
+                        <span className="avg-count">({reviews.length} avis)</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {loadingReviews ? (
+                    <div className="reviews-loading">
+                      <div className="urbanet-spinner-sm" />
+                      <span>Chargement des avis...</span>
+                    </div>
+                  ) : reviews.length === 0 ? (
+                    <div className="reviews-empty-state">
+                      <span className="reviews-empty-icon">⭐</span>
+                      <p className="reviews-empty-title">Aucun avis pour le moment</p>
+                      <p className="reviews-empty-desc">
+                        Soyez le premier à réserver une visite et à partager votre expérience avec ce propriétaire.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="reviews-cards-list">
+                      {reviews.map((rev) => {
+                        const clientName =
+                          rev.clientFirstName && rev.clientLastName
+                            ? `${rev.clientFirstName} ${rev.clientLastName}`
+                            : rev.client
+                            ? `${rev.client.firstName || ''} ${rev.client.lastName || ''}`.trim() || rev.client.email
+                            : 'Client Urbanet';
+
+                        return (
+                          <div key={rev.id} className="review-card">
+                            <div className="review-card-header">
+                              <div className="review-client-info">
+                                <div className="review-client-avatar">
+                                  {clientName.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                  <strong className="review-client-name">{clientName}</strong>
+                                  <span className="review-date">
+                                    {rev.createdAt
+                                      ? new Date(rev.createdAt).toLocaleDateString('fr-FR', {
+                                          day: 'numeric',
+                                          month: 'short',
+                                          year: 'numeric',
+                                        })
+                                      : 'Visite effectuée'}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="review-stars-display" title={`${rev.rating} sur 5`}>
+                                {[1, 2, 3, 4, 5].map((s) => (
+                                  <span
+                                    key={s}
+                                    className={`review-star ${s <= rev.rating ? 'active' : 'inactive'}`}
+                                  >
+                                    ★
+                                  </span>
+                                ))}
+                                <span className="review-rating-val">{rev.rating}/5</span>
+                              </div>
+                            </div>
+
+                            {rev.comment && (
+                              <p className="review-comment-text">"{rev.comment}"</p>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
 

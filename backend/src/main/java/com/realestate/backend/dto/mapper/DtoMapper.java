@@ -193,10 +193,15 @@ public class DtoMapper {
         if (review == null) {
             return null;
         }
+        String clientFirstName = (review.getClient() != null) ? review.getClient().getFirstName() : null;
+        String clientLastName = (review.getClient() != null) ? review.getClient().getLastName() : null;
+
         return ReviewDTO.builder()
                 .id(review.getId())
                 .bookingId(review.getBooking() != null ? review.getBooking().getId() : null)
                 .client(toUserSummaryDTO(review.getClient()))
+                .clientFirstName(clientFirstName)
+                .clientLastName(clientLastName)
                 .targetUser(toUserSummaryDTO(review.getTargetUser()))
                 .rating(review.getRating())
                 .comment(review.getComment())

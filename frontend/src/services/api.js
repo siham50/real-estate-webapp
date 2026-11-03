@@ -282,6 +282,20 @@ export const createReview = async (data) => {
   }
 };
 
+export const getReviewsByTargetUser = async (targetUserId) => {
+  try {
+    const response = await api.get(`/reviews/target/${targetUserId}`);
+    return response.data;
+  } catch (error) {
+    throw new Error(
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      error.message ||
+      'Impossible de charger les avis.'
+    );
+  }
+};
+
 
 // ─── Administration ──────────────────────────────────────────────────────────
 
