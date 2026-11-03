@@ -19,7 +19,7 @@ const RegisterPage = () => {
     iceNumber: '',
   });
 
-  const [legalDoc, setLegalDoc] = useState(null);
+  const [legalDocs, setLegalDocs] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [statusText, setStatusText] = useState('');
@@ -32,17 +32,45 @@ const RegisterPage = () => {
     }));
   };
 
+  const handleLegalDocsChange = (e) => {
+    const selected = Array.from(e.target.files || []);
+    if (selected.length === 0) return;
+
+    setLegalDocs((prev) => {
+      // Éviter les doublons par nom et taille
+      const existingKey = new Set(prev.map((f) => `${f.name}-${f.size}`));
+      const newFiles = selected.filter((f) => !existingKey.has(`${f.name}-${f.size}`));
+
+      const combined = [...prev, ...newFiles];
+      if (combined.length > 5) {
+        setError("Vous pouvez ajouter jusqu'à 5 documents justificatifs maximum. Les 5 premiers ont été retenus.");
+        return combined.slice(0, 5);
+      }
+      setError('');
+      return combined;
+    });
+
+    // Réinitialiser la valeur de l'input pour permettre des ajouts successifs
+    e.target.value = '';
+  };
+
+  const handleRemoveLegalDoc = (index) => {
+    setLegalDocs((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
-    setStatusText('Upload en cours...');
 
     try {
-      let documentUrl = null;
-      if (formData.role === 'PROFESSIONAL' && legalDoc) {
-        setStatusText('Upload en cours...');
-        documentUrl = await uploadFile(legalDoc);
+      let documentUrls = [];
+      if (formData.role === 'PROFESSIONAL' && legalDocs.length > 0) {
+        for (let i = 0; i < legalDocs.length; i++) {
+          setStatusText(`Upload des documents (${i + 1}/${legalDocs.length})...`);
+          const url = await uploadFile(legalDocs[i]);
+          documentUrls.push(url);
+        }
       }
 
       setStatusText("Inscription en cours...");
@@ -58,7 +86,8 @@ const RegisterPage = () => {
         companyName: formData.role === 'PROFESSIONAL' ? formData.companyName.trim() : null,
         rcNumber: formData.role === 'PROFESSIONAL' ? formData.rcNumber.trim() : null,
         iceNumber: formData.role === 'PROFESSIONAL' ? formData.iceNumber.trim() : null,
-        documentUrl: documentUrl,
+        documentUrl: documentUrls.length > 0 ? documentUrls.join(',') : null,
+        documentUrls: documentUrls.length > 0 ? documentUrls : null,
       };
 
       await register(payload);
@@ -240,18 +269,159 @@ const RegisterPage = () => {
               </div>
 
               <div className="form-group">
-                <label htmlFor="legalDoc">Documents légaux (RC / ICE / Justificatif)</label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <label htmlFor="legalDocsInput" style={{ margin: 0, fontWeight: 600 }}>
+                    Documents légaux (RC / ICE / Justificatifs)
+                  </label>
+                  <span
+                    style={{
+                      fontSize: '0.8rem',
+                      fontWeight: 600,
+                      padding: '2px 8px',
+                      borderRadius: '12px',
+                      background: legalDocs.length === 5 ? '#fef3c7' : '#f1f5f9',
+                      color: legalDocs.length === 5 ? '#b45309' : '#475569',
+                    }}
+                  >
+                    {legalDocs.length} / 5 max
+                  </span>
+                </div>
+
+                {/* Bouton d'ajout personnalisé pour éviter l'écrasement standard du navigateur */}
+                {legalDocs.length < 5 ? (
+                  <label
+                    htmlFor="legalDocsInput"
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px',
+                      padding: '16px',
+                      border: '2px dashed #93c5fd',
+                      borderRadius: '10px',
+                      background: '#f8fafc',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      textAlign: 'center',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = '#2563eb';
+                      e.currentTarget.style.background = '#eff6ff';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = '#93c5fd';
+                      e.currentTarget.style.background = '#f8fafc';
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#2563eb', fontWeight: 600, fontSize: '0.9rem' }}>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="17 8 12 3 7 8" />
+                        <line x1="12" y1="3" x2="12" y2="15" />
+                      </svg>
+                      <span>
+                        {legalDocs.length === 0
+                          ? 'Choisir des fichiers (jusqu’à 5)'
+                          : `+ Ajouter un autre fichier (${5 - legalDocs.length} restant${5 - legalDocs.length > 1 ? 's' : ''})`}
+                      </span>
+                    </div>
+                    <span style={{ fontSize: '0.78rem', color: '#64748b' }}>
+                      Cliquez pour sélectionner un ou plusieurs fichiers (PDF, JPG, PNG — max. 10 Mo)
+                    </span>
+                  </label>
+                ) : (
+                  <div
+                    style={{
+                      padding: '10px 14px',
+                      background: '#ecfdf5',
+                      border: '1px solid #a7f3d0',
+                      borderRadius: '8px',
+                      color: '#065f46',
+                      fontSize: '0.85rem',
+                      fontWeight: 500,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                    }}
+                  >
+                    <span>✓ Limite maximale de 5 documents atteinte.</span>
+                  </div>
+                )}
+
                 <input
-                  id="legalDoc"
-                  name="legalDoc"
+                  id="legalDocsInput"
+                  name="legalDocs"
                   type="file"
+                  multiple
                   accept="image/jpeg,image/png,image/webp,application/pdf"
-                  className="auth-input"
-                  onChange={(e) => setLegalDoc(e.target.files[0] || null)}
+                  style={{ display: 'none' }}
+                  onChange={handleLegalDocsChange}
                 />
-                <small style={{ display: 'block', marginTop: '6px', color: '#6b7280', fontSize: '0.82rem' }}>
-                  Formats acceptés : PDF, JPG, PNG (max. 10 Mo)
-                </small>
+
+                {legalDocs.length > 0 && (
+                  <div style={{ marginTop: '12px', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '10px', overflow: 'hidden' }}>
+                    <div style={{ padding: '8px 14px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontSize: '0.82rem', fontWeight: 600, color: '#334155', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span>Documents prêts à être transmis ({legalDocs.length}/5)</span>
+                      <button
+                        type="button"
+                        onClick={() => setLegalDocs([])}
+                        style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.78rem', fontWeight: 600 }}
+                      >
+                        Tout supprimer
+                      </button>
+                    </div>
+                    <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                      {legalDocs.map((file, idx) => (
+                        <li
+                          key={idx}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '10px 14px',
+                            borderBottom: idx < legalDocs.length - 1 ? '1px solid #f1f5f9' : 'none',
+                            fontSize: '0.85rem',
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', overflow: 'hidden' }}>
+                            <span style={{ fontSize: '1.25rem' }}>
+                              {file.name.toLowerCase().endsWith('.pdf') ? '📕' : '🖼️'}
+                            </span>
+                            <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                              <span style={{ fontWeight: 600, color: '#1e293b', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', maxWidth: '240px' }}>
+                                {file.name}
+                              </span>
+                              <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                                {(file.size / (1024 * 1024)).toFixed(2)} Mo • Document {idx + 1} sur 5
+                              </span>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveLegalDoc(idx)}
+                            style={{
+                              background: '#fee2e2',
+                              border: 'none',
+                              color: '#b91c1c',
+                              borderRadius: '6px',
+                              padding: '5px 10px',
+                              cursor: 'pointer',
+                              fontSize: '0.78rem',
+                              fontWeight: 600,
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                            }}
+                            title="Retirer ce document"
+                          >
+                            ✕ Retirer
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             </div>
           )}

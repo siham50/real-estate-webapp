@@ -35,7 +35,7 @@ public class AdminService {
 
         user.setActive(isActive);
         User updated = userRepository.save(user);
-        return DtoMapper.toUserDTO(updated);
+        return mapUserWithAgencyProfile(updated);
     }
 
     @Transactional
@@ -52,6 +52,20 @@ public class AdminService {
             agencyProfileRepository.save(profile);
         });
 
-        return DtoMapper.toUserDTO(savedUser);
+        return mapUserWithAgencyProfile(savedUser);
+    }
+
+    private UserDTO mapUserWithAgencyProfile(User user) {
+        if (user == null) {
+            return null;
+        }
+        UserDTO dto = DtoMapper.toUserDTO(user);
+        agencyProfileRepository.findByUserId(user.getId()).ifPresent(profile -> {
+            dto.setCompanyName(profile.getCompanyName());
+            dto.setRcNumber(profile.getRcNumber());
+            dto.setIceNumber(profile.getIceNumber());
+            dto.setAgencyDocumentUrl(profile.getDocumentUrl());
+        });
+        return dto;
     }
 }

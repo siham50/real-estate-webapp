@@ -55,7 +55,13 @@ public class AuthService {
 
         // Si professionnel, création de son AgencyProfile
         if (role == Role.PROFESSIONAL) {
-            String docUrl = request.getDocumentUrl() != null ? request.getDocumentUrl() : "";
+            String docUrl = "";
+            if (request.getDocumentUrls() != null && !request.getDocumentUrls().isEmpty()) {
+                docUrl = String.join(",", request.getDocumentUrls());
+            } else if (request.getDocumentUrl() != null) {
+                docUrl = request.getDocumentUrl();
+            }
+
             AgencyProfile agencyProfile = AgencyProfile.builder()
                     .user(savedUser)
                     .companyName(request.getCompanyName() != null ? request.getCompanyName() : "")

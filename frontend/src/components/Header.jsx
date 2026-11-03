@@ -130,7 +130,7 @@ const Header = () => {
                 </div>
                 <span className="header-user-name">{user.firstName}</span>
                 <span className="header-user-role-badge">
-                  {user.role === 'PROFESSIONAL' || user.role === 'AGENCE' ? 'Agence' : 'Client'}
+                  {user.role === 'ADMIN' ? 'Admin' : (user.role === 'PROFESSIONAL' || user.role === 'AGENCE' ? 'Agence' : 'Client')}
                 </span>
               </button>
               <button

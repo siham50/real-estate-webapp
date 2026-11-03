@@ -27,7 +27,10 @@ const LoginPage = () => {
       });
 
       // Redirection selon le rôle reçu du backend
-      if (loggedUser?.role === 'PROFESSIONAL' || loggedUser?.role === 'AGENCE') {
+      const userRole = String(loggedUser?.role || '').toUpperCase();
+      if (userRole === 'ADMIN') {
+        navigate('/admin');
+      } else if (userRole === 'PROFESSIONAL' || userRole === 'AGENCE') {
         navigate('/profile/agency');
       } else {
         navigate('/profile/client');

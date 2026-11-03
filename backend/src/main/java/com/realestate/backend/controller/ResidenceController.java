@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/residences")
@@ -32,9 +33,16 @@ public class ResidenceController {
     }
 
     @PostMapping
-    public ResponseEntity<ResidenceDTO> createResidence(@RequestBody Residence residence) {
-        ResidenceDTO created = residenceService.createResidence(residence);
-        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    public ResponseEntity<?> createResidence(@RequestBody Residence residence) {
+        try {
+            ResidenceDTO created = residenceService.createResidence(residence);
+            return ResponseEntity.status(HttpStatus.CREATED).body(created);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "message", e.getMessage() != null ? e.getMessage() : "Erreur lors de la création de la résidence.",
+                    "error", e.getMessage() != null ? e.getMessage() : "Erreur lors de la création de la résidence."
+            ));
+        }
     }
 
     @PutMapping("/{id}")

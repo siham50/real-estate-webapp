@@ -53,7 +53,8 @@ const PropertyForm = ({ onClose, onCreated, residences, isModal = false }) => {
     e.preventDefault();
     setError('');
 
-    if (!propertyDocFile) {
+    // Le document de propriété est obligatoire pour les clients, pas pour les agences
+    if (isClient && !propertyDocFile) {
       setError('Le document de propriété (Titre Foncier / Acte) est obligatoire.');
       return;
     }
@@ -64,11 +65,14 @@ const PropertyForm = ({ onClose, onCreated, residences, isModal = false }) => {
     }
 
     setLoading(true);
-    setStatusText('Upload du document de propriété en cours...');
 
     try {
-      // 1. Upload du fichier de propriété
-      const propertyDocUrl = await uploadFile(propertyDocFile);
+      // 1. Upload du fichier de propriété (si fourni)
+      let propertyDocUrl = null;
+      if (propertyDocFile) {
+        setStatusText('Upload du document de propriété en cours...');
+        propertyDocUrl = await uploadFile(propertyDocFile);
+      }
 
       // 2. (Si nécessaire) Upload de la CIN et mise à jour du profil utilisateur
       if (isClient && !isCinVerified && cinFile) {
@@ -326,29 +330,31 @@ const PropertyForm = ({ onClose, onCreated, residences, isModal = false }) => {
           </select>
         </div>
 
-        {/* 1. Titre Foncier / Documents de propriété (OBLIGATOIRE) */}
-        <div className="agency-field-group">
-          <label htmlFor="property-doc">
-            Titre Foncier / Documents de propriété (obligatoire) *
-          </label>
-          <input
-            id="property-doc"
-            name="propertyDoc"
-            type="file"
-            required
-            accept="image/jpeg,image/png,image/webp,application/pdf"
-            className="agency-input"
-            onChange={(e) => setPropertyDocFile(e.target.files[0] || null)}
-          />
-          <small style={{ display: 'block', marginTop: '4px', color: '#6b7280', fontSize: '0.82rem' }}>
-            Formats autorisés : PDF, JPG, PNG (max. 10 Mo). Ce document servira à la validation légale de l'annonce.
-          </small>
-          {propertyDocFile && (
-            <div style={{ marginTop: '6px', fontSize: '0.85rem', color: '#166534', fontWeight: 500 }}>
-              ✓ Fichier sélectionné : {propertyDocFile.name} ({(propertyDocFile.size / 1024).toFixed(1)} Ko)
-            </div>
-          )}
-        </div>
+        {/* 1. Titre Foncier / Documents de propriété (OBLIGATOIRE POUR CLIENT UNIQUEMENT, PAS POUR LES AGENCES) */}
+        {isClient && (
+          <div className="agency-field-group">
+            <label htmlFor="property-doc">
+              Titre Foncier / Documents de propriété (obligatoire) *
+            </label>
+            <input
+              id="property-doc"
+              name="propertyDoc"
+              type="file"
+              required
+              accept="image/jpeg,image/png,image/webp,application/pdf"
+              className="agency-input"
+              onChange={(e) => setPropertyDocFile(e.target.files[0] || null)}
+            />
+            <small style={{ display: 'block', marginTop: '4px', color: '#6b7280', fontSize: '0.82rem' }}>
+              Formats autorisés : PDF, JPG, PNG (max. 10 Mo). Ce document servira à la validation légale de l'annonce.
+            </small>
+            {propertyDocFile && (
+              <div style={{ marginTop: '6px', fontSize: '0.85rem', color: '#166534', fontWeight: 500 }}>
+                ✓ Fichier sélectionné : {propertyDocFile.name} ({(propertyDocFile.size / 1024).toFixed(1)} Ko)
+              </div>
+            )}
+          </div>
+        )}
 
         {/* 2. Document CIN si le client n'est pas vérifié */}
         {isClient && !isCinVerified && (

@@ -3,6 +3,8 @@ package com.realestate.backend.service;
 import com.realestate.backend.dto.UserDTO;
 import com.realestate.backend.dto.mapper.DtoMapper;
 import com.realestate.backend.entity.User;
+import com.realestate.backend.entity.enums.Role;
+import com.realestate.backend.repository.AgencyProfileRepository;
 import com.realestate.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -14,6 +16,7 @@ import java.util.List;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final AgencyProfileRepository agencyProfileRepository;
 
     public long countUsers() {
         return userRepository.count();
@@ -21,13 +24,29 @@ public class UserService {
 
     public List<UserDTO> getAllUsers() {
         return userRepository.findAll().stream()
-                .map(DtoMapper::toUserDTO)
+                .map(this::mapUserWithAgencyProfile)
                 .toList();
     }
 
     public UserDTO getUserById(Long id) {
         User user = findUserById(id);
-        return DtoMapper.toUserDTO(user);
+        return mapUserWithAgencyProfile(user);
+    }
+
+    private UserDTO mapUserWithAgencyProfile(User user) {
+        if (user == null) {
+            return null;
+        }
+        UserDTO dto = DtoMapper.toUserDTO(user);
+        if (user.getRole() == Role.PROFESSIONAL) {
+            agencyProfileRepository.findByUserId(user.getId()).ifPresent(profile -> {
+                dto.setCompanyName(profile.getCompanyName());
+                dto.setRcNumber(profile.getRcNumber());
+                dto.setIceNumber(profile.getIceNumber());
+                dto.setAgencyDocumentUrl(profile.getDocumentUrl());
+            });
+        }
+        return dto;
     }
 
     public User findUserById(Long id) {

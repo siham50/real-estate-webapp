@@ -2,6 +2,7 @@ package com.realestate.backend.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -17,9 +18,28 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
-        String uploadUri = uploadPath.toUri().toString();
+        String uploadAbsolutePath = uploadPath.toFile().getAbsolutePath().replace("\\", "/");
+        if (!uploadAbsolutePath.endsWith("/")) {
+            uploadAbsolutePath += "/";
+        }
 
         registry.addResourceHandler("/uploads/**")
-                .addResourceLocations(uploadUri.endsWith("/") ? uploadUri : uploadUri + "/");
+                .addResourceLocations(
+                        "file:///" + uploadAbsolutePath,
+                        "file:" + uploadAbsolutePath,
+                        "file:uploads/",
+                        "file:backend/uploads/",
+                        "file:../uploads/"
+                )
+                .setCachePeriod(3600);
+    }
+
+    @Override
+    public void addCorsMappings(CorsRegistry registry) {
+        registry.addMapping("/**")
+                .allowedOriginPatterns("*")
+                .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
+                .allowedHeaders("*")
+                .allowCredentials(true);
     }
 }
