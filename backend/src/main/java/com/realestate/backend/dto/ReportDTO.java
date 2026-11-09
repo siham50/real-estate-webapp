@@ -14,9 +14,31 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class ReportDTO {
     private Long id;
+    private Long reporterId;
+    private Long reportedUserId;
     private UserSummaryDTO reporter;
     private UserSummaryDTO reportedUser;
     private String reason;
     private ReportStatus status;
     private LocalDateTime createdAt;
+
+    public Long getResolvedReporterId() {
+        if (reporterId != null) {
+            return reporterId;
+        }
+        if (reporter != null && reporter.getId() != null) {
+            return reporter.getId();
+        }
+        return null;
+    }
+
+    public Long getResolvedReportedUserId() {
+        if (reportedUserId != null) {
+            return reportedUserId;
+        }
+        if (reportedUser != null && reportedUser.getId() != null) {
+            return reportedUser.getId();
+        }
+        return null;
+    }
 }

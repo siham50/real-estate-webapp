@@ -5,6 +5,7 @@ import com.realestate.backend.dto.mapper.DtoMapper;
 import com.realestate.backend.entity.Report;
 import com.realestate.backend.entity.User;
 import com.realestate.backend.entity.enums.ReportStatus;
+import com.realestate.backend.entity.enums.Role;
 import com.realestate.backend.repository.ReportRepository;
 import com.realestate.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -19,11 +20,27 @@ public class ReportService {
 
     private final ReportRepository reportRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
+
+    public ReportDTO createReport(ReportDTO dto) {
+        if (dto == null) {
+            throw new IllegalArgumentException("Les informations de signalement sont requises");
+        }
+        Long reporterId = dto.getResolvedReporterId();
+        Long reportedUserId = dto.getResolvedReportedUserId();
+        return processReport(reporterId, reportedUserId, dto.getReason());
+    }
 
     public ReportDTO createReport(Report report) {
+        if (report == null) {
+            throw new IllegalArgumentException("Les informations de signalement sont requises");
+        }
         Long reporterId = report.getResolvedReporterId();
         Long reportedUserId = report.getResolvedReportedUserId();
+        return processReport(reporterId, reportedUserId, report.getReason());
+    }
 
+    private ReportDTO processReport(Long reporterId, Long reportedUserId, String reason) {
         if (reporterId == null || reportedUserId == null) {
             throw new IllegalArgumentException("Les identifiants de l'auteur (reporter) et de l'utilisateur signalé (reportedUser) sont requis");
         }
@@ -33,7 +50,7 @@ public class ReportService {
             throw new IllegalArgumentException("Un utilisateur ne peut pas se signaler lui-même");
         }
 
-        if (report.getReason() == null || report.getReason().trim().isEmpty()) {
+        if (reason == null || reason.trim().isEmpty()) {
             throw new IllegalArgumentException("Le motif du signalement est obligatoire");
         }
 
@@ -43,11 +60,30 @@ public class ReportService {
         User reportedUser = userRepository.findById(reportedUserId)
                 .orElseThrow(() -> new RuntimeException("Utilisateur signalé introuvable avec l'id : " + reportedUserId));
 
-        report.setReporter(reporter);
-        report.setReportedUser(reportedUser);
-        report.setStatus(ReportStatus.PENDING);
+        Report report = Report.builder()
+                .reporter(reporter)
+                .reportedUser(reportedUser)
+                .reason(reason.trim())
+                .status(ReportStatus.PENDING)
+                .build();
 
         Report savedReport = reportRepository.save(report);
+
+        // Envoi d'une notification aux Administrateurs
+        try {
+            List<User> admins = userRepository.findByRole(Role.ADMIN);
+            if (admins != null) {
+                for (User admin : admins) {
+                    notificationService.createNotification(
+                            admin.getId(),
+                            "Nouveau signalement reçu concernant l'utilisateur " + reportedUser.getEmail() + " : " + reason.trim(),
+                            "REPORT"
+                    );
+                }
+            }
+        } catch (Exception ignored) {
+        }
+
         return DtoMapper.toReportDTO(savedReport);
     }
 

@@ -1,7 +1,6 @@
 package com.realestate.backend.controller;
 
 import com.realestate.backend.dto.ReportDTO;
-import com.realestate.backend.entity.Report;
 import com.realestate.backend.entity.enums.ReportStatus;
 import com.realestate.backend.service.ReportService;
 import lombok.RequiredArgsConstructor;
@@ -14,14 +13,15 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/reports")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "*")
 public class ReportController {
 
     private final ReportService reportService;
 
     @PostMapping
-    public ResponseEntity<ReportDTO> createReport(@RequestBody Report report) {
+    public ResponseEntity<ReportDTO> createReport(@RequestBody ReportDTO reportDTO) {
         try {
-            ReportDTO created = reportService.createReport(report);
+            ReportDTO created = reportService.createReport(reportDTO);
             return ResponseEntity.status(HttpStatus.CREATED).body(created);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();

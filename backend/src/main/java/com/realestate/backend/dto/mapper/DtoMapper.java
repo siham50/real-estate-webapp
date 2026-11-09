@@ -216,6 +216,8 @@ public class DtoMapper {
         }
         return ReportDTO.builder()
                 .id(report.getId())
+                .reporterId(report.getReporter() != null ? report.getReporter().getId() : null)
+                .reportedUserId(report.getReportedUser() != null ? report.getReportedUser().getId() : null)
                 .reporter(toUserSummaryDTO(report.getReporter()))
                 .reportedUser(toUserSummaryDTO(report.getReportedUser()))
                 .reason(report.getReason())

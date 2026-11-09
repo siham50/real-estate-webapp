@@ -62,14 +62,10 @@ public class BookingService {
 
         Booking savedBooking = bookingRepository.save(booking);
 
-        // Notification automatique pour le vendeur
-        User vendor = property.getOwner() != null ? property.getOwner() : availability.getUser();
-        if (vendor != null) {
-            String clientName = (client.getFirstName() != null ? client.getFirstName() : "") + " " +
-                    (client.getLastName() != null ? client.getLastName() : "");
-            String propertyTitle = property.getTitle() != null ? property.getTitle() : "une propriété";
-            String notificationMessage = "Nouvelle demande de visite pour \"" + propertyTitle + "\" de la part de " + clientName.trim() + ".";
-            notificationService.createNotification(vendor, notificationMessage, "BOOKING_CREATED");
+        // Notification automatique pour le propriétaire / vendeur
+        Long ownerId = property.getOwner() != null ? property.getOwner().getId() : (availability.getUser() != null ? availability.getUser().getId() : null);
+        if (ownerId != null) {
+            notificationService.createNotification(ownerId, "Nouvelle demande de visite reçue", "BOOKING");
         }
 
         return DtoMapper.toBookingDTO(savedBooking);
