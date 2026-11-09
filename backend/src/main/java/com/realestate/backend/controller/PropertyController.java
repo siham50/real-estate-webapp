@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -21,6 +22,17 @@ public class PropertyController {
     @GetMapping
     public ResponseEntity<List<PropertyDTO>> getAllProperties() {
         return ResponseEntity.ok(propertyService.getAllProperties());
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<PropertyDTO>> searchProperties(
+            @RequestParam(required = false) String city,
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) String purpose,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice
+    ) {
+        return ResponseEntity.ok(propertyService.searchProperties(city, type, purpose, minPrice, maxPrice));
     }
 
     @GetMapping("/{id}")

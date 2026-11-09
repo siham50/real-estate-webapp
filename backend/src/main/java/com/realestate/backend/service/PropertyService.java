@@ -7,6 +7,8 @@ import com.realestate.backend.entity.Property;
 import com.realestate.backend.entity.PropertyDocument;
 import com.realestate.backend.entity.Residence;
 import com.realestate.backend.entity.User;
+import com.realestate.backend.entity.enums.PropertyPurpose;
+import com.realestate.backend.entity.enums.PropertyType;
 import com.realestate.backend.entity.enums.Role;
 import com.realestate.backend.repository.AgencyProfileRepository;
 import com.realestate.backend.repository.PropertyRepository;
@@ -15,6 +17,7 @@ import com.realestate.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -158,6 +161,30 @@ public class PropertyService {
 
     public List<PropertyDTO> getAllPropertiesAdmin() {
         return propertyRepository.findAll().stream()
+                .map(DtoMapper::toPropertyDTO)
+                .toList();
+    }
+
+    public List<PropertyDTO> searchProperties(String city, String type, String purpose, BigDecimal minPrice, BigDecimal maxPrice) {
+        PropertyType propertyType = null;
+        if (type != null && !type.trim().isEmpty()) {
+            try {
+                propertyType = PropertyType.valueOf(type.trim().toUpperCase());
+            } catch (IllegalArgumentException ignored) {
+            }
+        }
+
+        PropertyPurpose propertyPurpose = null;
+        if (purpose != null && !purpose.trim().isEmpty()) {
+            try {
+                propertyPurpose = PropertyPurpose.valueOf(purpose.trim().toUpperCase());
+            } catch (IllegalArgumentException ignored) {
+            }
+        }
+
+        String searchCity = (city != null && !city.trim().isEmpty()) ? city.trim() : null;
+
+        return propertyRepository.searchProperties(searchCity, propertyType, propertyPurpose, minPrice, maxPrice).stream()
                 .map(DtoMapper::toPropertyDTO)
                 .toList();
     }

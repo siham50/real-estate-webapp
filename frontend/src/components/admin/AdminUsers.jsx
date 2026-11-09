@@ -536,7 +536,7 @@ const AdminUsers = () => {
                       style={{
                         textAlign: 'center',
                         background: '#0f172a',
-                        padding: '16px',
+                        padding: '24px 16px',
                         borderRadius: '10px',
                         display: 'flex',
                         flexDirection: 'column',
@@ -545,34 +545,89 @@ const AdminUsers = () => {
                         minHeight: '350px',
                       }}
                     >
-                      <img
-                        src={imageError ? resolveDocUrl(activeDoc.url, true) : activeDocFullUrl}
-                        alt={activeDoc.title}
-                        onError={(e) => {
-                          if (!imageError) {
-                            setImageError(true);
-                          }
-                        }}
-                        style={{
-                          maxWidth: '100%',
-                          maxHeight: '460px',
-                          objectFit: 'contain',
-                          borderRadius: '6px',
-                          boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
-                        }}
-                      />
-                      {imageError && (
-                        <div style={{ marginTop: '12px', color: '#f87171', fontSize: '0.82rem' }}>
-                          <span>Aperçu alternatif chargé via l'API. Si l'image ne s'affiche pas, </span>
+                      {imageError ? (
+                        <div
+                          style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: '24px 20px',
+                            color: '#e2e8f0',
+                            maxWidth: '520px',
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: '64px',
+                              height: '64px',
+                              borderRadius: '16px',
+                              background: 'rgba(56, 189, 248, 0.15)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              marginBottom: '16px',
+                              fontSize: '2rem',
+                            }}
+                          >
+                            📄
+                          </div>
+                          <h4 style={{ margin: '0 0 8px 0', fontSize: '1.15rem', color: '#f8fafc', fontWeight: 600 }}>
+                            {activeDoc.title}
+                          </h4>
+                          <p style={{ margin: '0 0 14px 0', fontSize: '0.85rem', color: '#94a3b8', wordBreak: 'break-all' }}>
+                            Fichier : {activeDoc.url.replace('/uploads/', '')}
+                          </p>
+                          <div
+                            style={{
+                              background: 'rgba(16, 185, 129, 0.15)',
+                              border: '1px solid #10b981',
+                              borderRadius: '8px',
+                              padding: '8px 16px',
+                              color: '#34d399',
+                              fontSize: '0.82rem',
+                              fontWeight: 600,
+                              marginBottom: '16px',
+                            }}
+                          >
+                            ✓ Document téléversé lors de la soumission du dossier
+                          </div>
                           <a
                             href={activeDocFullUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            style={{ color: '#60a5fa', textDecoration: 'underline' }}
+                            style={{
+                              color: '#38bdf8',
+                              fontSize: '0.85rem',
+                              textDecoration: 'underline',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                            }}
                           >
-                            cliquez ici pour ouvrir directement le fichier
+                            <span>Ouvrir le document dans un nouvel onglet</span>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                              <polyline points="15 3 21 3 21 9" />
+                              <line x1="10" y1="14" x2="21" y2="3" />
+                            </svg>
                           </a>
                         </div>
+                      ) : (
+                        <img
+                          src={activeDocFullUrl}
+                          alt={activeDoc.title}
+                          onError={() => {
+                            setImageError(true);
+                          }}
+                          style={{
+                            maxWidth: '100%',
+                            maxHeight: '460px',
+                            objectFit: 'contain',
+                            borderRadius: '6px',
+                            boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+                          }}
+                        />
                       )}
                     </div>
                   )}

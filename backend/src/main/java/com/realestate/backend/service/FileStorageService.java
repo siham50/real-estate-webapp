@@ -10,10 +10,13 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -27,8 +30,10 @@ public class FileStorageService {
         this.fileStorageLocation = Paths.get(uploadDir).toAbsolutePath().normalize();
         try {
             Files.createDirectories(this.fileStorageLocation);
+            Files.createDirectories(Paths.get("uploads").toAbsolutePath().normalize());
+            Files.createDirectories(Paths.get("backend", "uploads").toAbsolutePath().normalize());
         } catch (IOException ex) {
-            throw new RuntimeException("Impossible de créer le dossier de stockage des fichiers uploadés.", ex);
+            // Ignored if permissions restrict one of the alternative paths
         }
     }
 
@@ -83,7 +88,12 @@ public class FileStorageService {
 
     public Resource loadFileAsResource(String fileName) {
         try {
-            String cleanedName = StringUtils.cleanPath(fileName);
+            if (fileName == null || fileName.isBlank()) {
+                return null;
+            }
+
+            String decodedName = URLDecoder.decode(fileName, StandardCharsets.UTF_8);
+            String cleanedName = StringUtils.cleanPath(decodedName);
             if (cleanedName.contains("/")) {
                 cleanedName = cleanedName.substring(cleanedName.lastIndexOf('/') + 1);
             }
@@ -91,14 +101,14 @@ public class FileStorageService {
                 cleanedName = cleanedName.substring(cleanedName.lastIndexOf('\\') + 1);
             }
 
-            List<Path> candidateDirs = Arrays.asList(
+            List<Path> candidateDirs = new ArrayList<>(Arrays.asList(
                     this.fileStorageLocation,
                     Paths.get("uploads").toAbsolutePath().normalize(),
                     Paths.get("backend/uploads").toAbsolutePath().normalize(),
                     Paths.get("../uploads").toAbsolutePath().normalize(),
-                    Paths.get(System.getProperty("user.dir"), "uploads").normalize(),
-                    Paths.get(System.getProperty("user.dir"), "backend", "uploads").normalize()
-            );
+                    Paths.get(System.getProperty("user.dir", "."), "uploads").normalize(),
+                    Paths.get(System.getProperty("user.dir", "."), "backend", "uploads").normalize()
+            ));
 
             for (Path dir : candidateDirs) {
                 Path filePath = dir.resolve(cleanedName).normalize();

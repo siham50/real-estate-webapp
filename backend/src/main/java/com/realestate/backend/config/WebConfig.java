@@ -8,6 +8,8 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
@@ -18,19 +20,30 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
-        String uploadAbsolutePath = uploadPath.toFile().getAbsolutePath().replace("\\", "/");
-        if (!uploadAbsolutePath.endsWith("/")) {
-            uploadAbsolutePath += "/";
+        String uploadUri = uploadPath.toUri().toString();
+        if (!uploadUri.endsWith("/")) {
+            uploadUri += "/";
+        }
+
+        List<String> locations = new ArrayList<>();
+        locations.add(uploadUri);
+        locations.add("file:uploads/");
+        locations.add("file:backend/uploads/");
+        locations.add("file:../uploads/");
+
+        try {
+            Path currentDirPath = Paths.get(System.getProperty("user.dir", ".")).toAbsolutePath().normalize();
+            String currentUri = currentDirPath.toUri().toString();
+            if (!currentUri.endsWith("/")) {
+                currentUri += "/";
+            }
+            locations.add(currentUri + "uploads/");
+            locations.add(currentUri + "backend/uploads/");
+        } catch (Exception ignored) {
         }
 
         registry.addResourceHandler("/uploads/**")
-                .addResourceLocations(
-                        "file:///" + uploadAbsolutePath,
-                        "file:" + uploadAbsolutePath,
-                        "file:uploads/",
-                        "file:backend/uploads/",
-                        "file:../uploads/"
-                )
+                .addResourceLocations(locations.toArray(new String[0]))
                 .setCachePeriod(3600);
     }
 
