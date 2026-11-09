@@ -5847,6 +5847,297 @@ img {
   line-height: 1.5;
 }
 
+/* ==========================================================================
+   PropertyMap & Interactive Map Styling
+   ========================================================================== */
+.map-container {
+  height: 400px;
+  width: 100%;
+  border-radius: 12px;
+  z-index: 0;
+}
+
+.property-map-card {
+  margin-bottom: 24px;
+}
+
+.property-map-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.property-map-header .section-card-title {
+  margin-bottom: 0;
+}
+
+.property-map-coords-badge {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #475569;
+  background: #f1f5f9;
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1px solid #e2e8f0;
+}
+
+.property-map-wrapper {
+  overflow: hidden;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+}
+
+.property-map-unavailable {
+  text-align: center;
+  padding: 48px 24px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px dashed #cbd5e1;
+}
+
+.map-unavailable-icon {
+  font-size: 2.2rem;
+  margin-bottom: 10px;
+}
+
+.map-unavailable-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 6px;
+}
+
+.map-unavailable-hint {
+  font-size: 0.88rem;
+  color: #64748b;
+  max-width: 420px;
+  display: block;
+  margin: 0 auto;
+}
+
+.map-popup-body {
+  font-family: inherit;
+  font-size: 0.88rem;
+  color: #0f172a;
+}
+
+.map-popup-body strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #0f172a;
+}
+
+.map-popup-body p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+/* ==========================================================================
+   LoanCalculator Widget Styling (Urbanet Theme)
+   ========================================================================== */
+.loan-calculator-widget {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 26px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.06);
+  margin-top: 24px;
+  transition: all 0.25s ease;
+}
+
+.loan-calculator-header {
+  margin-bottom: 18px;
+}
+
+.loan-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 8px;
+}
+
+.loan-calculator-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 4px 0;
+}
+
+.loan-calculator-subtitle {
+  font-size: 0.84rem;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.45;
+}
+
+.loan-result-card {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 20px;
+  text-align: center;
+  color: #0f172a;
+  margin-bottom: 20px;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.loan-result-label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+  margin-bottom: 6px;
+}
+
+.loan-result-amount {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.loan-result-unit {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.loan-result-details {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e2e8f0;
+  font-size: 0.8rem;
+  color: #64748b;
+  flex-wrap: wrap;
+}
+
+.loan-result-details strong {
+  color: #0f172a;
+}
+
+.loan-calculator-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.loan-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.loan-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+}
+
+.loan-label-row label {
+  font-weight: 600;
+  color: #334155;
+}
+
+.loan-value-hint {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #2563eb;
+}
+
+.loan-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.loan-input-field {
+  width: 100%;
+  padding: 10px 60px 10px 14px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #0f172a;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.loan-input-field:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.loan-input-suffix {
+  position: absolute;
+  right: 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.loan-duration-quick-picks {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.loan-pill-btn {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  font-family: inherit;
+  text-align: center;
+}
+
+.loan-pill-btn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.loan-pill-btn.active {
+  background: #0f172a;
+  color: #ffffff;
+  border-color: #0f172a;
+}
+
+.loan-calculator-disclaimer {
+  font-size: 0.74rem;
+  color: #94a3b8;
+  text-align: center;
+  margin: 0;
+  line-height: 1.4;
+}
+
+
 
 
 

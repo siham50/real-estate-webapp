@@ -9,6 +9,8 @@ import {
 } from '../services/api';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import PropertyMap from '../components/property/PropertyMap';
+import LoanCalculator from '../components/property/LoanCalculator';
 import {
   DEFAULT_PROPERTIES,
   TYPE_IMAGES,
@@ -72,6 +74,8 @@ const PropertyDetailsPage = () => {
             type: fallback.type || 'VILLA',
             purpose: fallback.purpose || 'SALE',
             surfaceArea: parseInt(fallback.area, 10) || 200,
+            latitude: fallback.latitude || 33.5731,
+            longitude: fallback.longitude || -7.5898,
             image: fallback.image,
             owner: {
               id: 1,
@@ -425,7 +429,12 @@ const PropertyDetailsPage = () => {
                   </div>
                 </div>
 
-                {/* Informations de contact & Propriétaire */}
+                {/* Emplacement & Carte Interactive */}
+                <PropertyMap
+                  latitude={property.latitude}
+                  longitude={property.longitude}
+                  title={property.title}
+                />
                 <div className="property-details-section-card owner-section-card">
                   <h2 className="section-card-title">Propriétaire & Gestionnaire</h2>
                   <div className="owner-profile-row">
@@ -740,6 +749,9 @@ const PropertyDetailsPage = () => {
                     </div>
                   )}
                 </div>
+
+                {/* Calculateur de prêt immobilier interactif */}
+                <LoanCalculator price={property.price} />
               </aside>
             </div>
           )}
