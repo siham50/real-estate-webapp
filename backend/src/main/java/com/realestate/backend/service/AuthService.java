@@ -8,7 +8,9 @@ import com.realestate.backend.entity.User;
 import com.realestate.backend.entity.enums.Role;
 import com.realestate.backend.repository.AgencyProfileRepository;
 import com.realestate.backend.repository.UserRepository;
+import com.realestate.backend.security.JwtService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +20,8 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final AgencyProfileRepository agencyProfileRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -39,12 +43,16 @@ public class AuthService {
             }
         }
 
+        // Hachage du mot de passe avec BCrypt
+        String rawPassword = request.getPassword() != null ? request.getPassword() : "";
+        String encodedPassword = passwordEncoder.encode(rawPassword);
+
         // Création du User
         User user = User.builder()
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
                 .email(request.getEmail().trim())
-                .password(request.getPassword())
+                .password(encodedPassword)
                 .phone(request.getPhone())
                 .role(role)
                 .isActive(true)
@@ -74,11 +82,14 @@ public class AuthService {
             agencyProfileRepository.save(agencyProfile);
         }
 
+        String token = jwtService.generateToken(savedUser.getEmail());
+
         return AuthResponse.builder()
                 .id(savedUser.getId())
                 .email(savedUser.getEmail())
                 .firstName(savedUser.getFirstName())
                 .role(savedUser.getRole().name())
+                .token(token)
                 .message("Inscription réussie avec succès.")
                 .build();
     }
@@ -91,7 +102,19 @@ public class AuthService {
         User user = userRepository.findByEmail(request.getEmail().trim())
                 .orElseThrow(() -> new RuntimeException("Email ou mot de passe incorrect."));
 
-        if (user.getPassword() == null || !user.getPassword().equals(request.getPassword())) {
+        if (user.getPassword() == null) {
+            throw new RuntimeException("Email ou mot de passe incorrect.");
+        }
+
+        // Vérification avec passwordEncoder.matches (avec support rétroactif si le mot de passe n'était pas encore haché)
+        boolean matches = passwordEncoder.matches(request.getPassword(), user.getPassword());
+        if (!matches && user.getPassword().equals(request.getPassword())) {
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
+            userRepository.save(user);
+            matches = true;
+        }
+
+        if (!matches) {
             throw new RuntimeException("Email ou mot de passe incorrect.");
         }
 
@@ -99,11 +122,14 @@ public class AuthService {
             throw new RuntimeException("Votre compte est désactivé. Veuillez contacter un administrateur.");
         }
 
+        String token = jwtService.generateToken(user.getEmail());
+
         return AuthResponse.builder()
                 .id(user.getId())
                 .email(user.getEmail())
                 .firstName(user.getFirstName())
                 .role(user.getRole().name())
+                .token(token)
                 .message("Connexion réussie avec succès.")
                 .build();
     }

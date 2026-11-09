@@ -7,6 +7,18 @@ const api = axios.create({
   },
 });
 
+// Intercepteur pour injecter automatiquement le token JWT dans chaque requête
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('urbanet_token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
 // Authentification - Inscription
 export const register = async (data) => {
   try {
