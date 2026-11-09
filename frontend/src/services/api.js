@@ -571,6 +571,36 @@ export const sendMessage = async (conversationId, senderId, content) => {
   }
 };
 
+// ─── Notifications ──────────────────────────────────────────────────────────
+
+export const getUserNotifications = async (userId) => {
+  try {
+    const response = await api.get(`/notifications/user/${userId}`);
+    return response.data;
+  } catch (error) {
+    const message =
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      error.message ||
+      'Impossible de récupérer les notifications.';
+    throw new Error(message);
+  }
+};
+
+export const markNotificationAsRead = async (id) => {
+  try {
+    const response = await api.patch(`/notifications/${id}/read`);
+    return response.data;
+  } catch (error) {
+    const message =
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      error.message ||
+      'Impossible de marquer la notification comme lue.';
+    throw new Error(message);
+  }
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const testBackend = async () => {

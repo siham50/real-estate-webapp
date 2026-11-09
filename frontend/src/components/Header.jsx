@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import NotificationDropdown from './layout/NotificationDropdown';
 
 const Header = () => {
   const { user, logout } = useAuth();
@@ -85,6 +86,9 @@ const Header = () => {
 
           {isLoggedIn ? (
             <div className="urbanet-user-header-group">
+              {/* Notifications */}
+              <NotificationDropdown />
+
               {/* Bouton Messages pour Client ou Agence */}
               <button
                 type="button"
