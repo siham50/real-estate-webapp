@@ -1,7 +1,9 @@
 package com.realestate.backend.service;
 
+import com.realestate.backend.dto.UpdateProfileDTO;
 import com.realestate.backend.dto.UserDTO;
 import com.realestate.backend.dto.mapper.DtoMapper;
+import com.realestate.backend.entity.AgencyProfile;
 import com.realestate.backend.entity.User;
 import com.realestate.backend.entity.enums.Role;
 import com.realestate.backend.repository.AgencyProfileRepository;
@@ -102,6 +104,39 @@ public class UserService {
     public void deleteUser(Long id) {
         User user = findUserById(id);
         userRepository.delete(user);
+    }
+
+    public UserDTO updateProfile(Long userId, UpdateProfileDTO dto) {
+        User existingUser = findUserById(userId);
+
+        if (dto.getFirstName() != null) {
+            existingUser.setFirstName(dto.getFirstName().trim());
+        }
+        if (dto.getLastName() != null) {
+            existingUser.setLastName(dto.getLastName().trim());
+        }
+        if (dto.getPhone() != null) {
+            existingUser.setPhone(dto.getPhone().trim());
+        }
+
+        if (existingUser.getRole() == Role.PROFESSIONAL) {
+            AgencyProfile agencyProfile = agencyProfileRepository.findByUserId(existingUser.getId())
+                    .orElseGet(() -> AgencyProfile.builder().user(existingUser).build());
+
+            if (dto.getCompanyName() != null) {
+                agencyProfile.setCompanyName(dto.getCompanyName().trim());
+            }
+            if (dto.getRcNumber() != null) {
+                agencyProfile.setRcNumber(dto.getRcNumber().trim());
+            }
+            if (dto.getIceNumber() != null) {
+                agencyProfile.setIceNumber(dto.getIceNumber().trim());
+            }
+            agencyProfileRepository.save(agencyProfile);
+        }
+
+        User savedUser = userRepository.save(existingUser);
+        return mapUserWithAgencyProfile(savedUser);
     }
 
     public UserDTO updateProfile(Long id, User profileData) {

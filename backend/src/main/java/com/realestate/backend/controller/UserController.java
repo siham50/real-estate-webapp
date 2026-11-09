@@ -1,5 +1,6 @@
 package com.realestate.backend.controller;
 
+import com.realestate.backend.dto.UpdateProfileDTO;
 import com.realestate.backend.dto.UserDTO;
 import com.realestate.backend.entity.User;
 import com.realestate.backend.service.UserService;
@@ -58,9 +59,9 @@ public class UserController {
     }
 
     @PutMapping("/{id}/profile")
-    public ResponseEntity<UserDTO> updateProfile(@PathVariable Long id, @RequestBody User user) {
+    public ResponseEntity<UserDTO> updateProfile(@PathVariable Long id, @RequestBody UpdateProfileDTO dto) {
         try {
-            return ResponseEntity.ok(userService.updateProfile(id, user));
+            return ResponseEntity.ok(userService.updateProfile(id, dto));
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
