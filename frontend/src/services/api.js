@@ -216,6 +216,20 @@ export const getPropertyById = async (id) => {
   }
 };
 
+export const incrementPropertyViews = async (id) => {
+  try {
+    const response = await api.patch(`/properties/${id}/view`);
+    return response.data;
+  } catch (error) {
+    throw new Error(
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      error.message ||
+      "Impossible d'incrémenter le nombre de vues."
+    );
+  }
+};
+
 export const getPropertiesByOwner = async (ownerId) => {
   try {
     const response = await api.get('/properties');

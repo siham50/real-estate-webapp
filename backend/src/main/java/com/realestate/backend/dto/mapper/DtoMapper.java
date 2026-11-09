@@ -148,6 +148,7 @@ public class DtoMapper {
                 .verificationStatus(property.getVerificationStatus())
                 .isDeleted(property.isDeleted())
                 .isAvailable(property.isAvailable())
+                .views(property.getViews() != null ? property.getViews() : 0)
                 .createdAt(property.getCreatedAt())
                 .updatedAt(property.getUpdatedAt())
                 .owner(toUserSummaryDTO(property.getOwner()))

@@ -36,6 +36,7 @@ public class PropertyDTO {
 
     @JsonProperty("isAvailable")
     private boolean isAvailable;
+    private Integer views;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private UserSummaryDTO owner;

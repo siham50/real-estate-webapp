@@ -6,6 +6,7 @@ import {
   getAvailabilitiesByOwner,
   createBooking,
   getReviewsByTargetUser,
+  incrementPropertyViews,
 } from '../services/api';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -102,6 +103,21 @@ const PropertyDetailsPage = () => {
 
     if (id) {
       fetchProperty();
+    }
+  }, [id]);
+
+  // Incrémentation du compteur de vues (appelé une seule fois au chargement de la page)
+  useEffect(() => {
+    if (id) {
+      incrementPropertyViews(id)
+        .then((updated) => {
+          if (updated && updated.views != null) {
+            setProperty((prev) => (prev ? { ...prev, views: updated.views } : prev));
+          }
+        })
+        .catch(() => {
+          // Silencieux pour ne pas perturber l'expérience utilisateur
+        });
     }
   }, [id]);
 
@@ -340,6 +356,27 @@ const PropertyDetailsPage = () => {
                     </span>
                     <span className="details-tag-verified">
                       ✓ Vérifié Urbanet
+                    </span>
+                    <span
+                      className="details-tag-views"
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        background: '#f1f5f9',
+                        color: '#334155',
+                        padding: '4px 10px',
+                        borderRadius: '6px',
+                        fontSize: '0.82rem',
+                        fontWeight: 600,
+                      }}
+                      title="Nombre de vues de cette annonce"
+                    >
+                      <span>👁️</span>
+                      <span>
+                        {property.views != null ? property.views : 0}{' '}
+                        {(property.views || 0) === 1 ? 'vue' : 'vues'}
+                      </span>
                     </span>
                   </div>
 

@@ -99,4 +99,13 @@ public class PropertyController {
             return ResponseEntity.notFound().build();
         }
     }
+
+    @PatchMapping("/{id}/view")
+    public ResponseEntity<PropertyDTO> incrementViews(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(propertyService.incrementViews(id));
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
 }

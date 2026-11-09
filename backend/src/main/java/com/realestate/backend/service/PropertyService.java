@@ -201,4 +201,12 @@ public class PropertyService {
                 .orElseThrow(() -> new RuntimeException("Property not found"));
         propertyRepository.delete(property);
     }
+
+    public PropertyDTO incrementViews(Long id) {
+        Property property = propertyRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Property not found"));
+        property.setViews((property.getViews() != null ? property.getViews() : 0) + 1);
+        Property saved = propertyRepository.save(property);
+        return DtoMapper.toPropertyDTO(saved);
+    }
 }
