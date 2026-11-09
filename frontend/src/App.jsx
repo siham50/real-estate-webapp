@@ -2,6 +2,7 @@ import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import HomePage from './pages/HomePage';
+import SearchResultsPage from './pages/SearchResultsPage';
 import PropertyDetailsPage from './pages/PropertyDetailsPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -21,6 +22,7 @@ function App() {
     <AuthProvider>
       <Routes>
         <Route path="/" element={<HomePage />} />
+        <Route path="/properties" element={<SearchResultsPage />} />
         <Route path="/properties/:id" element={<PropertyDetailsPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />

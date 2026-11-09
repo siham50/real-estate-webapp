@@ -167,6 +167,32 @@ export const getAllProperties = async () => {
   }
 };
 
+export const searchProperties = async (filters = {}) => {
+  try {
+    const params = {};
+    if (filters.city && filters.city.trim() !== '') {
+      params.city = filters.city.trim();
+    }
+    if (filters.type && filters.type.trim() !== '') {
+      params.type = filters.type.trim();
+    }
+    if (filters.purpose && filters.purpose.trim() !== '') {
+      params.purpose = filters.purpose.trim();
+    }
+    if (filters.minPrice !== undefined && filters.minPrice !== null && filters.minPrice !== '') {
+      params.minPrice = filters.minPrice;
+    }
+    if (filters.maxPrice !== undefined && filters.maxPrice !== null && filters.maxPrice !== '') {
+      params.maxPrice = filters.maxPrice;
+    }
+
+    const response = await api.get('/properties/search', { params });
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || error.response?.data?.error || error.message);
+  }
+};
+
 export const getPropertyById = async (id) => {
   try {
     const response = await api.get(`/properties/${id}`);
