@@ -35,6 +35,8 @@ const PropertyForm = ({ onClose, onCreated, residences, isModal = false }) => {
   const [formData, setFormData] = useState(EMPTY_FORM);
   const [propertyDocFile, setPropertyDocFile] = useState(null);
   const [cinFile, setCinFile] = useState(null);
+  const [selectedImages, setSelectedImages] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
 
   const [loading, setLoading] = useState(false);
   const [statusText, setStatusText] = useState('');
@@ -43,6 +45,23 @@ const PropertyForm = ({ onClose, onCreated, residences, isModal = false }) => {
   const isClient = user?.role === 'CLIENT';
   const isCinVerified = user?.isIdentityVerified === true;
   const hasExistingCin = Boolean(user?.identityDocumentUrl);
+
+  const handleImagesChange = (e) => {
+    if (e.target.files) {
+      const filesArray = Array.from(e.target.files);
+      setSelectedImages((prev) => [...prev, ...filesArray]);
+      const newPreviews = filesArray.map((file) => URL.createObjectURL(file));
+      setImagePreviews((prev) => [...prev, ...newPreviews]);
+    }
+  };
+
+  const handleRemoveImage = (index) => {
+    setSelectedImages((prev) => prev.filter((_, i) => i !== index));
+    setImagePreviews((prev) => {
+      URL.revokeObjectURL(prev[index]);
+      return prev.filter((_, i) => i !== index);
+    });
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -82,7 +101,17 @@ const PropertyForm = ({ onClose, onCreated, residences, isModal = false }) => {
         updateUserState(updatedUser);
       }
 
-      // 3. Envoi de la requête de création avec documentUrl
+      // 3. Upload des photos du bien
+      const imageUrls = [];
+      if (selectedImages.length > 0) {
+        for (let i = 0; i < selectedImages.length; i++) {
+          setStatusText(`Upload de la photo (${i + 1}/${selectedImages.length})...`);
+          const url = await uploadFile(selectedImages[i]);
+          imageUrls.push(url);
+        }
+      }
+
+      // 4. Envoi de la requête de création avec documentUrl et images
       setStatusText('Création du bien en cours...');
       const payload = {
         title: formData.title.trim(),
@@ -98,6 +127,7 @@ const PropertyForm = ({ onClose, onCreated, residences, isModal = false }) => {
         owner: { id: user?.id },
         residence: formData.residenceId ? { id: parseInt(formData.residenceId, 10) } : null,
         documentUrl: propertyDocUrl,
+        images: imageUrls.map((url) => ({ imageUrl: url, isPrimary: false })),
         isAvailable: true,
         isDeleted: false,
       };
@@ -328,6 +358,60 @@ const PropertyForm = ({ onClose, onCreated, residences, isModal = false }) => {
               <option key={r.id} value={r.id}>{r.name} — {r.city}</option>
             ))}
           </select>
+        </div>
+
+        {/* Photos du bien */}
+        <div className="agency-field-group">
+          <label htmlFor="property-images">Photos du bien immobilier</label>
+          <input
+            id="property-images"
+            type="file"
+            multiple
+            accept="image/*"
+            className="agency-input"
+            onChange={handleImagesChange}
+          />
+          <small style={{ display: 'block', marginTop: '4px', color: '#6b7280', fontSize: '0.82rem' }}>
+            Sélectionnez une ou plusieurs photos (JPG, PNG, WebP) pour illustrer votre annonce.
+          </small>
+
+          {imagePreviews.length > 0 && (
+            <div className="image-preview-grid">
+              {imagePreviews.map((previewUrl, idx) => (
+                <div key={idx} style={{ position: 'relative' }}>
+                  <img
+                    src={previewUrl}
+                    alt={`Aperçu ${idx + 1}`}
+                    className="image-preview"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveImage(idx)}
+                    style={{
+                      position: 'absolute',
+                      top: '4px',
+                      right: '4px',
+                      background: 'rgba(0, 0, 0, 0.65)',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '50%',
+                      width: '22px',
+                      height: '22px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '12px',
+                      lineHeight: 1,
+                    }}
+                    title="Supprimer cette photo"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* 1. Titre Foncier / Documents de propriété (OBLIGATOIRE POUR CLIENT UNIQUEMENT, PAS POUR LES AGENCES) */}

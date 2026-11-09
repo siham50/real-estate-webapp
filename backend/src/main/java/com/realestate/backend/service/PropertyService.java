@@ -5,6 +5,7 @@ import com.realestate.backend.dto.mapper.DtoMapper;
 import com.realestate.backend.entity.AgencyProfile;
 import com.realestate.backend.entity.Property;
 import com.realestate.backend.entity.PropertyDocument;
+import com.realestate.backend.entity.PropertyImage;
 import com.realestate.backend.entity.Residence;
 import com.realestate.backend.entity.User;
 import com.realestate.backend.entity.enums.PropertyPurpose;
@@ -83,6 +84,12 @@ public class PropertyService {
                 property.setDocuments(new ArrayList<>());
             }
             property.getDocuments().add(doc);
+        }
+
+        if (property.getImages() != null) {
+            for (PropertyImage img : property.getImages()) {
+                img.setProperty(property);
+            }
         }
 
         Property savedProperty = propertyRepository.save(property);

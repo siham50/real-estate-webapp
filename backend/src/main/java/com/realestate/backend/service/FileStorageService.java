@@ -80,6 +80,15 @@ public class FileStorageService {
             } catch (Exception ignored) {
             }
 
+            try {
+                Path appUploadsPath = Paths.get("/app/uploads").normalize();
+                if (!appUploadsPath.equals(this.fileStorageLocation)) {
+                    Files.createDirectories(appUploadsPath);
+                    Files.copy(targetLocation, appUploadsPath.resolve(uniqueFilename), StandardCopyOption.REPLACE_EXISTING);
+                }
+            } catch (Exception ignored) {
+            }
+
             return "/uploads/" + uniqueFilename;
         } catch (IOException ex) {
             throw new RuntimeException("Erreur lors de l'enregistrement du fichier sur le serveur.", ex);
@@ -104,10 +113,12 @@ public class FileStorageService {
             List<Path> candidateDirs = new ArrayList<>(Arrays.asList(
                     this.fileStorageLocation,
                     Paths.get("uploads").toAbsolutePath().normalize(),
-                    Paths.get("backend/uploads").toAbsolutePath().normalize(),
-                    Paths.get("../uploads").toAbsolutePath().normalize(),
+                    Paths.get("backend", "uploads").toAbsolutePath().normalize(),
+                    Paths.get("..", "uploads").toAbsolutePath().normalize(),
+                    Paths.get("/app/uploads").normalize(),
                     Paths.get(System.getProperty("user.dir", "."), "uploads").normalize(),
-                    Paths.get(System.getProperty("user.dir", "."), "backend", "uploads").normalize()
+                    Paths.get(System.getProperty("user.dir", "."), "backend", "uploads").normalize(),
+                    Paths.get(System.getProperty("java.io.tmpdir"), "uploads").normalize()
             ));
 
             for (Path dir : candidateDirs) {

@@ -1,6 +1,7 @@
 package com.realestate.backend.controller;
 
 import com.realestate.backend.service.FileStorageService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
@@ -21,15 +22,28 @@ public class UploadServeController {
 
     private final FileStorageService fileStorageService;
 
-    @GetMapping({
-            "/uploads/{fileName}",
-            "/uploads/{fileName:.+}",
-            "/api/files/download/{fileName}",
-            "/api/files/download/{fileName:.+}",
-            "/api/uploads/{fileName}",
-            "/api/uploads/{fileName:.+}"
+    @GetMapping(value = {
+            "/uploads/**",
+            "/api/uploads/**",
+            "/api/files/download/**",
+            "/api/files/view/**"
     })
-    public ResponseEntity<Resource> serveUploadedFile(@PathVariable String fileName) {
+    public ResponseEntity<Resource> serveUploadedFile(HttpServletRequest request) {
+        String uri = request != null ? request.getRequestURI() : "";
+        String fileName = uri;
+
+        if (uri.contains("/uploads/")) {
+            fileName = uri.substring(uri.indexOf("/uploads/") + "/uploads/".length());
+        } else if (uri.contains("/download/")) {
+            fileName = uri.substring(uri.indexOf("/download/") + "/download/".length());
+        } else if (uri.contains("/view/")) {
+            fileName = uri.substring(uri.indexOf("/view/") + "/view/".length());
+        } else if (uri.contains("/")) {
+            fileName = uri.substring(uri.lastIndexOf('/') + 1);
+        }
+
+        fileName = fileName.replaceAll("^/+", "");
+
         try {
             String decodedName = URLDecoder.decode(fileName, StandardCharsets.UTF_8);
             Resource resource = fileStorageService.loadFileAsResource(decodedName);
@@ -68,6 +82,7 @@ public class UploadServeController {
         if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg";
         if (lower.endsWith(".webp")) return "image/webp";
         if (lower.endsWith(".svg")) return "image/svg+xml";
+        if (lower.endsWith(".gif")) return "image/gif";
         if (lower.endsWith(".pdf")) return "application/pdf";
         return "application/octet-stream";
     }

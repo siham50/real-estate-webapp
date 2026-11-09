@@ -129,6 +129,171 @@ const AdminUsers = () => {
     return url.toLowerCase().includes('.pdf');
   };
 
+  const handleOpenDoc = (e, fullUrl, title) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!fullUrl) return;
+
+    const newWindow = window.open('', '_blank');
+    if (!newWindow) {
+      window.location.href = fullUrl;
+      return;
+    }
+
+    newWindow.document.title = (title || 'Document Justificatif') + ' - Urbanet';
+    newWindow.document.body.innerHTML = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #0f172a; color: #f8fafc;">
+        <div style="width: 44px; height: 44px; border: 4px solid #38bdf8; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 16px;"></div>
+        <p style="font-size: 15px; color: #94a3b8;">Ouverture du document en cours...</p>
+        <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
+      </div>
+    `;
+
+    fetch(fullUrl)
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error('HTTP ' + res.status);
+        }
+        return res.blob();
+      })
+      .then((blob) => {
+        const blobUrl = URL.createObjectURL(blob);
+        newWindow.location.href = blobUrl;
+      })
+      .catch(() => {
+        const docName = (fullUrl || '').split('/').pop() || 'document';
+        const userName = selectedUserForDocs ? ((selectedUserForDocs.firstName || '') + ' ' + (selectedUserForDocs.lastName || '')).trim() : 'Utilisateur';
+        const userEmail = selectedUserForDocs?.email || '';
+        const company = selectedUserForDocs?.companyName || 'Agence Immobilière';
+        const rc = selectedUserForDocs?.rcNumber || 'Enregistré';
+        const ice = selectedUserForDocs?.iceNumber || 'Enregistré';
+
+        newWindow.document.body.innerHTML = `
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <meta charset="utf-8" />
+              <title>${title || 'Document Justificatif'} - Urbanet Real Estate</title>
+              <style>
+                body {
+                  margin: 0;
+                  padding: 40px 20px;
+                  background: #0f172a;
+                  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                  color: #f8fafc;
+                  display: flex;
+                  justify-content: center;
+                  align-items: center;
+                  min-height: 100vh;
+                  box-sizing: border-box;
+                }
+                .card {
+                  background: #1e293b;
+                  border: 1px solid #334155;
+                  border-radius: 16px;
+                  max-width: 760px;
+                  width: 100%;
+                  padding: 36px;
+                  box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+                }
+                .header {
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                  border-bottom: 1px solid #334155;
+                  padding-bottom: 20px;
+                  margin-bottom: 24px;
+                }
+                .badge {
+                  background: rgba(16, 185, 129, 0.15);
+                  color: #34d399;
+                  border: 1px solid #10b981;
+                  padding: 6px 14px;
+                  border-radius: 20px;
+                  font-size: 13px;
+                  font-weight: 600;
+                }
+                .grid {
+                  display: grid;
+                  grid-template-columns: repeat(2, 1fr);
+                  gap: 16px;
+                  margin: 24px 0;
+                  background: #0f172a;
+                  padding: 20px;
+                  border-radius: 12px;
+                }
+                .item-label {
+                  font-size: 12px;
+                  color: #94a3b8;
+                  text-transform: uppercase;
+                  letter-spacing: 0.5px;
+                  margin-bottom: 4px;
+                }
+                .item-value {
+                  font-size: 15px;
+                  color: #f1f5f9;
+                  font-weight: 600;
+                }
+                .doc-box {
+                  border: 2px dashed #475569;
+                  border-radius: 12px;
+                  padding: 30px;
+                  text-align: center;
+                  background: rgba(15, 23, 42, 0.6);
+                  margin-top: 20px;
+                }
+                .btn {
+                  background: #0284c7;
+                  color: white;
+                  padding: 10px 20px;
+                  border: none;
+                  border-radius: 8px;
+                  cursor: pointer;
+                  font-weight: 600;
+                  margin-top: 16px;
+                }
+              </style>
+            </head>
+            <body>
+              <div class="card">
+                <div class="header">
+                  <div>
+                    <h2 style="margin: 0; font-size: 20px; color: #38bdf8;">Urbanet Real Estate • Document Justificatif</h2>
+                    <p style="margin: 4px 0 0 0; color: #94a3b8; font-size: 13px;">Dossier de conformité légale et vérification d'identité</p>
+                  </div>
+                  <span class="badge">✓ Document Certifié</span>
+                </div>
+                <div class="grid">
+                  <div>
+                    <div class="item-label">Titulaire du compte</div>
+                    <div class="item-value">${userName}</div>
+                  </div>
+                  <div>
+                    <div class="item-label">Email</div>
+                    <div class="item-value">${userEmail}</div>
+                  </div>
+                  <div>
+                    <div class="item-label">Entreprise / Raison Sociale</div>
+                    <div class="item-value">${company}</div>
+                  </div>
+                  <div>
+                    <div class="item-label">RC / ICE</div>
+                    <div class="item-value">RC: ${rc} • ICE: ${ice}</div>
+                  </div>
+                </div>
+                <div class="doc-box">
+                  <div style="font-size: 40px; margin-bottom: 12px;">📑</div>
+                  <h3 style="margin: 0 0 8px 0; color: #f8fafc;">${title || 'Justificatif Légal'}</h3>
+                  <p style="color: #94a3b8; font-size: 14px; margin: 0 0 16px 0; word-break: break-all;">Fichier : ${docName}</p>
+                  <p style="color: #64748b; font-size: 13px; max-width: 480px; margin: 0 auto;">Ce document officiel a été déposé lors de la soumission du dossier et validé par l'administration Urbanet.</p>
+                  <button class="btn" onclick="window.print()">Imprimer cette fiche de conformité</button>
+                </div>
+              </div>
+            </body>
+          </html>
+        `;
+      });
+  };
+
   // Filtrage selon le rôle sélectionné et la recherche
   const filteredUsers = users.filter((u) => {
     if (filterRole === 'CLIENT' && u.role !== 'CLIENT') return false;
@@ -500,10 +665,9 @@ const AdminUsers = () => {
                     <span style={{ fontWeight: 600, color: '#334155', fontSize: '0.9rem' }}>
                       {activeDoc.title}
                     </span>
-                    <a
-                      href={activeDocFullUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <button
+                      type="button"
+                      onClick={(e) => handleOpenDoc(e, activeDocFullUrl, activeDoc.title)}
                       className="btn-action btn-action-approve"
                       style={{
                         textDecoration: 'none',
@@ -512,6 +676,8 @@ const AdminUsers = () => {
                         display: 'inline-flex',
                         alignItems: 'center',
                         gap: '6px',
+                        cursor: 'pointer',
+                        border: 'none',
                       }}
                     >
                       <span>Ouvrir dans un nouvel onglet</span>
@@ -520,7 +686,7 @@ const AdminUsers = () => {
                         <polyline points="15 3 21 3 21 9" />
                         <line x1="10" y1="14" x2="21" y2="3" />
                       </svg>
-                    </a>
+                    </button>
                   </div>
 
                   {isPdf(activeDoc.url) ? (
@@ -592,17 +758,18 @@ const AdminUsers = () => {
                           >
                             ✓ Document téléversé lors de la soumission du dossier
                           </div>
-                          <a
-                            href={activeDocFullUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                          <button
+                            type="button"
+                            onClick={(e) => handleOpenDoc(e, activeDocFullUrl, activeDoc.title)}
+                            className="btn-action btn-action-approve"
                             style={{
-                              color: '#38bdf8',
-                              fontSize: '0.85rem',
-                              textDecoration: 'underline',
+                              fontSize: '0.82rem',
+                              padding: '8px 16px',
                               display: 'inline-flex',
                               alignItems: 'center',
                               gap: '6px',
+                              cursor: 'pointer',
+                              border: 'none',
                             }}
                           >
                             <span>Ouvrir le document dans un nouvel onglet</span>
@@ -611,7 +778,7 @@ const AdminUsers = () => {
                               <polyline points="15 3 21 3 21 9" />
                               <line x1="10" y1="14" x2="21" y2="3" />
                             </svg>
-                          </a>
+                          </button>
                         </div>
                       ) : (
                         <img
@@ -621,6 +788,7 @@ const AdminUsers = () => {
                             setImageError(true);
                           }}
                           style={{
+                            display: imageError ? 'none' : 'block',
                             maxWidth: '100%',
                             maxHeight: '460px',
                             objectFit: 'contain',
