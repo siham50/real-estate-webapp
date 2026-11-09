@@ -85,6 +85,17 @@ const Header = () => {
 
           {isLoggedIn ? (
             <div className="urbanet-user-header-group">
+              {/* Bouton Messages pour Client ou Agence */}
+              <button
+                type="button"
+                className="urbanet-header-messages-btn"
+                onClick={() => navigate('/messages')}
+                title="Mes discussions"
+              >
+                <span className="header-messages-icon">✉️</span>
+                <span className="header-messages-text">Messages</span>
+              </button>
+
               {/* Bouton "Mon Espace Agence" uniquement pour les professionnels */}
               {(user.role === 'PROFESSIONAL' || user.role === 'AGENCE') && (
                 <button

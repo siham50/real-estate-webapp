@@ -11,6 +11,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import PropertyMap from '../components/property/PropertyMap';
 import LoanCalculator from '../components/property/LoanCalculator';
+import ContactOwnerButton from '../components/property/ContactOwnerButton';
 import {
   DEFAULT_PROPERTIES,
   TYPE_IMAGES,
@@ -453,6 +454,9 @@ const PropertyDetailsPage = () => {
                       </p>
                     </div>
                   </div>
+                  <div className="owner-contact-action-wrapper" style={{ marginTop: '16px' }}>
+                    <ContactOwnerButton property={property} />
+                  </div>
                 </div>
 
                 {/* Section Avis sur le propriétaire */}
@@ -553,6 +557,9 @@ const PropertyDetailsPage = () => {
                       Choisissez un créneau disponible pour visiter ce bien directement avec{' '}
                       <strong>{ownerName}</strong>.
                     </p>
+                    <div style={{ marginTop: '14px' }}>
+                      <ContactOwnerButton property={property} className="btn-full-width" />
+                    </div>
                   </div>
 
                   {/* CAS 1 : Utilisateur non connecté */}

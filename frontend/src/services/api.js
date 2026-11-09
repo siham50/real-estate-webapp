@@ -434,6 +434,89 @@ export const updateReportStatus = async (id, status) => {
   }
 };
 
+// ─── Messagerie / Chat (Conversations & Messages) ─────────────────────────────
+
+export const getUserConversations = async (userId) => {
+  try {
+    const response = await api.get(`/conversations/user/${userId}`);
+    return response.data;
+  } catch (error) {
+    const errorMessage =
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      error.message ||
+      'Impossible de récupérer les conversations.';
+    throw new Error(errorMessage);
+  }
+};
+
+export const createConversation = async (user1Id, user2Id, propertyId) => {
+  try {
+    // Prend en charge soit les arguments directs, soit un objet { user1Id, user2Id, propertyId }
+    const u1 = typeof user1Id === 'object' && user1Id !== null ? user1Id.user1Id : user1Id;
+    const u2 = typeof user1Id === 'object' && user1Id !== null ? user1Id.user2Id : user2Id;
+    const pId = typeof user1Id === 'object' && user1Id !== null ? user1Id.propertyId : propertyId;
+
+    const payload = {
+      user1Id: Number(u1),
+      user2Id: Number(u2),
+      propertyId: pId ? Number(pId) : null,
+      user1: { id: Number(u1) },
+      user2: { id: Number(u2) },
+      property: pId ? { id: Number(pId) } : null,
+    };
+    const response = await api.post('/conversations', payload);
+    return response.data;
+  } catch (error) {
+    const errorMessage =
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      error.message ||
+      'Impossible de créer la conversation.';
+    throw new Error(errorMessage);
+  }
+};
+
+export const getConversationMessages = async (conversationId) => {
+  try {
+    const response = await api.get(`/messages/conversation/${conversationId}`);
+    return response.data;
+  } catch (error) {
+    const errorMessage =
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      error.message ||
+      'Impossible de charger les messages.';
+    throw new Error(errorMessage);
+  }
+};
+
+export const sendMessage = async (conversationId, senderId, content) => {
+  try {
+    // Prend en charge soit les arguments directs, soit un objet { conversationId, senderId, content }
+    const cId = typeof conversationId === 'object' && conversationId !== null ? conversationId.conversationId : conversationId;
+    const sId = typeof conversationId === 'object' && conversationId !== null ? conversationId.senderId : senderId;
+    const text = typeof conversationId === 'object' && conversationId !== null ? conversationId.content : content;
+
+    const payload = {
+      conversationId: Number(cId),
+      senderId: Number(sId),
+      content: text,
+      conversation: { id: Number(cId) },
+      sender: { id: Number(sId) },
+    };
+    const response = await api.post('/messages', payload);
+    return response.data;
+  } catch (error) {
+    const errorMessage =
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      error.message ||
+      "Impossible d'envoyer le message.";
+    throw new Error(errorMessage);
+  }
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const testBackend = async () => {
