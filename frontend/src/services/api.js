@@ -7,16 +7,37 @@ const api = axios.create({
   },
 });
 
-// Intercepteur pour injecter automatiquement le token JWT dans chaque requête
+// Intercepteur de requête : injecter automatiquement le token JWT
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('urbanet_token');
+    const token = localStorage.getItem('token') || localStorage.getItem('urbanet_token');
     if (token) {
+      config.headers = config.headers || {};
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
   (error) => Promise.reject(error)
+);
+
+// Intercepteur de réponse : gérer la déconnexion automatique en cas de 401 Unauthorized
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      // Déconnecte l'utilisateur en supprimant les données du localStorage
+      localStorage.removeItem('token');
+      localStorage.removeItem('urbanet_token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('urbanet_user');
+
+      // Redirige vers /login
+      if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
 );
 
 // Authentification - Inscription
