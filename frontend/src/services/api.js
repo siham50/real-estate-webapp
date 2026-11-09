@@ -69,6 +69,20 @@ export const updateUserProfile = async (userId, data) => {
   }
 };
 
+export const updateProfile = async (userId, data) => {
+  try {
+    const response = await api.put(`/users/${userId}/profile`, data);
+    return response.data;
+  } catch (error) {
+    const errorMessage =
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      error.message ||
+      'Erreur lors de la mise à jour du profil.';
+    throw new Error(errorMessage);
+  }
+};
+
 export const verifyIdentity = async (userId, documentUrl) => {
   try {
     const response = await api.patch(`/users/${userId}/verify-identity`, { documentUrl });

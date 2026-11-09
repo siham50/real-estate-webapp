@@ -1,56 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import ClientBookings from '../components/client/ClientBookings';
+import EditProfileForm from '../components/profile/EditProfileForm';
 import { useAuth } from '../context/AuthContext';
-import { updateUserProfile, uploadFile, uploadCin } from '../services/api';
+import { uploadFile, uploadCin } from '../services/api';
 
 const ClientProfilePage = () => {
   const { user, updateUserState, logout } = useAuth();
 
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
   const [cinFile, setCinFile] = useState(null);
   const [cinFilePreview, setCinFilePreview] = useState('');
   const [cinDragOver, setCinDragOver] = useState(false);
 
-  const [saving, setSaving] = useState(false);
   const [uploadingCin, setUploadingCin] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
-
-  useEffect(() => {
-    if (user) {
-      setFirstName(user.firstName || '');
-      setLastName(user.lastName || '');
-      setPhone(user.phone || '');
-      setEmail(user.email || '');
-    }
-  }, [user]);
-
-  const handleUpdateProfile = async (e) => {
-    e.preventDefault();
-    setSaving(true);
-    setMessage({ type: '', text: '' });
-
-    try {
-      const updated = await updateUserProfile(user.id, {
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        phone: phone.trim(),
-      });
-      updateUserState(updated);
-      setMessage({ type: 'success', text: 'Vos informations ont été mises à jour avec succès.' });
-    } catch (err) {
-      setMessage({
-        type: 'error',
-        text: err.response?.data?.message || err.message || 'Erreur lors de la mise à jour.',
-      });
-    } finally {
-      setSaving(false);
-    }
-  };
 
   const handleCinFileChange = (file) => {
     if (!file) return;
@@ -160,55 +124,7 @@ const ClientProfilePage = () => {
                 </div>
               </div>
 
-              <form onSubmit={handleUpdateProfile} className="profile-form">
-                <div className="form-row-2">
-                  <div className="form-group">
-                    <label>Prénom</label>
-                    <input
-                      type="text"
-                      required
-                      className="input-field"
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Nom</label>
-                    <input
-                      type="text"
-                      required
-                      className="input-field"
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label>Numéro de téléphone</label>
-                  <input
-                    type="tel"
-                    required
-                    className="input-field"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Adresse email (non modifiable)</label>
-                  <input
-                    type="email"
-                    disabled
-                    className="input-field input-field-disabled"
-                    value={email}
-                  />
-                </div>
-
-                <button type="submit" disabled={saving} className="btn-urbanet-primary">
-                  {saving ? 'Enregistrement...' : 'Enregistrer les modifications'}
-                </button>
-              </form>
+              <EditProfileForm />
             </div>
 
             {/* Right: Vérification d'identité */}
