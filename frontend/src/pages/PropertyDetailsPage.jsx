@@ -12,6 +12,7 @@ import Footer from '../components/Footer';
 import PropertyMap from '../components/property/PropertyMap';
 import LoanCalculator from '../components/property/LoanCalculator';
 import ContactOwnerButton from '../components/property/ContactOwnerButton';
+import ReportModal from '../components/property/ReportModal';
 import {
   DEFAULT_PROPERTIES,
   TYPE_IMAGES,
@@ -41,6 +42,9 @@ const PropertyDetailsPage = () => {
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [slotsError, setSlotsError] = useState(null);
   const [selectedSlotId, setSelectedSlotId] = useState('');
+
+  // État de la modale de signalement
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
   // État de la réservation
   const [bookingLoading, setBookingLoading] = useState(false);
@@ -182,6 +186,17 @@ const PropertyDetailsPage = () => {
     if (property.agency) return property.agency;
     return 'Propriétaire Urbanet';
   }, [property]);
+
+  // Vérifie si l'utilisateur connecté peut signaler l'annonce (connecté et non-propriétaire)
+  const canReport = useMemo(() => {
+    if (!isAuthenticated || !user?.id || !property) return false;
+    const realOwnerId =
+      property.owner?.id ||
+      property.ownerId ||
+      (typeof property.owner === 'number' ? property.owner : null);
+    if (!realOwnerId) return false;
+    return user.id !== realOwnerId;
+  }, [isAuthenticated, user, property]);
 
   // Image d'affichage principale
   const propertyHeroImage = useMemo(() => {
@@ -543,6 +558,68 @@ const PropertyDetailsPage = () => {
                     </div>
                   )}
                 </div>
+
+                {/* Bouton discret de signalement d'annonce */}
+                {canReport && (
+                  <div
+                    className="report-ad-container"
+                    style={{
+                      marginTop: '20px',
+                      padding: '14px 18px',
+                      background: '#f8fafc',
+                      borderRadius: '12px',
+                      border: '1px solid #e2e8f0',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      flexWrap: 'wrap',
+                      gap: '10px',
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        color: '#64748b',
+                        fontSize: '0.88rem',
+                      }}
+                    >
+                      <span>Vous avez constaté un problème avec cette annonce ?</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsReportModalOpen(true)}
+                      style={{
+                        background: 'transparent',
+                        border: '1px solid #cbd5e1',
+                        color: '#64748b',
+                        padding: '6px 14px',
+                        borderRadius: '6px',
+                        fontSize: '0.85rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        transition: 'all 0.2s ease',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.color = '#ef4444';
+                        e.currentTarget.style.borderColor = '#ef4444';
+                        e.currentTarget.style.background = 'rgba(239, 68, 68, 0.06)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.color = '#64748b';
+                        e.currentTarget.style.borderColor = '#cbd5e1';
+                        e.currentTarget.style.background = 'transparent';
+                      }}
+                    >
+                      <span role="img" aria-label="signaler">🚩</span>
+                      <span>Signaler cette annonce</span>
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Colonne Droite : Widget de Réservation de Visite */}
@@ -764,6 +841,15 @@ const PropertyDetailsPage = () => {
           )}
         </div>
       </main>
+
+      {/* Modale de signalement */}
+      {isReportModalOpen && (
+        <ReportModal
+          property={property}
+          user={user}
+          onClose={() => setIsReportModalOpen(false)}
+        />
+      )}
 
       <Footer />
     </div>

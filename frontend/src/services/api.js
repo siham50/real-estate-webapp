@@ -465,6 +465,20 @@ export const hardDeleteProperty = async (id) => {
   }
 };
 
+export const createReport = async (data) => {
+  try {
+    const response = await api.post('/reports', data);
+    return response.data;
+  } catch (error) {
+    const message =
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      error.message ||
+      'Erreur lors de la création du signalement.';
+    throw new Error(message);
+  }
+};
+
 export const updateReportStatus = async (id, status) => {
   try {
     const response = await api.patch(`/reports/${id}/status?status=${status}`);
