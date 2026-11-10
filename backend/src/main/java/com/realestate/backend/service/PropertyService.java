@@ -73,6 +73,8 @@ public class PropertyService {
             Residence residence = residenceRepository.findById(property.getResidence().getId())
                     .orElse(null);
             property.setResidence(residence);
+        } else {
+            property.setResidence(null);
         }
 
         if (property.getDocumentUrl() != null && !property.getDocumentUrl().isBlank()) {
@@ -86,10 +88,12 @@ public class PropertyService {
             property.getDocuments().add(doc);
         }
 
-        if (property.getImages() != null) {
+        if (property.getImages() != null && !property.getImages().isEmpty()) {
             for (PropertyImage img : property.getImages()) {
                 img.setProperty(property);
             }
+        } else {
+            property.setImages(new ArrayList<>());
         }
 
         Property savedProperty = propertyRepository.save(property);
