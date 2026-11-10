@@ -10,6 +10,16 @@ const Header = () => {
   // On considère l'utilisateur connecté uniquement s'il possède un id valide
   const isLoggedIn = Boolean(user && user.id);
 
+  const handleLogoClick = () => {
+    if (user?.role === 'ADMIN') {
+      navigate('/admin');
+    } else if (user?.role === 'PROFESSIONAL' || user?.role === 'AGENCE') {
+      navigate('/agency/dashboard');
+    } else {
+      navigate('/');
+    }
+  };
+
   const handleProfileClick = () => {
     if (user?.role === 'ADMIN') {
       navigate('/admin');
@@ -23,9 +33,9 @@ const Header = () => {
   return (
     <header className="urbanet-header">
       <div className="urbanet-header-container">
-        {/* Logo Urbanet vers la racine / */}
+        {/* Logo Urbanet vers la racine ou l'espace utilisateur */}
         <span
-          onClick={() => navigate('/')}
+          onClick={handleLogoClick}
           className="urbanet-logo"
           style={{ cursor: 'pointer' }}
         >
@@ -49,15 +59,35 @@ const Header = () => {
 
         {/* Navigation centrale */}
         <nav className="urbanet-nav">
-          <NavLink
-            to="/"
-            end
-            className={({ isActive }) =>
-              `urbanet-nav-pill ${isActive ? 'active' : ''}`
-            }
-          >
-            Accueil
-          </NavLink>
+          {user?.role === 'ADMIN' ? (
+            <NavLink
+              to="/admin"
+              className={({ isActive }) =>
+                `urbanet-nav-pill ${isActive ? 'active' : ''}`
+              }
+            >
+              Mon Espace
+            </NavLink>
+          ) : (user?.role === 'PROFESSIONAL' || user?.role === 'AGENCE') ? (
+            <NavLink
+              to="/agency/dashboard"
+              className={({ isActive }) =>
+                `urbanet-nav-pill ${isActive ? 'active' : ''}`
+              }
+            >
+              Mon Espace
+            </NavLink>
+          ) : (
+            <NavLink
+              to="/"
+              end
+              className={({ isActive }) =>
+                `urbanet-nav-pill ${isActive ? 'active' : ''}`
+              }
+            >
+              Accueil
+            </NavLink>
+          )}
           <a href="/#annonces" className="urbanet-nav-link">
             Biens
           </a>
@@ -159,6 +189,7 @@ const Header = () => {
                   <polyline points="16 17 21 12 16 7" />
                   <line x1="21" y1="12" x2="9" y2="12" />
                 </svg>
+                <span>Se déconnecter</span>
               </button>
             </div>
           ) : (

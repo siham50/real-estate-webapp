@@ -22,11 +22,11 @@ const ProtectedRoute = ({ children, requiredRole }) => {
   const reqRole = String(requiredRole || '').toUpperCase();
 
   if (requiredRole && userRole !== reqRole) {
-    let target = '/profile/client';
+    let target = '/';
     if (userRole === 'ADMIN') {
       target = '/admin';
     } else if (userRole === 'PROFESSIONAL' || userRole === 'AGENCE') {
-      target = '/profile/agency';
+      target = '/agency/dashboard';
     }
     return <Navigate to={target} replace />;
   }
