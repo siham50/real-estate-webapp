@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import NotificationDropdown from './layout/NotificationDropdown';
 
 const Header = () => {
   const { user, logout } = useAuth();
@@ -9,8 +10,20 @@ const Header = () => {
   // On considère l'utilisateur connecté uniquement s'il possède un id valide
   const isLoggedIn = Boolean(user && user.id);
 
+  const handleLogoClick = () => {
+    if (user?.role === 'ADMIN') {
+      navigate('/admin');
+    } else if (user?.role === 'PROFESSIONAL' || user?.role === 'AGENCE') {
+      navigate('/agency/dashboard');
+    } else {
+      navigate('/');
+    }
+  };
+
   const handleProfileClick = () => {
-    if (user?.role === 'PROFESSIONAL' || user?.role === 'AGENCE') {
+    if (user?.role === 'ADMIN') {
+      navigate('/admin');
+    } else if (user?.role === 'PROFESSIONAL' || user?.role === 'AGENCE') {
       navigate('/profile/agency');
     } else {
       navigate('/profile/client');
@@ -20,9 +33,9 @@ const Header = () => {
   return (
     <header className="urbanet-header">
       <div className="urbanet-header-container">
-        {/* Logo Urbanet vers la racine / */}
+        {/* Logo Urbanet vers la racine ou l'espace utilisateur */}
         <span
-          onClick={() => navigate('/')}
+          onClick={handleLogoClick}
           className="urbanet-logo"
           style={{ cursor: 'pointer' }}
         >
@@ -46,15 +59,35 @@ const Header = () => {
 
         {/* Navigation centrale */}
         <nav className="urbanet-nav">
-          <NavLink
-            to="/"
-            end
-            className={({ isActive }) =>
-              `urbanet-nav-pill ${isActive ? 'active' : ''}`
-            }
-          >
-            Accueil
-          </NavLink>
+          {user?.role === 'ADMIN' ? (
+            <NavLink
+              to="/admin"
+              className={({ isActive }) =>
+                `urbanet-nav-pill ${isActive ? 'active' : ''}`
+              }
+            >
+              Mon Espace
+            </NavLink>
+          ) : (user?.role === 'PROFESSIONAL' || user?.role === 'AGENCE') ? (
+            <NavLink
+              to="/agency/dashboard"
+              className={({ isActive }) =>
+                `urbanet-nav-pill ${isActive ? 'active' : ''}`
+              }
+            >
+              Mon Espace
+            </NavLink>
+          ) : (
+            <NavLink
+              to="/"
+              end
+              className={({ isActive }) =>
+                `urbanet-nav-pill ${isActive ? 'active' : ''}`
+              }
+            >
+              Accueil
+            </NavLink>
+          )}
           <a href="/#annonces" className="urbanet-nav-link">
             Biens
           </a>
@@ -83,6 +116,20 @@ const Header = () => {
 
           {isLoggedIn ? (
             <div className="urbanet-user-header-group">
+              {/* Notifications */}
+              <NotificationDropdown />
+
+              {/* Bouton Messages pour Client ou Agence */}
+              <button
+                type="button"
+                className="urbanet-header-messages-btn"
+                onClick={() => navigate('/messages')}
+                title="Mes discussions"
+              >
+                <span className="header-messages-icon">✉️</span>
+                <span className="header-messages-text">Messages</span>
+              </button>
+
               {/* Bouton "Mon Espace Agence" uniquement pour les professionnels */}
               {(user.role === 'PROFESSIONAL' || user.role === 'AGENCE') && (
                 <button
@@ -100,6 +147,24 @@ const Header = () => {
                   Mon Espace
                 </button>
               )}
+
+              {/* Bouton "Administration" pour les admins */}
+              {user.role === 'ADMIN' && (
+                <button
+                  type="button"
+                  className="agency-header-dashboard-btn"
+                  onClick={() => navigate('/admin')}
+                  title="Tableau de bord administrateur"
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="7" height="7" />
+                    <rect x="14" y="3" width="7" height="7" />
+                    <rect x="14" y="14" width="7" height="7" />
+                    <rect x="3" y="14" width="7" height="7" />
+                  </svg>
+                  Admin
+                </button>
+              )}
               <button
                 type="button"
                 onClick={handleProfileClick}
@@ -110,7 +175,7 @@ const Header = () => {
                 </div>
                 <span className="header-user-name">{user.firstName}</span>
                 <span className="header-user-role-badge">
-                  {user.role === 'PROFESSIONAL' || user.role === 'AGENCE' ? 'Agence' : 'Client'}
+                  {user.role === 'ADMIN' ? 'Admin' : (user.role === 'PROFESSIONAL' || user.role === 'AGENCE' ? 'Agence' : 'Client')}
                 </span>
               </button>
               <button
@@ -124,6 +189,7 @@ const Header = () => {
                   <polyline points="16 17 21 12 16 7" />
                   <line x1="21" y1="12" x2="9" y2="12" />
                 </svg>
+                <span>Se déconnecter</span>
               </button>
             </div>
           ) : (

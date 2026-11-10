@@ -27,10 +27,13 @@ const LoginPage = () => {
       });
 
       // Redirection selon le rôle reçu du backend
-      if (loggedUser?.role === 'PROFESSIONAL' || loggedUser?.role === 'AGENCE') {
-        navigate('/profile/agency');
+      const userRole = String(loggedUser?.role || '').toUpperCase();
+      if (userRole === 'ADMIN') {
+        navigate('/admin');
+      } else if (userRole === 'PROFESSIONAL' || userRole === 'AGENCE') {
+        navigate('/agency/dashboard');
       } else {
-        navigate('/profile/client');
+        navigate('/');
       }
     } catch (err) {
       setError(err.message || 'Identifiants incorrects ou serveur indisponible.');

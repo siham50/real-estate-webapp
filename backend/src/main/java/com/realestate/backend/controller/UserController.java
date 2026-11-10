@@ -1,5 +1,6 @@
 package com.realestate.backend.controller;
 
+import com.realestate.backend.dto.UpdateProfileDTO;
 import com.realestate.backend.dto.UserDTO;
 import com.realestate.backend.entity.User;
 import com.realestate.backend.service.UserService;
@@ -58,9 +59,9 @@ public class UserController {
     }
 
     @PutMapping("/{id}/profile")
-    public ResponseEntity<UserDTO> updateProfile(@PathVariable Long id, @RequestBody User user) {
+    public ResponseEntity<UserDTO> updateProfile(@PathVariable Long id, @RequestBody UpdateProfileDTO dto) {
         try {
-            return ResponseEntity.ok(userService.updateProfile(id, user));
+            return ResponseEntity.ok(userService.updateProfile(id, dto));
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
@@ -83,6 +84,21 @@ public class UserController {
                 return ResponseEntity.badRequest().build();
             }
             return ResponseEntity.ok(userService.uploadIdentityDocument(id, documentUrl));
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PatchMapping("/{id}/upload-cin")
+    public ResponseEntity<UserDTO> uploadCin(
+            @PathVariable Long id,
+            @RequestBody(required = false) Map<String, String> body) {
+        try {
+            String cinUrl = body != null ? body.get("cinUrl") : null;
+            if (cinUrl == null && body != null) {
+                cinUrl = body.getOrDefault("identityDocumentUrl", body.get("documentUrl"));
+            }
+            return ResponseEntity.ok(userService.uploadCin(id, cinUrl));
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }

@@ -15,7 +15,7 @@ const AuthContext = createContext({
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
     try {
-      const stored = localStorage.getItem('urbanet_user');
+      const stored = localStorage.getItem('user') || localStorage.getItem('urbanet_user');
       if (!stored || stored === 'undefined' || stored === 'null') return null;
       const parsed = JSON.parse(stored);
       // On ne valide que si l'objet contient un identifiant utilisateur
@@ -27,7 +27,7 @@ export const AuthProvider = ({ children }) => {
 
   const [token, setToken] = useState(() => {
     try {
-      return localStorage.getItem('urbanet_token') || null;
+      return localStorage.getItem('token') || localStorage.getItem('urbanet_token') || null;
     } catch (e) {
       return null;
     }
@@ -43,6 +43,7 @@ export const AuthProvider = ({ children }) => {
           const freshData = await getUserProfile(user.id);
           const merged = { ...user, ...freshData };
           setUser(merged);
+          localStorage.setItem('user', JSON.stringify(merged));
           localStorage.setItem('urbanet_user', JSON.stringify(merged));
         } catch (err) {
           // Conserve l'état local en cas d'indisponibilité temporaire
@@ -68,10 +69,12 @@ export const AuthProvider = ({ children }) => {
       }
 
       setUser(fullUser);
+      localStorage.setItem('user', JSON.stringify(fullUser));
       localStorage.setItem('urbanet_user', JSON.stringify(fullUser));
 
       if (response?.token) {
         setToken(response.token);
+        localStorage.setItem('token', response.token);
         localStorage.setItem('urbanet_token', response.token);
       }
 
@@ -84,7 +87,13 @@ export const AuthProvider = ({ children }) => {
   const register = async (data) => {
     setLoading(true);
     try {
-      return await apiRegister(data);
+      const res = await apiRegister(data);
+      if (res?.token) {
+        setToken(res.token);
+        localStorage.setItem('token', res.token);
+        localStorage.setItem('urbanet_token', res.token);
+      }
+      return res;
     } finally {
       setLoading(false);
     }
@@ -93,6 +102,8 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     setUser(null);
     setToken(null);
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
     localStorage.removeItem('urbanet_user');
     localStorage.removeItem('urbanet_token');
   };
@@ -100,6 +111,7 @@ export const AuthProvider = ({ children }) => {
   const updateUserState = (updatedData) => {
     setUser((prev) => {
       const merged = { ...prev, ...updatedData };
+      localStorage.setItem('user', JSON.stringify(merged));
       localStorage.setItem('urbanet_user', JSON.stringify(merged));
       return merged;
     });

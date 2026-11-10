@@ -1,8 +1,12 @@
 package com.realestate.backend.service;
 
+import com.realestate.backend.dto.UpdateProfileDTO;
 import com.realestate.backend.dto.UserDTO;
 import com.realestate.backend.dto.mapper.DtoMapper;
+import com.realestate.backend.entity.AgencyProfile;
 import com.realestate.backend.entity.User;
+import com.realestate.backend.entity.enums.Role;
+import com.realestate.backend.repository.AgencyProfileRepository;
 import com.realestate.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -14,6 +18,7 @@ import java.util.List;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final AgencyProfileRepository agencyProfileRepository;
 
     public long countUsers() {
         return userRepository.count();
@@ -21,13 +26,29 @@ public class UserService {
 
     public List<UserDTO> getAllUsers() {
         return userRepository.findAll().stream()
-                .map(DtoMapper::toUserDTO)
+                .map(this::mapUserWithAgencyProfile)
                 .toList();
     }
 
     public UserDTO getUserById(Long id) {
         User user = findUserById(id);
-        return DtoMapper.toUserDTO(user);
+        return mapUserWithAgencyProfile(user);
+    }
+
+    private UserDTO mapUserWithAgencyProfile(User user) {
+        if (user == null) {
+            return null;
+        }
+        UserDTO dto = DtoMapper.toUserDTO(user);
+        if (user.getRole() == Role.PROFESSIONAL) {
+            agencyProfileRepository.findByUserId(user.getId()).ifPresent(profile -> {
+                dto.setCompanyName(profile.getCompanyName());
+                dto.setRcNumber(profile.getRcNumber());
+                dto.setIceNumber(profile.getIceNumber());
+                dto.setAgencyDocumentUrl(profile.getDocumentUrl());
+            });
+        }
+        return dto;
     }
 
     public User findUserById(Long id) {
@@ -85,6 +106,39 @@ public class UserService {
         userRepository.delete(user);
     }
 
+    public UserDTO updateProfile(Long userId, UpdateProfileDTO dto) {
+        User existingUser = findUserById(userId);
+
+        if (dto.getFirstName() != null) {
+            existingUser.setFirstName(dto.getFirstName().trim());
+        }
+        if (dto.getLastName() != null) {
+            existingUser.setLastName(dto.getLastName().trim());
+        }
+        if (dto.getPhone() != null) {
+            existingUser.setPhone(dto.getPhone().trim());
+        }
+
+        if (existingUser.getRole() == Role.PROFESSIONAL) {
+            AgencyProfile agencyProfile = agencyProfileRepository.findByUserId(existingUser.getId())
+                    .orElseGet(() -> AgencyProfile.builder().user(existingUser).build());
+
+            if (dto.getCompanyName() != null) {
+                agencyProfile.setCompanyName(dto.getCompanyName().trim());
+            }
+            if (dto.getRcNumber() != null) {
+                agencyProfile.setRcNumber(dto.getRcNumber().trim());
+            }
+            if (dto.getIceNumber() != null) {
+                agencyProfile.setIceNumber(dto.getIceNumber().trim());
+            }
+            agencyProfileRepository.save(agencyProfile);
+        }
+
+        User savedUser = userRepository.save(existingUser);
+        return mapUserWithAgencyProfile(savedUser);
+    }
+
     public UserDTO updateProfile(Long id, User profileData) {
         User existingUser = findUserById(id);
         if (profileData.getFirstName() != null) {
@@ -104,6 +158,14 @@ public class UserService {
         User existingUser = findUserById(id);
         existingUser.setIdentityDocumentUrl(documentUrl);
         existingUser.setIsIdentityVerified(false); // Passe isIdentityVerified en attente
+        User savedUser = userRepository.save(existingUser);
+        return DtoMapper.toUserDTO(savedUser);
+    }
+
+    public UserDTO uploadCin(Long id, String cinUrl) {
+        User existingUser = findUserById(id);
+        existingUser.setIdentityDocumentUrl(cinUrl);
+        existingUser.setIsIdentityVerified(false); // En attente de validation admin
         User savedUser = userRepository.save(existingUser);
         return DtoMapper.toUserDTO(savedUser);
     }

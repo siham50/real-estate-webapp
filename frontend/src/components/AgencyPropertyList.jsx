@@ -66,6 +66,7 @@ const AgencyPropertyList = ({ properties, onDeleted }) => {
               <th>Ville</th>
               <th>Prix</th>
               <th>Surface</th>
+              <th>Vues</th>
               <th>Statut</th>
               <th>Résidence</th>
               <th>Actions</th>
@@ -86,6 +87,20 @@ const AgencyPropertyList = ({ properties, onDeleted }) => {
                 <td>{p.city}</td>
                 <td className="agency-table-price">{formatPrice(p.price)}</td>
                 <td>{p.surfaceArea ? `${p.surfaceArea} m²` : '-'}</td>
+                <td>
+                  <span
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      fontWeight: 600,
+                      color: '#475569',
+                      fontSize: '0.88rem',
+                    }}
+                  >
+                    <span>👁️</span> {p.views != null ? p.views : 0}
+                  </span>
+                </td>
                 <td>
                   {p.isAvailable ? (
                     <span className="agency-badge agency-badge-available">Disponible</span>

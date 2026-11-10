@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { getAllProperties, getAllResidences } from '../services/api';
 
-const DEFAULT_PROPERTIES = [
+export const DEFAULT_PROPERTIES = [
   {
     id: 1,
     tag: 'À vendre',
@@ -14,6 +15,8 @@ const DEFAULT_PROPERTIES = [
     beds: '4 ch.',
     baths: '3 sdb',
     area: '350 m²',
+    latitude: 33.5412,
+    longitude: -7.6324,
     views: '1.248 vues',
     agency: 'Atlas Immobilier',
     image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=900&q=80',
@@ -31,6 +34,8 @@ const DEFAULT_PROPERTIES = [
     beds: '2 ch.',
     baths: '2 sdb',
     area: '120 m²',
+    latitude: 33.5898,
+    longitude: -7.6256,
     views: '876 vues',
     agency: 'Karim Benali',
     image: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=900&q=80',
@@ -48,6 +53,8 @@ const DEFAULT_PROPERTIES = [
     beds: '3 ch.',
     baths: '3 sdb',
     area: '240 m²',
+    latitude: 31.5492,
+    longitude: -7.9578,
     views: '2.140 vues',
     agency: 'Résidences Al Manar',
     image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=900&q=80',
@@ -55,7 +62,7 @@ const DEFAULT_PROPERTIES = [
   },
 ];
 
-const TYPE_IMAGES = {
+export const TYPE_IMAGES = {
   VILLA: [
     'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=900&q=80',
     'https://images.unsplash.com/photo-1613977257363-707ba9348227?auto=format&fit=crop&w=900&q=80',
@@ -81,7 +88,7 @@ const TYPE_IMAGES = {
   ],
 };
 
-const TYPE_TRANSLATIONS = {
+export const TYPE_TRANSLATIONS = {
   VILLA: 'Villa',
   APARTMENT: 'Appartement',
   HOUSE: 'Maison',
@@ -401,13 +408,13 @@ const FeaturedProperties = ({ filterResidenceId }) => {
                       <span className="property-agency" title={`Annonce proposée par ${agency}`}>
                         {agency}
                       </span>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedProperty(item)}
+                      <Link
+                        to={`/properties/${item.id}`}
                         className="property-link property-link-btn"
+                        style={{ textDecoration: 'none' }}
                       >
                         Voir le bien →
-                      </button>
+                      </Link>
                     </div>
                   </div>
                 </article>

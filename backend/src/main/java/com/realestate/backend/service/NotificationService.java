@@ -51,6 +51,15 @@ public class NotificationService {
         return DtoMapper.toNotificationDTO(saved);
     }
 
+    public NotificationDTO createNotification(Long userId, String message, String type) {
+        if (userId == null) {
+            throw new IllegalArgumentException("L'identifiant de l'utilisateur (userId) est requis");
+        }
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Utilisateur introuvable avec l'id : " + userId));
+        return createNotification(user, message, type);
+    }
+
     public List<NotificationDTO> getNotificationsByUserId(Long userId) {
         return notificationRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
                 .map(DtoMapper::toNotificationDTO)

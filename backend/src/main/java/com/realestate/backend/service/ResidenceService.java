@@ -2,8 +2,11 @@ package com.realestate.backend.service;
 
 import com.realestate.backend.dto.ResidenceDTO;
 import com.realestate.backend.dto.mapper.DtoMapper;
+import com.realestate.backend.entity.AgencyProfile;
 import com.realestate.backend.entity.Residence;
 import com.realestate.backend.entity.User;
+import com.realestate.backend.entity.enums.Role;
+import com.realestate.backend.repository.AgencyProfileRepository;
 import com.realestate.backend.repository.ResidenceRepository;
 import com.realestate.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +20,7 @@ public class ResidenceService {
 
     private final ResidenceRepository residenceRepository;
     private final UserRepository userRepository;
+    private final AgencyProfileRepository agencyProfileRepository;
 
     public List<ResidenceDTO> getAllResidences() {
         return residenceRepository.findByIsAvailableTrueAndIsDeletedFalse()
@@ -41,6 +45,18 @@ public class ResidenceService {
                     .orElseThrow(() -> new RuntimeException("Owner not found"));
             residence.setOwner(owner);
         }
+
+        if (residence.getOwner() != null) {
+            User owner = residence.getOwner();
+            if (owner.getRole() == Role.PROFESSIONAL) {
+                AgencyProfile agencyProfile = agencyProfileRepository.findByUserId(owner.getId())
+                        .orElseThrow(() -> new RuntimeException("Votre compte agence doit être vérifié par un administrateur avant de publier une résidence."));
+                if (!agencyProfile.isVerified()) {
+                    throw new RuntimeException("Votre compte agence doit être vérifié par un administrateur avant de publier une résidence.");
+                }
+            }
+        }
+
         Residence savedResidence = residenceRepository.save(residence);
         return DtoMapper.toResidenceDTO(savedResidence);
     }

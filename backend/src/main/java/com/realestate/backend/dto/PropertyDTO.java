@@ -36,9 +36,11 @@ public class PropertyDTO {
 
     @JsonProperty("isAvailable")
     private boolean isAvailable;
+    private Integer views;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private UserSummaryDTO owner;
     private ResidenceSummaryDTO residence;
+    private String documentUrl;
     private List<PropertyDocumentDTO> documents;
 }

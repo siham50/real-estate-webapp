@@ -1,15 +1,43 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
-const SearchBar = () => {
-  const [transactionType, setTransactionType] = useState('buy'); // 'buy' or 'rent'
-  const [keyword, setKeyword] = useState('');
-  const [city, setCity] = useState('');
-  const [propertyType, setPropertyType] = useState('');
-  const [budget, setBudget] = useState('');
+const SearchBar = ({ initialValues = {} }) => {
+  const navigate = useNavigate();
+  const [transactionType, setTransactionType] = useState(
+    initialValues.purpose === 'RENT' ? 'rent' : 'buy'
+  );
+  const [keyword, setKeyword] = useState(initialValues.keyword || '');
+  const [city, setCity] = useState(initialValues.city || '');
+  const [propertyType, setPropertyType] = useState(initialValues.type || '');
+  const [budget, setBudget] = useState(initialValues.maxPrice || '');
 
   const handleSearch = (e) => {
     e.preventDefault();
-    console.log('Search params:', { transactionType, keyword, city, propertyType, budget });
+
+    const params = new URLSearchParams();
+
+    // Ville ou mot-clé
+    const targetCity = city.trim() || keyword.trim();
+    if (targetCity) {
+      params.set('city', targetCity);
+    }
+
+    // Type de bien
+    if (propertyType) {
+      params.set('type', propertyType.toUpperCase());
+    }
+
+    // Objectif (Vente / Location)
+    const purpose = transactionType === 'rent' ? 'RENT' : 'SALE';
+    params.set('purpose', purpose);
+
+    // Budget max
+    if (budget) {
+      params.set('maxPrice', budget);
+    }
+
+    const queryString = params.toString();
+    navigate(queryString ? `/properties?${queryString}` : '/properties');
   };
 
   return (
@@ -53,7 +81,7 @@ const SearchBar = () => {
             </svg>
             <input
               type="text"
-              placeholder="Quartier, résidence, mot-clé..."
+              placeholder="Quartier, mot-clé..."
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
               className="urbanet-input"
@@ -68,11 +96,12 @@ const SearchBar = () => {
               className="urbanet-select"
             >
               <option value="">Toutes les villes</option>
-              <option value="casablanca">Casablanca</option>
-              <option value="marrakech">Marrakech</option>
-              <option value="rabat">Rabat</option>
-              <option value="tanger">Tanger</option>
-              <option value="agadir">Agadir</option>
+              <option value="Casablanca">Casablanca</option>
+              <option value="Marrakech">Marrakech</option>
+              <option value="Rabat">Rabat</option>
+              <option value="Tanger">Tanger</option>
+              <option value="Agadir">Agadir</option>
+              <option value="Fès">Fès</option>
             </select>
             <svg
               className="select-chevron"
@@ -97,11 +126,12 @@ const SearchBar = () => {
               className="urbanet-select"
             >
               <option value="">Tous les types</option>
-              <option value="appartement">Appartement</option>
-              <option value="villa">Villa</option>
-              <option value="penthouse">Penthouse</option>
-              <option value="terrain">Terrain</option>
-              <option value="bureau">Bureau</option>
+              <option value="APARTMENT">Appartement</option>
+              <option value="VILLA">Villa</option>
+              <option value="HOUSE">Maison</option>
+              <option value="OFFICE">Bureau</option>
+              <option value="COMMERCIAL">Local commercial</option>
+              <option value="LAND">Terrain</option>
             </select>
             <svg
               className="select-chevron"
@@ -125,11 +155,13 @@ const SearchBar = () => {
               onChange={(e) => setBudget(e.target.value)}
               className="urbanet-select"
             >
-              <option value="">Budget illimité</option>
-              <option value="1000000">&lt; 1.000.000 MAD</option>
-              <option value="3000000">&lt; 3.000.000 MAD</option>
-              <option value="5000000">&lt; 5.000.000 MAD</option>
-              <option value="10000000">&lt; 10.000.000 MAD</option>
+              <option value="">Budget max (Tout)</option>
+              <option value="500000">&lt; 500 000 MAD</option>
+              <option value="1000000">&lt; 1 000 000 MAD</option>
+              <option value="2000000">&lt; 2 000 000 MAD</option>
+              <option value="3000000">&lt; 3 000 000 MAD</option>
+              <option value="5000000">&lt; 5 000 000 MAD</option>
+              <option value="10000000">&lt; 10 000 000 MAD</option>
             </select>
             <svg
               className="select-chevron"

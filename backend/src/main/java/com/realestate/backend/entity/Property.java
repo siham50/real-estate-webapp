@@ -23,6 +23,7 @@ import java.util.List;
 @Builder
 @Entity
 @Table(name = "properties")
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Property {
 
     @Id
@@ -34,7 +35,7 @@ public class Property {
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private User owner;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.EAGER, optional = true)
     @JoinColumn(name = "residence_id", nullable = true)
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Residence residence;
@@ -71,6 +72,9 @@ public class Property {
     @Column(name = "longitude")
     private Double longitude;
 
+    @Column(name = "document_url", nullable = true, length = 255)
+    private String documentUrl;
+
     @Enumerated(EnumType.STRING)
     @Builder.Default
     @Column(name = "verification_status", nullable = false)
@@ -85,6 +89,10 @@ public class Property {
     @Builder.Default
     @Column(name = "is_available", nullable = false)
     private boolean isAvailable = true;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private Integer views = 0;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -102,6 +110,9 @@ public class Property {
 
     @PrePersist
     protected void onCreate() {
+        if (this.views == null) {
+            this.views = 0;
+        }
         if (this.createdAt == null) {
             this.createdAt = LocalDateTime.now();
         }

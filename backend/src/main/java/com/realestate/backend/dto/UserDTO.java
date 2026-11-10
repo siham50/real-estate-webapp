@@ -29,5 +29,10 @@ public class UserDTO {
     @JsonProperty("isActive")
     private boolean isActive;
 
+    private String companyName;
+    private String rcNumber;
+    private String iceNumber;
+    private String agencyDocumentUrl;
+
     private LocalDateTime createdAt;
 }

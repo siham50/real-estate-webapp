@@ -15,6 +15,8 @@ public class ReviewDTO {
     private Long id;
     private Long bookingId;
     private UserSummaryDTO client;
+    private String clientFirstName;
+    private String clientLastName;
     private UserSummaryDTO targetUser;
     private Integer rating;
     private String comment;

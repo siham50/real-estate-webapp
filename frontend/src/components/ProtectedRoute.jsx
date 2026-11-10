@@ -18,9 +18,16 @@ const ProtectedRoute = ({ children, requiredRole }) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (requiredRole && user.role !== requiredRole) {
-    // Si l'utilisateur est client et essaie d'accéder à l'espace agence (ou inversement), on redirige vers son espace
-    const target = user.role === 'PROFESSIONAL' ? '/profile/agency' : '/profile/client';
+  const userRole = String(user.role || '').toUpperCase();
+  const reqRole = String(requiredRole || '').toUpperCase();
+
+  if (requiredRole && userRole !== reqRole) {
+    let target = '/';
+    if (userRole === 'ADMIN') {
+      target = '/admin';
+    } else if (userRole === 'PROFESSIONAL' || userRole === 'AGENCE') {
+      target = '/agency/dashboard';
+    }
     return <Navigate to={target} replace />;
   }
 

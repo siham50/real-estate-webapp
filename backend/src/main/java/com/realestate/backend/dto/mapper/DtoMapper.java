@@ -1,6 +1,7 @@
 package com.realestate.backend.dto.mapper;
 
 import com.realestate.backend.dto.*;
+import com.realestate.backend.dto.AdminStatsDTO;
 import com.realestate.backend.entity.Availability;
 import com.realestate.backend.entity.Booking;
 import com.realestate.backend.entity.Conversation;
@@ -147,10 +148,12 @@ public class DtoMapper {
                 .verificationStatus(property.getVerificationStatus())
                 .isDeleted(property.isDeleted())
                 .isAvailable(property.isAvailable())
+                .views(property.getViews() != null ? property.getViews() : 0)
                 .createdAt(property.getCreatedAt())
                 .updatedAt(property.getUpdatedAt())
                 .owner(toUserSummaryDTO(property.getOwner()))
                 .residence(toResidenceSummaryDTO(property.getResidence()))
+                .documentUrl(property.getDocumentUrl())
                 .documents(property.getDocuments() != null
                         ? property.getDocuments().stream()
                                 .map(DtoMapper::toPropertyDocumentDTO)
@@ -192,10 +195,15 @@ public class DtoMapper {
         if (review == null) {
             return null;
         }
+        String clientFirstName = (review.getClient() != null) ? review.getClient().getFirstName() : null;
+        String clientLastName = (review.getClient() != null) ? review.getClient().getLastName() : null;
+
         return ReviewDTO.builder()
                 .id(review.getId())
                 .bookingId(review.getBooking() != null ? review.getBooking().getId() : null)
                 .client(toUserSummaryDTO(review.getClient()))
+                .clientFirstName(clientFirstName)
+                .clientLastName(clientLastName)
                 .targetUser(toUserSummaryDTO(review.getTargetUser()))
                 .rating(review.getRating())
                 .comment(review.getComment())
@@ -209,6 +217,8 @@ public class DtoMapper {
         }
         return ReportDTO.builder()
                 .id(report.getId())
+                .reporterId(report.getReporter() != null ? report.getReporter().getId() : null)
+                .reportedUserId(report.getReportedUser() != null ? report.getReportedUser().getId() : null)
                 .reporter(toUserSummaryDTO(report.getReporter()))
                 .reportedUser(toUserSummaryDTO(report.getReportedUser()))
                 .reason(report.getReason())
