@@ -7039,3 +7039,97 @@ img {
   object-fit: cover;
   border-radius: 8px;
 }
+
+/* ==========================================================================
+   Location Picker (Géocodage & Carte Leaflet)
+   ========================================================================== */
+.location-picker-container {
+  margin-bottom: 18px;
+}
+
+.location-picker-input-row {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+  margin-top: 6px;
+  margin-bottom: 12px;
+}
+
+.location-picker-input {
+  flex: 1;
+}
+
+.location-picker-search-btn {
+  background: #2563eb;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 0 16px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.location-picker-search-btn:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.location-picker-search-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.location-picker-search-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.location-picker-error {
+  color: #dc2626;
+  font-size: 0.82rem;
+  margin-top: -6px;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.location-picker-map-wrapper {
+  margin-top: 6px;
+  position: relative;
+  z-index: 1;
+}
+
+.location-picker-map {
+  height: 250px;
+  width: 100%;
+  border-radius: 8px;
+  margin-top: 10px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.location-picker-hint {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: #64748b;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.location-picker-coords {
+  font-family: monospace;
+  font-size: 0.78rem;
+  background: #f1f5f9;
+  color: #334155;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+  border: 1px solid #e2e8f0;
+}
+

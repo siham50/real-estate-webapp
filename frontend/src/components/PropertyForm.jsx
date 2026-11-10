@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { createProperty, uploadFile, uploadCin } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import LocationPicker from './shared/LocationPicker';
 
 const EMPTY_FORM = {
   title: '',
@@ -122,8 +123,14 @@ const PropertyForm = ({ onClose, onCreated, residences, isModal = false }) => {
         surfaceArea: parseFloat(formData.surfaceArea),
         address: formData.address.trim(),
         city: formData.city.trim(),
-        latitude: formData.latitude !== '' ? parseFloat(formData.latitude) : null,
-        longitude: formData.longitude !== '' ? parseFloat(formData.longitude) : null,
+        latitude:
+          formData.latitude !== '' && formData.latitude !== null && !isNaN(Number(formData.latitude))
+            ? parseFloat(formData.latitude)
+            : 33.5731,
+        longitude:
+          formData.longitude !== '' && formData.longitude !== null && !isNaN(Number(formData.longitude))
+            ? parseFloat(formData.longitude)
+            : -7.5898,
         owner: { id: user?.id },
         residence: formData.residenceId ? { id: parseInt(formData.residenceId, 10) } : null,
         documentUrl: propertyDocUrl,
@@ -286,19 +293,14 @@ const PropertyForm = ({ onClose, onCreated, residences, isModal = false }) => {
           </div>
         </div>
 
-        <div className="agency-field-group">
-          <label htmlFor="prop-address">Adresse *</label>
-          <input
-            id="prop-address"
-            name="address"
-            type="text"
-            required
-            className="agency-input"
-            placeholder="Rue, numéro, quartier"
-            value={formData.address}
-            onChange={handleChange}
-          />
-        </div>
+        <LocationPicker
+          address={formData.address}
+          setAddress={(val) => setFormData((prev) => ({ ...prev, address: val }))}
+          latitude={formData.latitude}
+          setLatitude={(val) => setFormData((prev) => ({ ...prev, latitude: val }))}
+          longitude={formData.longitude}
+          setLongitude={(val) => setFormData((prev) => ({ ...prev, longitude: val }))}
+        />
 
         <div className="agency-field-group">
           <label htmlFor="prop-city">Ville *</label>
@@ -312,35 +314,6 @@ const PropertyForm = ({ onClose, onCreated, residences, isModal = false }) => {
             value={formData.city}
             onChange={handleChange}
           />
-        </div>
-
-        <div className="agency-form-row-2">
-          <div className="agency-field-group">
-            <label htmlFor="prop-lat">Latitude</label>
-            <input
-              id="prop-lat"
-              name="latitude"
-              type="number"
-              step="any"
-              className="agency-input"
-              placeholder="33.9716"
-              value={formData.latitude}
-              onChange={handleChange}
-            />
-          </div>
-          <div className="agency-field-group">
-            <label htmlFor="prop-lng">Longitude</label>
-            <input
-              id="prop-lng"
-              name="longitude"
-              type="number"
-              step="any"
-              className="agency-input"
-              placeholder="-6.8498"
-              value={formData.longitude}
-              onChange={handleChange}
-            />
-          </div>
         </div>
 
         {/* Résidence optionnelle */}
