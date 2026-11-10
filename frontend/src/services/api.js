@@ -154,11 +154,17 @@ export const uploadFile = async (file) => {
         'Content-Type': 'multipart/form-data',
       },
     });
-    return response.data;
+    // Retourne l'URL propre (ex: /uploads/image.png)
+    const resData = response.data;
+    if (typeof resData === 'string') {
+      return resData.trim();
+    }
+    return resData?.url || resData?.fileUrl || resData?.imageUrl || resData;
   } catch (error) {
     const errorMessage =
       error.response?.data?.message ||
-      error.response?.data ||
+      error.response?.data?.error ||
+      (typeof error.response?.data === 'string' ? error.response.data : null) ||
       error.message ||
       "Une erreur est survenue lors de l'upload du fichier.";
     throw new Error(errorMessage);
@@ -281,7 +287,11 @@ export const getPropertiesByOwner = async (ownerId) => {
 
 export const createProperty = async (data) => {
   try {
-    const response = await api.post('/properties', data);
+    const response = await api.post('/properties', data, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
     return response.data;
   } catch (error) {
     const errorMsg =

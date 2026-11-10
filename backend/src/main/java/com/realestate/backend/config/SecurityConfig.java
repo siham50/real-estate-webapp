@@ -71,10 +71,12 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/properties/**").permitAll()
-                        .requestMatchers("/api/files/**").permitAll()
-                        .requestMatchers("/uploads/**", "/api/uploads/**").permitAll()
+                        .requestMatchers("/api/auth", "/api/auth/**").permitAll()
+                        .requestMatchers("/api/properties", "/api/properties/**").permitAll()
+                        .requestMatchers("/api/residences", "/api/residences/**").permitAll()
+                        .requestMatchers("/api/files", "/api/files/**").permitAll()
+                        .requestMatchers("/uploads", "/uploads/**").permitAll()
+                        .requestMatchers("/api/uploads", "/api/uploads/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

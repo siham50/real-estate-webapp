@@ -108,12 +108,19 @@ const PropertyForm = ({ onClose, onCreated, residences, isModal = false }) => {
         for (let i = 0; i < selectedImages.length; i++) {
           setStatusText(`Upload de la photo (${i + 1}/${selectedImages.length})...`);
           const url = await uploadFile(selectedImages[i]);
-          imageUrls.push(url);
+          if (url) {
+            const cleanUrl = typeof url === 'string' ? url : (url.url || url.fileUrl || url.imageUrl || '');
+            imageUrls.push(cleanUrl);
+          }
         }
       }
 
-      // 4. Envoi de la requête de création avec documentUrl et images
+      // 4. Envoi de la requête de création avec documentUrl et images au format JSON
       setStatusText('Création du bien en cours...');
+      const cleanDocUrl = typeof propertyDocUrl === 'string'
+        ? propertyDocUrl
+        : (propertyDocUrl?.url || propertyDocUrl?.fileUrl || null);
+
       const payload = {
         title: formData.title.trim(),
         description: formData.description.trim(),
@@ -131,10 +138,10 @@ const PropertyForm = ({ onClose, onCreated, residences, isModal = false }) => {
           formData.longitude !== '' && formData.longitude !== null && !isNaN(Number(formData.longitude))
             ? parseFloat(formData.longitude)
             : -7.5898,
-        owner: { id: user?.id },
+        owner: user?.id ? { id: user.id } : null,
         residence: formData.residenceId ? { id: parseInt(formData.residenceId, 10) } : null,
-        documentUrl: propertyDocUrl,
-        images: imageUrls.map((url) => ({ imageUrl: url, isPrimary: false })),
+        documentUrl: cleanDocUrl,
+        images: imageUrls.map((url, idx) => ({ imageUrl: url, isPrimary: idx === 0 })),
         isAvailable: true,
         isDeleted: false,
       };

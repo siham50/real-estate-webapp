@@ -115,12 +115,30 @@ const AdminUsers = () => {
 
   const resolveDocUrl = (url, useApiFallback = false) => {
     if (!url) return '';
-    if (url.startsWith('http://') || url.startsWith('https://')) return url;
-    const cleanPath = url.startsWith('/') ? url : `/${url}`;
+    let trimmed = String(url).trim();
+
+    // Remplacer un éventuel port frontend par le port backend 8080
+    if (trimmed.includes('localhost:5173') || trimmed.includes('localhost:3000')) {
+      trimmed = trimmed.replace(/http:\/\/localhost:(5173|3000)/, 'http://localhost:8080');
+    }
+
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return trimmed;
+    }
+
+    // Normaliser le chemin : préfixer par /uploads/ si nécessaire
+    let cleanPath = trimmed;
+    if (!cleanPath.startsWith('/uploads/') && !cleanPath.startsWith('uploads/') && !cleanPath.startsWith('/api/')) {
+      cleanPath = cleanPath.startsWith('/') ? `/uploads${cleanPath}` : `/uploads/${cleanPath}`;
+    } else if (!cleanPath.startsWith('/')) {
+      cleanPath = `/${cleanPath}`;
+    }
+
     if (useApiFallback && cleanPath.startsWith('/uploads/')) {
       const filename = cleanPath.replace('/uploads/', '');
       return `http://localhost:8080/api/files/download/${filename}`;
     }
+
     return `http://localhost:8080${cleanPath}`;
   };
 
@@ -784,8 +802,14 @@ const AdminUsers = () => {
                         <img
                           src={activeDocFullUrl}
                           alt={activeDoc.title}
-                          onError={() => {
-                            setImageError(true);
+                          onError={(e) => {
+                            const currentSrc = e.target.src;
+                            if (currentSrc && currentSrc.includes('/uploads/') && !currentSrc.includes('/api/files/view/')) {
+                              const filename = currentSrc.substring(currentSrc.indexOf('/uploads/') + '/uploads/'.length());
+                              e.target.src = `http://localhost:8080/api/files/view/${filename}`;
+                            } else {
+                              setImageError(true);
+                            }
                           }}
                           style={{
                             display: imageError ? 'none' : 'block',
