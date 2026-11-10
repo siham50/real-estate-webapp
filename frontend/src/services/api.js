@@ -191,7 +191,13 @@ export const createResidence = async (data) => {
     const response = await api.post('/residences', data);
     return response.data;
   } catch (error) {
-    throw new Error(error.response?.data?.message || error.response?.data?.error || error.message);
+    const errorMsg =
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      (typeof error.response?.data === 'string' ? error.response.data : null) ||
+      error.message ||
+      'Erreur lors de la création de la résidence.';
+    throw new Error(errorMsg);
   }
 };
 
@@ -278,7 +284,13 @@ export const createProperty = async (data) => {
     const response = await api.post('/properties', data);
     return response.data;
   } catch (error) {
-    throw new Error(error.response?.data?.message || error.response?.data?.error || error.message);
+    const errorMsg =
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      (typeof error.response?.data === 'string' ? error.response.data : null) ||
+      error.message ||
+      'Erreur lors de la création du bien.';
+    throw new Error(errorMsg);
   }
 };
 

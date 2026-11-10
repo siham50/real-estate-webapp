@@ -7211,3 +7211,53 @@ img {
   border-color: #fecdd3;
   color: #be123c;
 }
+
+/* ==========================================================================
+   Agency Notice Banner (Encart d'information publication)
+   ========================================================================== */
+.agency-notice-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.agency-notice-warning {
+  background-color: #fffbeb;
+  border: 1px solid #fde68a;
+  color: #92400e;
+}
+
+.agency-notice-info {
+  background-color: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e40af;
+}
+
+.agency-notice-icon {
+  font-size: 1.35rem;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.agency-notice-content {
+  flex: 1;
+}
+
+.agency-notice-title {
+  font-weight: 700;
+  margin-bottom: 3px;
+  color: inherit;
+}
+
+.agency-notice-text {
+  margin: 0;
+  font-size: 0.88rem;
+  color: inherit;
+}

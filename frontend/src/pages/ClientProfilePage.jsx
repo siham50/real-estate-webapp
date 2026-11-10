@@ -124,7 +124,7 @@ const ClientProfilePage = () => {
                 </div>
               </div>
 
-              <EditProfileForm />
+              <EditProfileForm onProfileUpdated={(updated) => updateUserState(updated)} />
             </div>
 
             {/* Right: Vérification d'identité */}

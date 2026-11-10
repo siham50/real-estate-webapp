@@ -5,7 +5,7 @@ import EditProfileForm from '../components/profile/EditProfileForm';
 import { useAuth } from '../context/AuthContext';
 
 const AgencyProfilePage = () => {
-  const { user, logout } = useAuth();
+  const { user, updateUserState, logout } = useAuth();
 
   return (
     <div className="urbanet-app-root">
@@ -43,7 +43,7 @@ const AgencyProfilePage = () => {
                 </div>
               </div>
 
-              <EditProfileForm />
+              <EditProfileForm onProfileUpdated={(updated) => updateUserState(updated)} />
             </div>
 
             {/* Right: Statut Agence */}

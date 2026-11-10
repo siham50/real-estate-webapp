@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { updateProfile } from '../../services/api';
+import { updateProfile, getUserProfile } from '../../services/api';
 
 const EditProfileForm = ({ onProfileUpdated }) => {
   const { user, updateUserState } = useAuth();
@@ -52,8 +52,34 @@ const EditProfileForm = ({ onProfileUpdated }) => {
       // Appel de l'endpoint PUT /api/users/{id}/profile
       const updatedUser = await updateProfile(user.id, payload);
 
-      // Mise à jour de l'AuthContext et du localStorage
+      // Mise à jour immédiate des états locaux du formulaire
+      if (updatedUser) {
+        setFirstName(updatedUser.firstName || firstName);
+        setLastName(updatedUser.lastName || lastName);
+        setPhone(updatedUser.phone || phone);
+        if (updatedUser.companyName !== undefined) setCompanyName(updatedUser.companyName || '');
+        if (updatedUser.rcNumber !== undefined) setRcNumber(updatedUser.rcNumber || '');
+        if (updatedUser.iceNumber !== undefined) setIceNumber(updatedUser.iceNumber || '');
+      }
+
+      // Mise à jour immédiate de l'AuthContext et du localStorage
       updateUserState(updatedUser);
+
+      // Rechargement des données fraîches depuis le backend pour garantir une synchronisation complète
+      try {
+        const freshProfile = await getUserProfile(user.id);
+        if (freshProfile) {
+          updateUserState(freshProfile);
+          if (freshProfile.firstName) setFirstName(freshProfile.firstName);
+          if (freshProfile.lastName) setLastName(freshProfile.lastName);
+          if (freshProfile.phone) setPhone(freshProfile.phone);
+          if (freshProfile.companyName !== undefined) setCompanyName(freshProfile.companyName || '');
+          if (freshProfile.rcNumber !== undefined) setRcNumber(freshProfile.rcNumber || '');
+          if (freshProfile.iceNumber !== undefined) setIceNumber(freshProfile.iceNumber || '');
+        }
+      } catch {
+        // En cas d'indisponibilité, updatedUser est déjà appliqué
+      }
 
       setFeedback({
         type: 'success',

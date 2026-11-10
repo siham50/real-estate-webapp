@@ -68,7 +68,15 @@ const ResidenceFormModal = ({ onClose, onCreated }) => {
           </button>
         </div>
 
-        {error && <div className="agency-alert-error">{error}</div>}
+        {error && (
+          <div className="agency-notice-banner agency-notice-warning" role="alert">
+            <span className="agency-notice-icon">⚠️</span>
+            <div className="agency-notice-content">
+              <div className="agency-notice-title">Notice de publication</div>
+              <div className="agency-notice-text">{error}</div>
+            </div>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="agency-modal-form">
           <div className="agency-field-group">

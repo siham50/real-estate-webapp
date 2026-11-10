@@ -169,8 +169,12 @@ const PropertyForm = ({ onClose, onCreated, residences, isModal = false }) => {
       </div>
 
       {error && (
-        <div className="agency-alert-error" style={{ marginBottom: '16px' }}>
-          <strong>Erreur : </strong> {error}
+        <div className="agency-notice-banner agency-notice-warning" role="alert">
+          <span className="agency-notice-icon">⚠️</span>
+          <div className="agency-notice-content">
+            <div className="agency-notice-title">Notice de publication</div>
+            <div className="agency-notice-text">{error}</div>
+          </div>
         </div>
       )}
 

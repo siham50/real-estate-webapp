@@ -88,12 +88,10 @@ const LocationPicker = ({
   /**
    * Recherche de l'adresse via l'API Nominatim (OpenStreetMap)
    */
-  const handleSearch = async (e) => {
-    if (e && e.preventDefault) {
-      e.preventDefault();
-    }
+  const handleSearch = async (targetAddress) => {
+    const query = typeof targetAddress === 'string' ? targetAddress : address;
 
-    if (!address || !address.trim()) {
+    if (!query || !query.trim()) {
       setError('Veuillez saisir une adresse avant de lancer la recherche.');
       return;
     }
@@ -103,13 +101,7 @@ const LocationPicker = ({
 
     try {
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address.trim())}`,
-        {
-          headers: {
-            Accept: 'application/json',
-            'User-Agent': 'UrbanetRealEstateApp/1.0',
-          },
-        }
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query.trim())}&limit=1`
       );
 
       if (!response.ok) {
@@ -139,7 +131,7 @@ const LocationPicker = ({
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      handleSearch();
+      handleSearch(address);
     }
   };
 
@@ -165,15 +157,21 @@ const LocationPicker = ({
           placeholder="Ex : Boulevard d'Anfa, Casablanca"
           value={address || ''}
           onChange={(e) => setAddress && setAddress(e.target.value)}
+          onBlur={(e) => {
+            const val = e.target.value;
+            if (val && val.trim().length >= 3) {
+              handleSearch(val.trim());
+            }
+          }}
           onKeyDown={handleKeyDown}
         />
         <button
           type="button"
           className="location-picker-search-btn"
-          onClick={handleSearch}
+          onClick={() => handleSearch(address)}
           disabled={searching}
         >
-          {searching ? 'Recherche...' : 'Rechercher sur la carte'}
+          {searching ? 'Recherche...' : "Rechercher l'adresse"}
         </button>
       </div>
 
@@ -193,6 +191,7 @@ const LocationPicker = ({
           <MapRecenter center={mapCenter} />
           <MapClickHandler onLocationChange={handleLocationUpdate} />
           <Marker
+            key={`marker-${currentLat}-${currentLng}`}
             position={[currentLat, currentLng]}
             draggable={true}
             eventHandlers={{
