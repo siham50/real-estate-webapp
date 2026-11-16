@@ -1,6 +1,25 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const Footer = () => {
+  const { user } = useAuth();
+  const isLoggedIn = Boolean(user && user.id);
+
+  // Redirection selon la connexion et le rôle pour "Publier une annonce"
+  const getPublishLink = () => {
+    if (!isLoggedIn) {
+      return '/login';
+    }
+    if (user?.role === 'ADMIN') {
+      return '/admin/properties';
+    }
+    if (user?.role === 'PROFESSIONAL' || user?.role === 'AGENCE') {
+      return '/agency/dashboard?newProperty=true';
+    }
+    return '/agency/dashboard?newProperty=true';
+  };
+
   return (
     <footer className="urbanet-footer">
       {/* Background Curved Lines Pattern */}
@@ -30,7 +49,7 @@ const Footer = () => {
         <div className="urbanet-footer-top">
           {/* Brand Column */}
           <div className="footer-brand-col">
-            <div className="urbanet-logo footer-logo">
+            <Link to="/" className="urbanet-logo footer-logo" style={{ textDecoration: 'none' }}>
               <div className="urbanet-footer-logo-badge">
                 <svg
                   width="18"
@@ -47,7 +66,7 @@ const Footer = () => {
                 </svg>
               </div>
               <span className="urbanet-logo-title footer-title-white">Urbanet</span>
-            </div>
+            </Link>
             <p className="footer-desc">
               Simplifier l'achat, la vente et la location de biens immobiliers, partout au Maroc.
             </p>
@@ -59,10 +78,10 @@ const Footer = () => {
             <div className="footer-col">
               <h4 className="footer-col-title">EXPLORER</h4>
               <ul className="footer-links">
-                <li><a href="#annonces">Toutes les annonces</a></li>
-                <li><a href="#villas">Villas & maisons</a></li>
-                <li><a href="#appartements">Appartements</a></li>
-                <li><a href="#terrains">Terrains & locaux</a></li>
+                <li><Link to="/properties">Toutes les annonces</Link></li>
+                <li><Link to="/properties">Villas & maisons</Link></li>
+                <li><Link to="/properties?type=APARTMENT">Appartements</Link></li>
+                <li><Link to="/properties?type=LAND">Terrains & locaux</Link></li>
               </ul>
             </div>
 
@@ -70,10 +89,12 @@ const Footer = () => {
             <div className="footer-col">
               <h4 className="footer-col-title">VILLES</h4>
               <ul className="footer-links">
-                <li><a href="#casablanca">Casablanca</a></li>
-                <li><a href="#rabat">Rabat</a></li>
-                <li><a href="#marrakech">Marrakech</a></li>
-                <li><a href="#tanger">Tanger</a></li>
+                <li><Link to="/properties?city=Casablanca">Casablanca</Link></li>
+                <li><Link to="/properties?city=Rabat">Rabat</Link></li>
+                <li><Link to="/properties?city=Marrakech">Marrakech</Link></li>
+                <li><Link to="/properties?city=Tanger">Tanger</Link></li>
+                <li><Link to="/properties?city=Agadir">Agadir</Link></li>
+                <li><Link to="/properties?city=F%C3%A8s">Fès</Link></li>
               </ul>
             </div>
 
@@ -81,10 +102,10 @@ const Footer = () => {
             <div className="footer-col">
               <h4 className="footer-col-title">URBANET</h4>
               <ul className="footer-links">
-                <li><a href="#apropos">À propos</a></li>
-                <li><a href="#publier">Publier une annonce</a></li>
-                <li><a href="#contact">Aide & contact</a></li>
-                <li><a href="#cgu">Conditions d'utilisation</a></li>
+                <li><Link to="/#apropos">À propos</Link></li>
+                <li><Link to={getPublishLink()}>Publier une annonce</Link></li>
+                <li><Link to="/#contact">Aide & contact</Link></li>
+                <li><Link to="/#cgu">Conditions d'utilisation</Link></li>
               </ul>
             </div>
           </div>

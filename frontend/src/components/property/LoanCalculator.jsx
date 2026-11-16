@@ -1,35 +1,39 @@
 import React, { useState, useEffect, useMemo } from 'react';
 
-const LoanCalculator = ({ price }) => {
-  // Parsing initial du prix transmis en props
-  const initialPrice = useMemo(() => {
-    const num = Number(price);
-    return !isNaN(num) && num > 0 ? num : 1000000;
-  }, [price]);
-
-  // États pour les 4 valeurs du simulateur
-  const [loanPrice, setLoanPrice] = useState(initialPrice);
-  const [downPayment, setDownPayment] = useState(Math.round(initialPrice * 0.1)); // 10% par défaut
-  const [interestRate, setInterestRate] = useState(4.5); // 4.5% par défaut
-  const [duration, setDuration] = useState(20); // 20 ans par défaut
+const LoanCalculator = ({ price: propPrice }) => {
+  // États de type String pour permettre la saisie fluide sans remise à 0 intempestive
+  const [price, setPrice] = useState(
+    propPrice !== undefined && propPrice !== null && propPrice !== ''
+      ? String(propPrice)
+      : ''
+  );
+  const [downPayment, setDownPayment] = useState(
+    propPrice && parseFloat(propPrice) > 0
+      ? String(Math.round(parseFloat(propPrice) * 0.1))
+      : ''
+  );
+  const [interestRate, setInterestRate] = useState('4.5'); // 4.5% par défaut
+  const [duration, setDuration] = useState('20'); // 20 ans par défaut
 
   // Synchronisation si le prix du bien change (ex: chargement asynchrone des détails)
   useEffect(() => {
-    const num = Number(price);
-    if (!isNaN(num) && num > 0) {
-      setLoanPrice(num);
-      setDownPayment(Math.round(num * 0.1));
+    if (propPrice !== undefined && propPrice !== null && propPrice !== '') {
+      const num = parseFloat(propPrice);
+      if (!isNaN(num) && num > 0) {
+        setPrice(String(propPrice));
+        setDownPayment(String(Math.round(num * 0.1)));
+      }
     }
-  }, [price]);
+  }, [propPrice]);
 
-  // Calcul mathématique de la mensualité
+  // Calcul mathématique de la mensualité avec parseFloat(...) || 0
   const { principal, monthlyPayment, totalPayment, totalInterest } = useMemo(() => {
-    const pPrice = Math.max(0, Number(loanPrice) || 0);
-    const pDown = Math.max(0, Number(downPayment) || 0);
+    const pPrice = parseFloat(price) || 0;
+    const pDown = parseFloat(downPayment) || 0;
     const pPrincipal = Math.max(0, pPrice - pDown);
 
-    const rate = Math.max(0, Number(interestRate) || 0);
-    const years = Math.max(1, Number(duration) || 1);
+    const rate = parseFloat(interestRate) || 0;
+    const years = parseFloat(duration) || 0;
     const numberOfPayments = years * 12;
 
     let monthly = 0;
@@ -54,7 +58,7 @@ const LoanCalculator = ({ price }) => {
       totalPayment: total,
       totalInterest: interest,
     };
-  }, [loanPrice, downPayment, interestRate, duration]);
+  }, [price, downPayment, interestRate, duration]);
 
   // Formatage en Dirham Marocain (DH)
   const formatDH = (value) => {
@@ -66,9 +70,11 @@ const LoanCalculator = ({ price }) => {
 
   // Pourcentage d'apport calculé dynamiquement
   const downPaymentPercent = useMemo(() => {
-    if (!loanPrice || loanPrice <= 0) return 0;
-    return Math.round(((Number(downPayment) || 0) / loanPrice) * 100);
-  }, [loanPrice, downPayment]);
+    const pPrice = parseFloat(price) || 0;
+    const pDown = parseFloat(downPayment) || 0;
+    if (pPrice <= 0) return 0;
+    return Math.round((pDown / pPrice) * 100);
+  }, [price, downPayment]);
 
   return (
     <div className="loan-calculator-widget">
@@ -83,7 +89,7 @@ const LoanCalculator = ({ price }) => {
         </p>
       </div>
 
-      {/* Résultat mis en avant : Mensualité (fond gris clair, texte noir) */}
+      {/* Résultat mis en avant : Mensualité */}
       <div className="loan-result-card">
         <span className="loan-result-label">Mensualité estimée</span>
         <div className="loan-result-amount">
@@ -91,17 +97,17 @@ const LoanCalculator = ({ price }) => {
         </div>
         <div className="loan-result-details">
           <span>Montant emprunté : <strong>{formatDH(principal)} DH</strong></span>
-          <span>Durée : <strong>{duration} ans ({duration * 12} mois)</strong></span>
+          <span>Durée : <strong>{duration || '0'} ans ({(parseFloat(duration) || 0) * 12} mois)</strong></span>
         </div>
       </div>
 
-      {/* Formulaire des 4 champs de saisie */}
+      {/* Formulaire des 4 champs de saisie (String states) */}
       <div className="loan-calculator-inputs">
         {/* 1. Prix du bien */}
         <div className="loan-input-group">
           <div className="loan-label-row">
             <label htmlFor="loan-price">Prix du bien</label>
-            <span className="loan-value-hint">{formatDH(loanPrice)} DH</span>
+            <span className="loan-value-hint">{formatDH(parseFloat(price) || 0)} DH</span>
           </div>
           <div className="loan-input-wrapper">
             <input
@@ -109,8 +115,9 @@ const LoanCalculator = ({ price }) => {
               type="number"
               min="0"
               step="10000"
-              value={loanPrice}
-              onChange={(e) => setLoanPrice(Number(e.target.value))}
+              placeholder=""
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
               className="loan-input-field"
             />
             <span className="loan-input-suffix">DH</span>
@@ -122,7 +129,7 @@ const LoanCalculator = ({ price }) => {
           <div className="loan-label-row">
             <label htmlFor="loan-down-payment">Apport initial</label>
             <span className="loan-value-hint">
-              {downPaymentPercent}% ({formatDH(downPayment)} DH)
+              {downPaymentPercent}% ({formatDH(parseFloat(downPayment) || 0)} DH)
             </span>
           </div>
           <div className="loan-input-wrapper">
@@ -130,10 +137,10 @@ const LoanCalculator = ({ price }) => {
               id="loan-down-payment"
               type="number"
               min="0"
-              max={loanPrice}
               step="5000"
+              placeholder=""
               value={downPayment}
-              onChange={(e) => setDownPayment(Number(e.target.value))}
+              onChange={(e) => setDownPayment(e.target.value)}
               className="loan-input-field"
             />
             <span className="loan-input-suffix">DH</span>
@@ -144,7 +151,7 @@ const LoanCalculator = ({ price }) => {
         <div className="loan-input-group">
           <div className="loan-label-row">
             <label htmlFor="loan-interest-rate">Taux d'intérêt annuel</label>
-            <span className="loan-value-hint">{interestRate}%</span>
+            <span className="loan-value-hint">{interestRate || '0'}%</span>
           </div>
           <div className="loan-input-wrapper">
             <input
@@ -153,8 +160,9 @@ const LoanCalculator = ({ price }) => {
               min="0"
               max="20"
               step="0.1"
+              placeholder=""
               value={interestRate}
-              onChange={(e) => setInterestRate(Number(e.target.value))}
+              onChange={(e) => setInterestRate(e.target.value)}
               className="loan-input-field"
             />
             <span className="loan-input-suffix">%</span>
@@ -165,7 +173,7 @@ const LoanCalculator = ({ price }) => {
         <div className="loan-input-group">
           <div className="loan-label-row">
             <label htmlFor="loan-duration">Durée du prêt</label>
-            <span className="loan-value-hint">{duration} ans</span>
+            <span className="loan-value-hint">{duration || '0'} ans</span>
           </div>
           <div className="loan-input-wrapper">
             <input
@@ -174,8 +182,9 @@ const LoanCalculator = ({ price }) => {
               min="1"
               max="35"
               step="1"
+              placeholder=""
               value={duration}
-              onChange={(e) => setDuration(Number(e.target.value))}
+              onChange={(e) => setDuration(e.target.value)}
               className="loan-input-field"
             />
             <span className="loan-input-suffix">Années</span>
@@ -183,14 +192,14 @@ const LoanCalculator = ({ price }) => {
         </div>
       </div>
 
-      {/* Raccourcis rapides de durée (15 ans, 20 ans, 25 ans) */}
+      {/* Raccourcis rapides de durée (10 ans, 15 ans, 20 ans, 25 ans) */}
       <div className="loan-duration-quick-picks">
         {[10, 15, 20, 25].map((years) => (
           <button
             key={years}
             type="button"
-            className={`loan-pill-btn ${duration === years ? 'active' : ''}`}
-            onClick={() => setDuration(years)}
+            className={`loan-pill-btn ${duration === String(years) ? 'active' : ''}`}
+            onClick={() => setDuration(String(years))}
           >
             {years} ans
           </button>
@@ -205,4 +214,3 @@ const LoanCalculator = ({ price }) => {
 };
 
 export default LoanCalculator;
-

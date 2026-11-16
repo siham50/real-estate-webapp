@@ -1,8 +1,14 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import SearchBar from './SearchBar';
 
 const Hero = () => {
+  const { user } = useAuth();
+  const isLoggedIn = Boolean(user && user.id);
+  const publishLink = !isLoggedIn
+    ? '/login'
+    : (user?.role === 'ADMIN' ? '/admin/properties' : '/agency/dashboard?newProperty=true');
   return (
     <section className="urbanet-hero-section">
       <div className="urbanet-hero-bg">
@@ -54,7 +60,7 @@ const Hero = () => {
                 <polyline points="12 5 19 12 12 19" />
               </svg>
             </a>
-            <Link to="/login" className="urbanet-hero-btn-secondary">
+            <Link to={publishLink} className="urbanet-hero-btn-secondary">
               Publier une annonce
             </Link>
           </div>

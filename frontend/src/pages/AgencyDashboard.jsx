@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getResidencesByOwner, getPropertiesByOwner } from '../services/api';
 import Header from '../components/Header';
@@ -14,6 +14,7 @@ import PropertyFormModal from '../components/PropertyFormModal';
 const AgencyDashboard = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [activeTab, setActiveTab] = useState('residences'); // 'residences', 'properties', 'bookings', 'availabilities'
   const [residences, setResidences] = useState([]);
@@ -23,6 +24,17 @@ const AgencyDashboard = () => {
   const [showResidenceModal, setShowResidenceModal] = useState(false);
   const [showPropertyModal, setShowPropertyModal] = useState(false);
   const [fetchError, setFetchError] = useState('');
+
+  // Gestion des paramètres URL (ex: ouvrir directement la création de bien)
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('newProperty') === 'true') {
+      setActiveTab('properties');
+      setShowPropertyModal(true);
+    } else if (params.get('tab') === 'properties') {
+      setActiveTab('properties');
+    }
+  }, [location.search]);
 
   const fetchResidences = useCallback(async () => {
     if (!user?.id) return;

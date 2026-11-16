@@ -482,12 +482,6 @@ const PropertyDetailsPage = () => {
                   </div>
                 </div>
 
-                {/* Emplacement & Carte Interactive */}
-                <PropertyMap
-                  latitude={property.latitude}
-                  longitude={property.longitude}
-                  title={property.title}
-                />
                 <div className="property-details-section-card owner-section-card">
                   <h2 className="section-card-title">Propriétaire & Gestionnaire</h2>
                   <div className="owner-profile-row">
@@ -873,6 +867,13 @@ const PropertyDetailsPage = () => {
 
                 {/* Calculateur de prêt immobilier interactif */}
                 <LoanCalculator price={property.price} />
+
+                {/* Emplacement & Carte Interactive */}
+                <PropertyMap
+                  latitude={property.latitude}
+                  longitude={property.longitude}
+                  title={property.title}
+                />
               </aside>
             </div>
           )}

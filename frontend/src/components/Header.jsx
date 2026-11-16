@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import NotificationDropdown from './layout/NotificationDropdown';
@@ -6,9 +6,20 @@ import NotificationDropdown from './layout/NotificationDropdown';
 const Header = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [searchCity, setSearchCity] = useState('');
 
   // On considère l'utilisateur connecté uniquement s'il possède un id valide
   const isLoggedIn = Boolean(user && user.id);
+
+  const handleHeaderSearch = (e) => {
+    e.preventDefault();
+    const trimmed = searchCity.trim();
+    if (trimmed) {
+      navigate(`/properties?city=${encodeURIComponent(trimmed)}`);
+    } else {
+      navigate('/properties');
+    }
+  };
 
   const handleLogoClick = () => {
     if (user?.role === 'ADMIN') {
@@ -98,21 +109,37 @@ const Header = () => {
 
         {/* Actions à droite */}
         <div className="urbanet-header-actions">
-          <button type="button" className="urbanet-icon-btn" aria-label="Recherche">
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+          {/* Barre de recherche dans le Header */}
+          <form onSubmit={handleHeaderSearch} className="urbanet-header-search-wrap">
+            <input
+              type="text"
+              placeholder="Ville (ex: Casablanca)..."
+              value={searchCity}
+              onChange={(e) => setSearchCity(e.target.value)}
+              className="urbanet-header-search-input"
+              aria-label="Rechercher par ville"
+            />
+            <button
+              type="submit"
+              className="urbanet-header-search-btn"
+              aria-label="Rechercher"
+              title="Rechercher"
             >
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-          </button>
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+            </button>
+          </form>
 
           {isLoggedIn ? (
             <div className="urbanet-user-header-group">

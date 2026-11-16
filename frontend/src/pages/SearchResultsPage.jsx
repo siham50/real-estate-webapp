@@ -4,24 +4,12 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { searchProperties } from '../services/api';
 import { TYPE_IMAGES, TYPE_TRANSLATIONS } from '../components/FeaturedProperties';
+import { MOROCCAN_CITIES } from '../components/SearchBar';
 
 const FALLBACK_DEFAULT_IMAGE =
   'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=900&q=80';
 
-const CITIES_LIST = [
-  'Casablanca',
-  'Marrakech',
-  'Rabat',
-  'Tanger',
-  'Agadir',
-  'Fès',
-  'Meknès',
-  'Oujda',
-  'Kénitra',
-  'Tétouan',
-  'Mohammedia',
-  'El Jadida',
-];
+const CITIES_LIST = MOROCCAN_CITIES;
 
 const SearchResultsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -280,22 +268,17 @@ const SearchResultsPage = () => {
                   {/* Ville */}
                   <div className="filter-field-group">
                     <label htmlFor="filterCity" className="filter-label">Ville</label>
-                    <div className="filter-input-wrap">
-                      <input
-                        id="filterCity"
-                        type="text"
-                        list="moroccan-cities"
-                        placeholder="Ex: Casablanca, Marrakech..."
-                        value={cityInput}
-                        onChange={(e) => setCityInput(e.target.value)}
-                        className="filter-input"
-                      />
-                      <datalist id="moroccan-cities">
-                        {CITIES_LIST.map((c) => (
-                          <option key={c} value={c} />
-                        ))}
-                      </datalist>
-                    </div>
+                    <select
+                      id="filterCity"
+                      value={cityInput}
+                      onChange={(e) => setCityInput(e.target.value)}
+                      className="filter-select"
+                    >
+                      <option value="">Toutes les villes</option>
+                      {CITIES_LIST.map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
                   </div>
 
                   {/* Type de bien */}
