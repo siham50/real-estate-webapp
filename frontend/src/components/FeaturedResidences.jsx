@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { getAllResidences, getAllProperties } from '../services/api';
+import { getAllResidences, getAllProperties, incrementResidenceViews } from '../services/api';
+import ResidenceCard from './ResidenceCard';
+import { getImageUrl, DEFAULT_PLACEHOLDER_IMAGE } from '../utils/imageUtils';
 
 const DEFAULT_RESIDENCES = [
   {
@@ -35,14 +37,6 @@ const DEFAULT_RESIDENCES = [
     propertiesCount: 12,
     badge: 'Front de Mer',
   },
-];
-
-const RESIDENCE_FALLBACK_IMAGES = [
-  'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=900&q=80',
-  'https://images.unsplash.com/photo-1574362848149-11496d93a7c7?auto=format&fit=crop&w=900&q=80',
-  'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=900&q=80',
-  'https://images.unsplash.com/photo-1577495508048-b635879837f1?auto=format&fit=crop&w=900&q=80',
-  'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=900&q=80',
 ];
 
 const FeaturedResidences = ({ onSelectResidence }) => {
@@ -83,6 +77,22 @@ const FeaturedResidences = ({ onSelectResidence }) => {
     fetchData();
   }, []);
 
+  // Incrémentation automatique des vues au chargement/ouverture des détails de la résidence
+  useEffect(() => {
+    if (selectedResidence?.id) {
+      incrementResidenceViews(selectedResidence.id)
+        .then((updated) => {
+          if (updated && updated.views !== undefined) {
+            setSelectedResidence((prev) => (prev ? { ...prev, views: updated.views } : prev));
+            setResidences((prev) =>
+              prev.map((r) => (r.id === selectedResidence.id ? { ...r, views: updated.views } : r))
+            );
+          }
+        })
+        .catch(() => {});
+    }
+  }, [selectedResidence?.id]);
+
   const getResidenceCount = (residenceId) => {
     return properties.filter((p) => p.residence?.id === residenceId).length;
   };
@@ -96,12 +106,21 @@ const FeaturedResidences = ({ onSelectResidence }) => {
     return 'Agence partenaire';
   };
 
-  const getImage = (res, index) => {
-    if (res.image) return res.image;
-    if (res.images && res.images.length > 0 && res.images[0].imageUrl) {
-      return res.images[0].imageUrl;
+  const getImage = (res) => {
+    if (!res) return DEFAULT_PLACEHOLDER_IMAGE;
+    let displayImage = null;
+    if (res.images && res.images.length > 0) {
+      // Cherche l'image avec isPrimary = true
+      const primaryImg = res.images.find((img) => img.isPrimary === true);
+      // Si elle existe, on la prend, sinon on prend la première par défaut
+      displayImage = primaryImg ? primaryImg : res.images[0];
     }
-    return RESIDENCE_FALLBACK_IMAGES[index % RESIDENCE_FALLBACK_IMAGES.length];
+    if (displayImage) {
+      const path = typeof displayImage === 'string' ? displayImage : displayImage.imageUrl;
+      return getImageUrl(path);
+    }
+    if (res.image) return getImageUrl(res.image);
+    return DEFAULT_PLACEHOLDER_IMAGE;
   };
 
   return (
@@ -153,82 +172,20 @@ const FeaturedResidences = ({ onSelectResidence }) => {
         {/* Residences Grid */}
         {!loading && (
           <div className="urbanet-properties-grid urbanet-residences-grid">
-            {residences.map((res, index) => {
-              const count = getResidenceCount(res.id);
-              const agency = getAgencyName(res);
-              const imgUrl = getImage(res, index);
-
-              return (
-                <article key={res.id} className="urbanet-property-card urbanet-residence-card">
-                  {/* Media Header */}
-                  <div className="property-media-wrapper">
-                    <img
-                      src={imgUrl}
-                      alt={res.name}
-                      className="property-img"
-                      loading="lazy"
-                    />
-                    <span className="property-badge badge-residence-pill">
-                      {res.badge || 'Programme Agence'}
-                    </span>
-                    <span className="residence-units-badge">
-                      {count > 0 ? `${count} bien(s) lié(s)` : 'Nouveau complexe'}
-                    </span>
-                  </div>
-
-                  {/* Body */}
-                  <div className="property-body">
-                    <div className="residence-city-tag">
-                      <svg
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                        <circle cx="12" cy="10" r="3" />
-                      </svg>
-                      <span>{res.city || 'Maroc'}</span>
-                    </div>
-
-                    <h3 className="residence-title">{res.name}</h3>
-
-                    <div className="property-location residence-address">
-                      <span>{res.address || `${res.city || 'Maroc'}`}</span>
-                    </div>
-
-                    <p className="residence-description">
-                      {res.description || 'Résidence contemporaine offrant prestations de qualité supérieure et cadre de vie privilégié.'}
-                    </p>
-
-                    {/* Card Footer */}
-                    <div className="property-footer residence-footer">
-                      <div className="residence-agency-info">
-                        <span className="agency-label">Promoteur / Agence :</span>
-                        <span className="property-agency">{agency}</span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedResidence(res)}
-                        className="residence-explore-link"
-                      >
-                        Découvrir →
-                      </button>
-                    </div>
-                  </div>
-                </article>
-              );
-            })}
+            {residences.map((res) => (
+              <ResidenceCard
+                key={res.id}
+                residence={res}
+                propertiesCount={getResidenceCount(res.id)}
+                onSelect={(selected) => setSelectedResidence(selected)}
+              />
+            ))}
           </div>
         )}
 
         {/* Modal Détails Résidence */}
         {selectedResidence && (
-          <div className="residence-modal-overlay" onClick={() => setSelectedResidence(null)}>
+          <div className="residence-modal-overlay">
             <div className="residence-modal-card" onClick={(e) => e.stopPropagation()}>
               <div className="residence-modal-header">
                 <div>
@@ -250,9 +207,13 @@ const FeaturedResidences = ({ onSelectResidence }) => {
 
               <div className="residence-modal-body">
                 <img
-                  src={getImage(selectedResidence, 0)}
+                  src={getImage(selectedResidence)}
                   alt={selectedResidence.name}
                   className="residence-modal-img"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = DEFAULT_PLACEHOLDER_IMAGE;
+                  }}
                 />
 
                 <div className="residence-modal-info">
@@ -278,6 +239,12 @@ const FeaturedResidences = ({ onSelectResidence }) => {
                       <span className="detail-item-label">Biens disponibles</span>
                       <span className="detail-item-val">
                         {getResidenceCount(selectedResidence.id)} bien(s)
+                      </span>
+                    </div>
+                    <div className="residence-detail-item">
+                      <span className="detail-item-label">Consultations</span>
+                      <span className="detail-item-val">
+                        👁️ {selectedResidence.views != null ? selectedResidence.views : 0} vues
                       </span>
                     </div>
                   </div>

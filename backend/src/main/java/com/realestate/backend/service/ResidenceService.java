@@ -4,14 +4,17 @@ import com.realestate.backend.dto.ResidenceDTO;
 import com.realestate.backend.dto.mapper.DtoMapper;
 import com.realestate.backend.entity.AgencyProfile;
 import com.realestate.backend.entity.Residence;
+import com.realestate.backend.entity.ResidenceImage;
 import com.realestate.backend.entity.User;
 import com.realestate.backend.entity.enums.Role;
+import com.realestate.backend.entity.enums.VerificationStatus;
 import com.realestate.backend.repository.AgencyProfileRepository;
 import com.realestate.backend.repository.ResidenceRepository;
 import com.realestate.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -57,6 +60,24 @@ public class ResidenceService {
             }
         }
 
+        if (residence.getImages() != null && !residence.getImages().isEmpty()) {
+            boolean hasPrimary = residence.getImages().stream().anyMatch(ResidenceImage::isPrimary);
+            if (!hasPrimary) {
+                residence.getImages().get(0).setPrimary(true);
+            }
+            for (ResidenceImage img : residence.getImages()) {
+                img.setResidence(residence);
+            }
+        } else {
+            residence.setImages(new ArrayList<>());
+        }
+
+        // Forcer le statut de vérification à VERIFIED pour les résidences d'agence
+        residence.setVerificationStatus(VerificationStatus.VERIFIED);
+        if (residence.getViews() == null) {
+            residence.setViews(0);
+        }
+
         Residence savedResidence = residenceRepository.save(residence);
         return DtoMapper.toResidenceDTO(savedResidence);
     }
@@ -90,6 +111,17 @@ public class ResidenceService {
                     .orElseThrow(() -> new RuntimeException("Owner not found"));
             existingResidence.setOwner(owner);
         }
+        if (updatedResidence.getImages() != null) {
+            existingResidence.getImages().clear();
+            boolean hasPrimary = updatedResidence.getImages().stream().anyMatch(ResidenceImage::isPrimary);
+            if (!hasPrimary && !updatedResidence.getImages().isEmpty()) {
+                updatedResidence.getImages().get(0).setPrimary(true);
+            }
+            for (ResidenceImage img : updatedResidence.getImages()) {
+                img.setResidence(existingResidence);
+                existingResidence.getImages().add(img);
+            }
+        }
 
         Residence savedResidence = residenceRepository.save(existingResidence);
         return DtoMapper.toResidenceDTO(savedResidence);
@@ -108,5 +140,13 @@ public class ResidenceService {
         residence.setAvailable(!residence.isAvailable());
         Residence updated = residenceRepository.save(residence);
         return DtoMapper.toResidenceDTO(updated);
+    }
+
+    public ResidenceDTO incrementViews(Long id) {
+        Residence residence = residenceRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Residence not found"));
+        residence.setViews((residence.getViews() != null ? residence.getViews() : 0) + 1);
+        Residence saved = residenceRepository.save(residence);
+        return DtoMapper.toResidenceDTO(saved);
     }
 }

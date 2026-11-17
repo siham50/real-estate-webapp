@@ -32,6 +32,7 @@ public class ResidenceDTO {
     private boolean isDeleted;
 
     private VerificationStatus verificationStatus;
+    private Integer views;
     private UserSummaryDTO owner;
     private List<ResidenceImageDTO> images;
     private List<ResidenceDocumentDTO> documents;

@@ -778,6 +778,86 @@ img {
   stroke: #ef4444;
 }
 
+/* Carrousel sur les cartes de biens */
+.property-carousel-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(4px);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: opacity 0.2s ease, transform 0.2s ease, background 0.2s ease;
+  opacity: 0;
+  pointer-events: none;
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1;
+  user-select: none;
+}
+
+.urbanet-property-card:hover .property-carousel-btn {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.property-carousel-btn:hover {
+  background: rgba(15, 23, 42, 0.95);
+  transform: translateY(-50%) scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.property-carousel-btn-prev {
+  left: 10px;
+}
+
+.property-carousel-btn-next {
+  right: 10px;
+}
+
+.property-carousel-counter {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(4px);
+  color: #ffffff;
+  padding: 3px 9px;
+  border-radius: 12px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  z-index: 9;
+  pointer-events: none;
+}
+
+.property-media-badges-bottom {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 8;
+  max-width: 75%;
+}
+
+.property-media-badges-bottom .property-type-tag,
+.property-media-badges-bottom .property-residence-badge {
+  position: static;
+  bottom: auto;
+  left: auto;
+}
+
+
 /* Card Body */
 .property-body {
   padding: 20px 22px;
@@ -1651,6 +1731,20 @@ img {
   width: 100%;
   max-width: 500px;
   padding: 40px 36px;
+}
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 20px;
+  color: #64748b;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.9rem;
+  transition: color 0.2s ease;
+}
+
+.back-link:hover {
+  color: #000000;
 }
 
 .auth-header {

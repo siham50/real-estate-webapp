@@ -9,6 +9,7 @@ import com.realestate.backend.entity.Message;
 import com.realestate.backend.entity.Notification;
 import com.realestate.backend.entity.Property;
 import com.realestate.backend.entity.PropertyDocument;
+import com.realestate.backend.entity.PropertyImage;
 import com.realestate.backend.entity.Report;
 import com.realestate.backend.entity.Residence;
 import com.realestate.backend.entity.ResidenceDocument;
@@ -16,6 +17,7 @@ import com.realestate.backend.entity.ResidenceImage;
 import com.realestate.backend.entity.Review;
 import com.realestate.backend.entity.User;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -87,6 +89,17 @@ public class DtoMapper {
                 .build();
     }
 
+    public static PropertyImageDTO toPropertyImageDTO(PropertyImage image) {
+        if (image == null) {
+            return null;
+        }
+        return PropertyImageDTO.builder()
+                .id(image.getId())
+                .imageUrl(image.getImageUrl())
+                .isPrimary(image.isPrimary())
+                .build();
+    }
+
     public static ResidenceDTO toResidenceDTO(Residence residence) {
         if (residence == null) {
             return null;
@@ -104,12 +117,14 @@ public class DtoMapper {
                 .isAvailable(residence.isAvailable())
                 .isDeleted(residence.isDeleted())
                 .verificationStatus(residence.getVerificationStatus())
+                .views(residence.getViews() != null ? residence.getViews() : 0)
                 .owner(toUserSummaryDTO(residence.getOwner()))
                 .images(residence.getImages() != null
                         ? residence.getImages().stream()
+                                .sorted((img1, img2) -> Boolean.compare(img2.isPrimary(), img1.isPrimary()))
                                 .map(DtoMapper::toResidenceImageDTO)
                                 .toList()
-                        : List.of())
+                        : new ArrayList<>())
                 .documents(residence.getDocuments() != null
                         ? residence.getDocuments().stream()
                                 .map(DtoMapper::toResidenceDocumentDTO)
@@ -159,6 +174,12 @@ public class DtoMapper {
                                 .map(DtoMapper::toPropertyDocumentDTO)
                                 .toList()
                         : List.of())
+                .images(property.getImages() != null
+                        ? property.getImages().stream()
+                                .sorted((img1, img2) -> Boolean.compare(img2.isPrimary(), img1.isPrimary()))
+                                .map(DtoMapper::toPropertyImageDTO)
+                                .toList()
+                        : new ArrayList<>())
                 .build();
     }
 

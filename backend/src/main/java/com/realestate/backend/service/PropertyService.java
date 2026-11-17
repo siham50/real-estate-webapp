@@ -89,6 +89,10 @@ public class PropertyService {
         }
 
         if (property.getImages() != null && !property.getImages().isEmpty()) {
+            boolean hasPrimary = property.getImages().stream().anyMatch(PropertyImage::isPrimary);
+            if (!hasPrimary) {
+                property.getImages().get(0).setPrimary(true);
+            }
             for (PropertyImage img : property.getImages()) {
                 img.setProperty(property);
             }
@@ -149,6 +153,17 @@ public class PropertyService {
             User owner = userRepository.findById(updatedProperty.getOwner().getId())
                     .orElseThrow(() -> new RuntimeException("Owner not found"));
             existingProperty.setOwner(owner);
+        }
+        if (updatedProperty.getImages() != null) {
+            existingProperty.getImages().clear();
+            boolean hasPrimary = updatedProperty.getImages().stream().anyMatch(PropertyImage::isPrimary);
+            if (!hasPrimary && !updatedProperty.getImages().isEmpty()) {
+                updatedProperty.getImages().get(0).setPrimary(true);
+            }
+            for (PropertyImage img : updatedProperty.getImages()) {
+                img.setProperty(existingProperty);
+                existingProperty.getImages().add(img);
+            }
         }
 
         Property savedProperty = propertyRepository.save(existingProperty);

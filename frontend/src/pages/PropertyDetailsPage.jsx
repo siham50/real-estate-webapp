@@ -14,6 +14,7 @@ import PropertyMap from '../components/property/PropertyMap';
 import LoanCalculator from '../components/property/LoanCalculator';
 import ContactOwnerButton from '../components/property/ContactOwnerButton';
 import ReportModal from '../components/property/ReportModal';
+import { getImageUrl, DEFAULT_PLACEHOLDER_IMAGE } from '../utils/imageUtils';
 import {
   DEFAULT_PROPERTIES,
   TYPE_IMAGES,
@@ -214,21 +215,41 @@ const PropertyDetailsPage = () => {
     return user.id !== realOwnerId;
   }, [isAuthenticated, user, property]);
 
-  // Image d'affichage principale
+  // Image d'affichage principale (priorité absolue à isPrimary === true)
   const propertyHeroImage = useMemo(() => {
-    if (!property) return FALLBACK_DEFAULT_IMAGE;
-    if (property.image) return property.image;
+    if (!property) return DEFAULT_PLACEHOLDER_IMAGE;
+
+    let displayImage = null;
+    if (property.images && property.images.length > 0) {
+      // Cherche l'image avec isPrimary = true
+      const primaryImg = property.images.find((img) => img.isPrimary === true);
+      // Si elle existe, on la prend, sinon on prend la première par défaut
+      displayImage = primaryImg ? primaryImg : property.images[0];
+    }
+
+    if (displayImage) {
+      const path = typeof displayImage === 'string' ? displayImage : displayImage.imageUrl;
+      if (path) return getImageUrl(path);
+    }
+    if (property.image) return getImageUrl(property.image);
     if (property.documents && property.documents.length > 0) {
       const imgDoc = property.documents.find(
         (d) => d.documentType === 'PHOTO' || (d.documentUrl && d.documentUrl.match(/\.(jpeg|jpg|png|webp)/i))
       );
-      if (imgDoc?.documentUrl) return imgDoc.documentUrl;
+      if (imgDoc?.documentUrl) return getImageUrl(imgDoc.documentUrl);
     }
     if (property.type && TYPE_IMAGES[property.type]) {
       return TYPE_IMAGES[property.type][0];
     }
-    return FALLBACK_DEFAULT_IMAGE;
+    return DEFAULT_PLACEHOLDER_IMAGE;
   }, [property]);
+
+  const [selectedImage, setSelectedImage] = useState(null);
+  const activeHeroImage = selectedImage || propertyHeroImage;
+
+  useEffect(() => {
+    setSelectedImage(null);
+  }, [property?.id]);
 
   // Créneau sélectionné objet
   const selectedSlot = useMemo(() => {
@@ -411,14 +432,91 @@ const PropertyDetailsPage = () => {
                 {/* Galerie / Image Showcase */}
                 <div className="property-details-hero-gallery">
                   <img
-                    src={propertyHeroImage}
+                    src={activeHeroImage}
                     alt={property.title}
                     className="property-details-hero-img"
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = DEFAULT_PLACEHOLDER_IMAGE;
+                    }}
                   />
                   <div className="hero-img-badge-overlay">
                     <span>Photos certifiées haute résolution</span>
                   </div>
                 </div>
+
+                {/* Carrousel de vignettes si plusieurs photos */}
+                {Array.isArray(property.images) && property.images.length > 1 && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      gap: '10px',
+                      marginTop: '12px',
+                      overflowX: 'auto',
+                      paddingBottom: '8px',
+                    }}
+                  >
+                    {property.images.map((img, idx) => {
+                      const src = getImageUrl(typeof img === 'string' ? img : img?.imageUrl);
+                      const isSelected = activeHeroImage === src;
+                      const isPrimary = Boolean(img?.isPrimary);
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => setSelectedImage(src)}
+                          style={{
+                            position: 'relative',
+                            padding: 0,
+                            border: isSelected
+                              ? '2px solid var(--color-primary, #0f172a)'
+                              : '2px solid transparent',
+                            borderRadius: '8px',
+                            overflow: 'hidden',
+                            cursor: 'pointer',
+                            flexShrink: 0,
+                            background: 'none',
+                            outline: 'none',
+                          }}
+                          title={isPrimary ? 'Image principale' : `Photo ${idx + 1}`}
+                        >
+                          <img
+                            src={src}
+                            alt=""
+                            style={{
+                              width: '84px',
+                              height: '62px',
+                              objectFit: 'cover',
+                              display: 'block',
+                            }}
+                            onError={(e) => {
+                              e.currentTarget.onerror = null;
+                              e.currentTarget.src = DEFAULT_PLACEHOLDER_IMAGE;
+                            }}
+                          />
+                          {isPrimary && (
+                            <span
+                              style={{
+                                position: 'absolute',
+                                top: '3px',
+                                left: '3px',
+                                background: '#eab308',
+                                color: '#000',
+                                fontSize: '10px',
+                                fontWeight: 700,
+                                borderRadius: '6px',
+                                padding: '1px 5px',
+                                lineHeight: 1.2,
+                              }}
+                            >
+                              ⭐
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
 
                 {/* Grille des caractéristiques clés */}
                 <div className="property-specs-grid-cards">

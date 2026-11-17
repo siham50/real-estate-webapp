@@ -107,6 +107,10 @@ const RegisterPage = () => {
   return (
     <div className="auth-container">
       <div className="auth-card">
+        <Link to="/" className="back-link">
+          ← Retour à l'accueil
+        </Link>
+
         {/* En-tête avec logo Urbanet */}
         <div className="auth-header">
           <Link to="/" className="urbanet-logo auth-logo-center">

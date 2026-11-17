@@ -53,7 +53,7 @@ const ReportModal = ({ property, user, onClose }) => {
   };
 
   return (
-    <div className="agency-modal-overlay" onClick={onClose}>
+    <div className="agency-modal-overlay">
       <div className="agency-modal-card" onClick={(e) => e.stopPropagation()}>
         <div className="agency-modal-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

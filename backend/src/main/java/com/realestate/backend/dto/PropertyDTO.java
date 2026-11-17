@@ -43,4 +43,5 @@ public class PropertyDTO {
     private ResidenceSummaryDTO residence;
     private String documentUrl;
     private List<PropertyDocumentDTO> documents;
+    private List<PropertyImageDTO> images;
 }

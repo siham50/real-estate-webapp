@@ -570,7 +570,7 @@ const AdminUsers = () => {
 
       {/* MODAL DE VISUALISATION DES DOCUMENTS POUR APPROBATION */}
       {selectedUserForDocs && (
-        <div className="admin-doc-modal-overlay" onClick={() => setSelectedUserForDocs(null)}>
+        <div className="admin-doc-modal-overlay">
           <div className="admin-doc-modal-container" onClick={(e) => e.stopPropagation()}>
             {/* Header du modal */}
             <div className="admin-doc-modal-header">

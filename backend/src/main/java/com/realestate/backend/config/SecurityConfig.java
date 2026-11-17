@@ -74,12 +74,14 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth", "/api/auth/**").permitAll()
                         .requestMatchers("/api/properties", "/api/properties/**").permitAll()
                         .requestMatchers("/api/residences", "/api/residences/**").permitAll()
-                        .requestMatchers("/api/files", "/api/files/**").permitAll()
+                        .requestMatchers("/api/files", "/api/files/**", "/files/**").permitAll()
                         .requestMatchers("/uploads", "/uploads/**").permitAll()
                         .requestMatchers("/api/uploads", "/api/uploads/**").permitAll()
+                        .requestMatchers("/api/notifications/**").authenticated()
                         .anyRequest().authenticated()
-                )
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                );
+
+        http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
@@ -89,7 +91,7 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOriginPatterns(List.of("*"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers"));
+        configuration.setAllowedHeaders(List.of("*"));
         configuration.setExposedHeaders(List.of("Authorization"));
         configuration.setAllowCredentials(true);
 

@@ -16,10 +16,12 @@ import AdminUsers from './components/admin/AdminUsers';
 import AdminProperties from './components/admin/AdminProperties';
 import AdminReports from './components/admin/AdminReports';
 import ProtectedRoute from './components/ProtectedRoute';
+import ScrollToTop from './components/utils/ScrollToTop';
 
 function App() {
   return (
     <AuthProvider>
+      <ScrollToTop />
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/properties" element={<SearchResultsPage />} />

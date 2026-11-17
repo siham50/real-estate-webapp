@@ -275,6 +275,20 @@ export const incrementPropertyViews = async (id) => {
   }
 };
 
+export const incrementResidenceViews = async (id) => {
+  try {
+    const response = await api.patch(`/residences/${id}/view`);
+    return response.data;
+  } catch (error) {
+    throw new Error(
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      error.message ||
+      "Impossible d'incrémenter le nombre de vues de la résidence."
+    );
+  }
+};
+
 export const getPropertiesByOwner = async (ownerId) => {
   try {
     const response = await api.get('/properties');

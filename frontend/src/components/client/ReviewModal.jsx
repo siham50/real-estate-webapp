@@ -67,7 +67,7 @@ const ReviewModal = ({ booking, isOpen, onClose, onReviewAdded }) => {
   const currentRating = hoverRating || rating;
 
   return (
-    <div className="modal-overlay urbanet-modal-overlay" onClick={onClose}>
+    <div className="modal-overlay urbanet-modal-overlay">
       <div
         className="modal-content urbanet-modal-card review-modal-card"
         onClick={(e) => e.stopPropagation()}

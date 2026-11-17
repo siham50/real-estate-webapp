@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getAllProperties, getAllResidences } from '../services/api';
+import PropertyCard, { getPropertyImages } from './PropertyCard';
+import { getImageUrl, DEFAULT_PLACEHOLDER_IMAGE } from '../utils/imageUtils';
 
 export const DEFAULT_PROPERTIES = [
   {
@@ -127,12 +129,7 @@ const FeaturedProperties = ({ filterResidenceId }) => {
         if (Array.isArray(propsData) && propsData.length > 0) {
           const nonDeleted = propsData.filter((p) => !p.isDeleted);
           if (nonDeleted.length > 0) {
-            // Si des biens existent dans la BD, on les combine avec les démos si moins de 3
-            if (nonDeleted.length < 3) {
-              setProperties([...nonDeleted, ...DEFAULT_PROPERTIES.slice(nonDeleted.length)]);
-            } else {
-              setProperties(nonDeleted);
-            }
+            setProperties(nonDeleted);
           } else {
             setProperties(DEFAULT_PROPERTIES);
           }
@@ -159,13 +156,21 @@ const FeaturedProperties = ({ filterResidenceId }) => {
     return `${formatted} MAD${purpose === 'RENT' ? ' / mois' : ''}`;
   };
 
-  const getCardImage = (item, index) => {
-    if (item.image) return item.image;
-    if (item.documents && item.documents.length > 0 && item.documents[0].fileUrl) {
-      return item.documents[0].fileUrl;
+  const getCardImage = (item) => {
+    if (!item) return DEFAULT_PLACEHOLDER_IMAGE;
+    let displayImage = null;
+    if (item.images && item.images.length > 0) {
+      // Cherche l'image avec isPrimary = true
+      const primaryImg = item.images.find((img) => img.isPrimary === true);
+      // Si elle existe, on la prend, sinon on prend la première par défaut
+      displayImage = primaryImg ? primaryImg : item.images[0];
     }
-    const pool = TYPE_IMAGES[item.type] || TYPE_IMAGES.APARTMENT;
-    return pool[index % pool.length];
+    if (displayImage) {
+      const path = typeof displayImage === 'string' ? displayImage : displayImage.imageUrl;
+      return getImageUrl(path);
+    }
+    if (item.image) return getImageUrl(item.image);
+    return DEFAULT_PLACEHOLDER_IMAGE;
   };
 
   const getAgencyName = (item) => {
@@ -285,147 +290,21 @@ const FeaturedProperties = ({ filterResidenceId }) => {
         {/* Cards Grid */}
         {!loading && (
           <div className="urbanet-properties-grid">
-            {filteredList.map((item, index) => {
-              const isFav = favorites[item.id];
-              const tag = item.tag || (item.purpose === 'RENT' ? 'À louer' : 'À vendre');
-              const priceDisplay = item.formattedPrice || formatPrice(item.price, item.purpose);
-              const agency = getAgencyName(item);
-              const residenceName = getResidenceName(item);
-              const locationDisplay =
-                item.location ||
-                `${item.city || 'Maroc'}${item.address ? ', ' + item.address : ''}`;
-              const imageSrc = getCardImage(item, index);
-              const bedsDisplay =
-                item.beds || (item.surfaceArea ? `${Math.max(1, Math.round(item.surfaceArea / 45))} ch.` : '3 ch.');
-              const bathsDisplay =
-                item.baths || (item.surfaceArea ? `${Math.max(1, Math.round(item.surfaceArea / 70))} sdb` : '2 sdb');
-              const areaDisplay = item.area || (item.surfaceArea ? `${item.surfaceArea} m²` : '150 m²');
-              const viewsDisplay = item.views || `${((item.id * 149 + 320) % 2500) + 120} vues`;
-
-              return (
-                <article key={item.id} className="urbanet-property-card">
-                  {/* Media Header */}
-                  <div className="property-media-wrapper">
-                    <img
-                      src={imageSrc}
-                      alt={item.title}
-                      className="property-img"
-                      loading="lazy"
-                    />
-                    <span className="property-badge">{tag}</span>
-
-                    {/* Badge Résidence si associé */}
-                    {residenceName && (
-                      <span className="property-residence-badge" title={`Résidence : ${residenceName}`}>
-                        🏢 {residenceName}
-                      </span>
-                    )}
-
-                    <button
-                      type="button"
-                      onClick={() => toggleFavorite(item.id)}
-                      className={`property-fav-btn ${isFav ? 'is-active' : ''}`}
-                      aria-label="Ajouter aux favoris"
-                    >
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill={isFav ? '#ef4444' : 'none'}
-                        stroke={isFav ? '#ef4444' : '#0f172a'}
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                      </svg>
-                    </button>
-                  </div>
-
-                  {/* Card Body */}
-                  <div className="property-body">
-                    <div className="property-price">{priceDisplay}</div>
-                    <h3 className="property-title" title={item.title}>
-                      {item.title}
-                    </h3>
-
-                    <div className="property-location">
-                      <svg
-                        width="15"
-                        height="15"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="#94a3b8"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                        <circle cx="12" cy="10" r="3" />
-                      </svg>
-                      <span>{locationDisplay}</span>
-                    </div>
-
-                    {/* Specs Row */}
-                    <div className="property-specs">
-                      <span className="spec-item" title="Chambres">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M2 4v16" />
-                          <path d="M2 8h18a2 2 0 0 1 2 2v10" />
-                          <path d="M2 17h20" />
-                          <path d="M6 8v9" />
-                        </svg>
-                        {bedsDisplay}
-                      </span>
-                      <span className="spec-item" title="Salles de bain">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M9 6h11a2 2 0 0 1 2 2v2a4 4 0 0 1-4 4H9V6z" />
-                          <path d="M4 12v6" />
-                          <path d="M2 18h20" />
-                        </svg>
-                        {bathsDisplay}
-                      </span>
-                      <span className="spec-item" title="Superficie">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="15 3 21 3 21 9" />
-                          <polyline points="9 21 3 21 3 15" />
-                          <line x1="21" y1="3" x2="14" y2="10" />
-                          <line x1="3" y1="21" x2="10" y2="14" />
-                        </svg>
-                        {areaDisplay}
-                      </span>
-                      <span className="spec-item" title="Consultations">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                          <circle cx="12" cy="12" r="3" />
-                        </svg>
-                        {viewsDisplay}
-                      </span>
-                    </div>
-
-                    {/* Card Footer */}
-                    <div className="property-footer">
-                      <span className="property-agency" title={`Annonce proposée par ${agency}`}>
-                        {agency}
-                      </span>
-                      <Link
-                        to={`/properties/${item.id}`}
-                        className="property-link property-link-btn"
-                        style={{ textDecoration: 'none' }}
-                      >
-                        Voir le bien →
-                      </Link>
-                    </div>
-                  </div>
-                </article>
-              );
-            })}
+            {filteredList.map((item) => (
+              <PropertyCard
+                key={item.id}
+                property={item}
+                isFav={Boolean(favorites[item.id])}
+                onToggleFav={toggleFavorite}
+                residenceName={getResidenceName(item)}
+              />
+            ))}
           </div>
         )}
 
         {/* Modal Détails Bien */}
         {selectedProperty && (
-          <div className="residence-modal-overlay" onClick={() => setSelectedProperty(null)}>
+          <div className="residence-modal-overlay">
             <div className="residence-modal-card property-detail-modal" onClick={(e) => e.stopPropagation()}>
               <div className="residence-modal-header">
                 <div>

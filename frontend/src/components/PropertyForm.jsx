@@ -37,7 +37,6 @@ const PropertyForm = ({ onClose, onCreated, residences, isModal = false }) => {
   const [propertyDocFile, setPropertyDocFile] = useState(null);
   const [cinFile, setCinFile] = useState(null);
   const [selectedImages, setSelectedImages] = useState([]);
-  const [imagePreviews, setImagePreviews] = useState([]);
 
   const [loading, setLoading] = useState(false);
   const [statusText, setStatusText] = useState('');
@@ -50,17 +49,39 @@ const PropertyForm = ({ onClose, onCreated, residences, isModal = false }) => {
   const handleImagesChange = (e) => {
     if (e.target.files) {
       const filesArray = Array.from(e.target.files);
-      setSelectedImages((prev) => [...prev, ...filesArray]);
-      const newPreviews = filesArray.map((file) => URL.createObjectURL(file));
-      setImagePreviews((prev) => [...prev, ...newPreviews]);
+      setSelectedImages((prev) => {
+        const hadAny = prev.length > 0;
+        const newItems = filesArray.map((file, i) => ({
+          file,
+          preview: URL.createObjectURL(file),
+          isPrimary: !hadAny && i === 0,
+        }));
+        const combined = [...prev, ...newItems];
+        if (combined.length > 0 && !combined.some((img) => img.isPrimary)) {
+          combined[0].isPrimary = true;
+        }
+        return combined;
+      });
     }
   };
 
+  const handleSetPrimary = (targetIndex) => {
+    setSelectedImages((prev) =>
+      prev.map((item, idx) => ({
+        ...item,
+        isPrimary: idx === targetIndex,
+      }))
+    );
+  };
+
   const handleRemoveImage = (index) => {
-    setSelectedImages((prev) => prev.filter((_, i) => i !== index));
-    setImagePreviews((prev) => {
-      URL.revokeObjectURL(prev[index]);
-      return prev.filter((_, i) => i !== index);
+    setSelectedImages((prev) => {
+      URL.revokeObjectURL(prev[index]?.preview);
+      const next = prev.filter((_, i) => i !== index);
+      if (next.length > 0 && !next.some((item) => item.isPrimary)) {
+        next[0] = { ...next[0], isPrimary: true };
+      }
+      return next;
     });
   };
 
@@ -102,18 +123,29 @@ const PropertyForm = ({ onClose, onCreated, residences, isModal = false }) => {
         updateUserState(updatedUser);
       }
 
-      // 3. Upload des photos du bien
-      const imageUrls = [];
+      // 3. Upload séquentiel des photos du bien avec for...of
       if (selectedImages.length > 0) {
-        for (let i = 0; i < selectedImages.length; i++) {
-          setStatusText(`Upload de la photo (${i + 1}/${selectedImages.length})...`);
-          const url = await uploadFile(selectedImages[i]);
-          if (url) {
-            const cleanUrl = typeof url === 'string' ? url : (url.url || url.fileUrl || url.imageUrl || '');
-            imageUrls.push(cleanUrl);
-          }
+        let index = 1;
+        for (const item of selectedImages) {
+          setStatusText(`Upload de l'image ${index}/${selectedImages.length}...`);
+          const res = await uploadFile(item.file);
+          const cleanUrl = typeof res === 'string' ? res : (res?.url || res?.fileUrl || res?.imageUrl || '');
+          item.url = cleanUrl;
+          index++;
         }
       }
+
+      // S'assurer qu'au moins une image est définie comme principale
+      if (selectedImages.length > 0 && !selectedImages.some((img) => img.isPrimary === true)) {
+        selectedImages[0].isPrimary = true;
+      }
+
+      const formattedImages = selectedImages
+        .filter((img) => img.url)
+        .map((img, index) => ({
+          imageUrl: img.url, // L'URL retournée par l'upload
+          isPrimary: img.isPrimary === true, // S'assurer que c'est bien un booléen
+        }));
 
       // 4. Envoi de la requête de création avec documentUrl et images au format JSON
       setStatusText('Création du bien en cours...');
@@ -141,7 +173,7 @@ const PropertyForm = ({ onClose, onCreated, residences, isModal = false }) => {
         owner: user?.id ? { id: user.id } : null,
         residence: formData.residenceId ? { id: parseInt(formData.residenceId, 10) } : null,
         documentUrl: cleanDocUrl,
-        images: imageUrls.map((url, idx) => ({ imageUrl: url, isPrimary: idx === 0 })),
+        images: formattedImages,
         isAvailable: true,
         isDeleted: false,
       };
@@ -174,6 +206,16 @@ const PropertyForm = ({ onClose, onCreated, residences, isModal = false }) => {
           </button>
         )}
       </div>
+
+      {loading && statusText && (
+        <div className="agency-notice-banner agency-notice-info" style={{ background: '#eff6ff', borderColor: '#bfdbfe', color: '#1d4ed8', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px' }} role="status">
+          <span className="agency-spinner-sm" style={{ borderTopColor: '#1d4ed8' }} />
+          <div>
+            <div style={{ fontWeight: 700, fontSize: '0.88rem' }}>Traitement en cours</div>
+            <div style={{ fontSize: '0.82rem' }}>{statusText}</div>
+          </div>
+        </div>
+      )}
 
       {error && (
         <div className="agency-notice-banner agency-notice-warning" role="alert">
@@ -356,44 +398,87 @@ const PropertyForm = ({ onClose, onCreated, residences, isModal = false }) => {
             onChange={handleImagesChange}
           />
           <small style={{ display: 'block', marginTop: '4px', color: '#6b7280', fontSize: '0.82rem' }}>
-            Sélectionnez une ou plusieurs photos (JPG, PNG, WebP) pour illustrer votre annonce.
+            Sélectionnez une ou plusieurs photos (JPG, PNG, WebP). Cliquez sur l'étoile ⭐ pour choisir l'image principale de votre annonce.
           </small>
 
-          {imagePreviews.length > 0 && (
-            <div className="image-preview-grid">
-              {imagePreviews.map((previewUrl, idx) => (
-                <div key={idx} style={{ position: 'relative' }}>
-                  <img
-                    src={previewUrl}
-                    alt={`Aperçu ${idx + 1}`}
-                    className="image-preview"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveImage(idx)}
+          {selectedImages.length > 0 && (
+            <div className="image-preview-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: '12px', marginTop: '12px' }}>
+              {selectedImages.map((item, idx) => {
+                const isPrimary = Boolean(item.isPrimary);
+                return (
+                  <div
+                    key={idx}
+                    className={`image-preview-card ${isPrimary ? 'is-primary' : ''}`}
                     style={{
-                      position: 'absolute',
-                      top: '4px',
-                      right: '4px',
-                      background: 'rgba(0, 0, 0, 0.65)',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: '50%',
-                      width: '22px',
-                      height: '22px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '12px',
-                      lineHeight: 1,
+                      position: 'relative',
+                      borderRadius: '8px',
+                      overflow: 'hidden',
+                      border: isPrimary ? '2px solid #eab308' : '1px solid #e2e8f0',
+                      boxShadow: isPrimary ? '0 0 0 2px rgba(234, 179, 8, 0.3)' : 'none',
+                      aspectRatio: '4/3',
                     }}
-                    title="Supprimer cette photo"
                   >
-                    ×
-                  </button>
-                </div>
-              ))}
+                    <img
+                      src={item.preview}
+                      alt={`Aperçu ${idx + 1}`}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                    />
+                    {/* Bouton sélection Image principale */}
+                    <button
+                      type="button"
+                      onClick={() => handleSetPrimary(idx)}
+                      style={{
+                        position: 'absolute',
+                        top: '5px',
+                        left: '5px',
+                        background: isPrimary ? '#eab308' : 'rgba(0, 0, 0, 0.65)',
+                        color: isPrimary ? '#000' : '#fff',
+                        border: 'none',
+                        borderRadius: '14px',
+                        padding: '2px 7px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '3px',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        zIndex: 2,
+                        transition: 'all 0.15s ease',
+                      }}
+                      title={isPrimary ? 'Image principale' : 'Définir comme image principale'}
+                    >
+                      <span>⭐</span>
+                      <span>{isPrimary ? 'Principale' : 'Choisir'}</span>
+                    </button>
+                    {/* Bouton supprimer */}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveImage(idx)}
+                      style={{
+                        position: 'absolute',
+                        top: '5px',
+                        right: '5px',
+                        background: 'rgba(0, 0, 0, 0.65)',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '50%',
+                        width: '22px',
+                        height: '22px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '13px',
+                        lineHeight: 1,
+                        zIndex: 2,
+                      }}
+                      title="Supprimer cette photo"
+                    >
+                      ×
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -468,7 +553,7 @@ const PropertyForm = ({ onClose, onCreated, residences, isModal = false }) => {
 
   if (onClose || isModal) {
     return (
-      <div className="agency-modal-overlay" onClick={onClose}>
+      <div className="agency-modal-overlay">
         {formContent}
       </div>
     );

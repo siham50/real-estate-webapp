@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { deleteProperty } from '../services/api';
+import { getImageUrl, DEFAULT_PLACEHOLDER_IMAGE } from '../utils/imageUtils';
 
 const TYPE_LABELS = {
   HOUSE: 'Maison',
@@ -73,11 +74,41 @@ const AgencyPropertyList = ({ properties, onDeleted }) => {
             </tr>
           </thead>
           <tbody>
-            {properties.map((p) => (
-              <tr key={p.id}>
-                <td>
-                  <span className="agency-table-name">{p.title}</span>
-                </td>
+            {properties.map((p) => {
+              let displayImage = null;
+              if (p.images && p.images.length > 0) {
+                // Cherche l'image avec isPrimary = true
+                const primaryImg = p.images.find((img) => img.isPrimary === true);
+                // Si elle existe, on la prend, sinon on prend la première par défaut
+                displayImage = primaryImg ? primaryImg : p.images[0];
+              }
+              const imageSrc = displayImage
+                ? getImageUrl(typeof displayImage === 'string' ? displayImage : displayImage.imageUrl)
+                : (p.image ? getImageUrl(p.image) : DEFAULT_PLACEHOLDER_IMAGE);
+
+              return (
+                <tr key={p.id}>
+                  <td>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <img
+                        src={imageSrc}
+                        alt={p.title}
+                        style={{
+                          width: '38px',
+                          height: '38px',
+                          borderRadius: '6px',
+                          objectFit: 'cover',
+                          flexShrink: 0,
+                          backgroundColor: '#e2e8f0',
+                        }}
+                        onError={(e) => {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = DEFAULT_PLACEHOLDER_IMAGE;
+                        }}
+                      />
+                      <span className="agency-table-name">{p.title}</span>
+                    </div>
+                  </td>
                 <td>{TYPE_LABELS[p.type] || p.type}</td>
                 <td>
                   <span className={`agency-badge ${p.purpose === 'SALE' ? 'agency-badge-sale' : 'agency-badge-rent'}`}>
@@ -130,7 +161,8 @@ const AgencyPropertyList = ({ properties, onDeleted }) => {
                   </button>
                 </td>
               </tr>
-            ))}
+            );
+          })}
           </tbody>
         </table>
       </div>

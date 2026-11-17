@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { deleteResidence } from '../services/api';
+import { getImageUrl, DEFAULT_PLACEHOLDER_IMAGE } from '../utils/imageUtils';
 
 const AgencyResidenceList = ({ residences, onDeleted }) => {
   const [deletingId, setDeletingId] = useState(null);
@@ -45,16 +46,46 @@ const AgencyResidenceList = ({ residences, onDeleted }) => {
               <th>Ville</th>
               <th>Adresse</th>
               <th>Statut</th>
-              <th>Vérification</th>
+              <th>Vues</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {residences.map((r) => (
-              <tr key={r.id}>
-                <td>
-                  <span className="agency-table-name">{r.name}</span>
-                </td>
+            {residences.map((r) => {
+              let displayImage = null;
+              if (r.images && r.images.length > 0) {
+                // Cherche l'image avec isPrimary = true
+                const primaryImg = r.images.find((img) => img.isPrimary === true);
+                // Si elle existe, on la prend, sinon on prend la première par défaut
+                displayImage = primaryImg ? primaryImg : r.images[0];
+              }
+              const imageSrc = displayImage
+                ? getImageUrl(typeof displayImage === 'string' ? displayImage : displayImage.imageUrl)
+                : (r.image ? getImageUrl(r.image) : DEFAULT_PLACEHOLDER_IMAGE);
+
+              return (
+                <tr key={r.id}>
+                  <td>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <img
+                        src={imageSrc}
+                        alt={r.name}
+                        style={{
+                          width: '38px',
+                          height: '38px',
+                          borderRadius: '6px',
+                          objectFit: 'cover',
+                          flexShrink: 0,
+                          backgroundColor: '#e2e8f0',
+                        }}
+                        onError={(e) => {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = DEFAULT_PLACEHOLDER_IMAGE;
+                        }}
+                      />
+                      <span className="agency-table-name">{r.name}</span>
+                    </div>
+                  </td>
                 <td>{r.city}</td>
                 <td className="agency-table-address">{r.address}</td>
                 <td>
@@ -65,13 +96,9 @@ const AgencyResidenceList = ({ residences, onDeleted }) => {
                   )}
                 </td>
                 <td>
-                  {r.verificationStatus === 'APPROVED' ? (
-                    <span className="agency-badge agency-badge-verified">Approuvée</span>
-                  ) : r.verificationStatus === 'REJECTED' ? (
-                    <span className="agency-badge agency-badge-rejected">Rejetée</span>
-                  ) : (
-                    <span className="agency-badge agency-badge-pending">En attente</span>
-                  )}
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#64748b', fontWeight: 600 }}>
+                    <span>👁️</span> {r.views != null ? r.views : 0}
+                  </span>
                 </td>
                 <td>
                   <button
@@ -94,7 +121,8 @@ const AgencyResidenceList = ({ residences, onDeleted }) => {
                   </button>
                 </td>
               </tr>
-            ))}
+            );
+          })}
           </tbody>
         </table>
       </div>

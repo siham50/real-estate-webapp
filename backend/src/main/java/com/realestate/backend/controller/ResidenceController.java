@@ -73,4 +73,13 @@ public class ResidenceController {
             return ResponseEntity.notFound().build();
         }
     }
+
+    @PatchMapping("/{id}/view")
+    public ResponseEntity<ResidenceDTO> incrementViews(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(residenceService.incrementViews(id));
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
 }
