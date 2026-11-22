@@ -10,6 +10,7 @@ const Header = () => {
 
   // On considère l'utilisateur connecté uniquement s'il possède un id valide
   const isLoggedIn = Boolean(user && user.id);
+  const userRole = String(user?.role || '').toUpperCase();
 
   const handleHeaderSearch = (e) => {
     e.preventDefault();
@@ -22,19 +23,19 @@ const Header = () => {
   };
 
   const handleLogoClick = () => {
-    if (user?.role === 'ADMIN') {
+    if (userRole === 'ADMIN') {
       navigate('/admin');
-    } else if (user?.role === 'PROFESSIONAL' || user?.role === 'AGENCE') {
+    } else if (userRole === 'PROFESSIONAL' || userRole === 'AGENCE') {
       navigate('/agency/dashboard');
     } else {
-      navigate('/client/dashboard');
+      navigate('/');
     }
   };
 
   const handleProfileClick = () => {
-    if (user?.role === 'ADMIN') {
+    if (userRole === 'ADMIN') {
       navigate('/admin');
-    } else if (user?.role === 'PROFESSIONAL' || user?.role === 'AGENCE') {
+    } else if (userRole === 'PROFESSIONAL' || userRole === 'AGENCE') {
       navigate('/profile/agency');
     } else {
       navigate('/profile/client');
@@ -70,7 +71,7 @@ const Header = () => {
 
         {/* Navigation centrale */}
         <nav className="urbanet-nav">
-          {user?.role === 'ADMIN' ? (
+          {userRole === 'ADMIN' ? (
             <NavLink
               to="/admin"
               className={({ isActive }) =>
@@ -79,7 +80,7 @@ const Header = () => {
             >
               Mon Espace
             </NavLink>
-          ) : (user?.role === 'PROFESSIONAL' || user?.role === 'AGENCE') ? (
+          ) : (userRole === 'PROFESSIONAL' || userRole === 'AGENCE') ? (
             <NavLink
               to="/agency/dashboard"
               className={({ isActive }) =>
@@ -158,25 +159,23 @@ const Header = () => {
               </button>
 
               {/* Bouton "Mon Espace" pour les clients */}
-              {user.role === 'CLIENT' && (
+              {userRole === 'CLIENT' && (
                 <button
                   type="button"
                   className="agency-header-dashboard-btn"
                   onClick={() => navigate('/client/dashboard')}
-                  title="Tableau de bord client"
+                  title="Mon Espace Client"
                 >
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="3" width="7" height="7" />
-                    <rect x="14" y="3" width="7" height="7" />
-                    <rect x="14" y="14" width="7" height="7" />
-                    <rect x="3" y="14" width="7" height="7" />
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
                   </svg>
                   Mon Espace
                 </button>
               )}
 
               {/* Bouton "Mon Espace Agence" uniquement pour les professionnels */}
-              {(user.role === 'PROFESSIONAL' || user.role === 'AGENCE') && (
+              {(userRole === 'PROFESSIONAL' || userRole === 'AGENCE') && (
                 <button
                   type="button"
                   className="agency-header-dashboard-btn"
@@ -194,7 +193,7 @@ const Header = () => {
               )}
 
               {/* Bouton "Administration" pour les admins */}
-              {user.role === 'ADMIN' && (
+              {userRole === 'ADMIN' && (
                 <button
                   type="button"
                   className="agency-header-dashboard-btn"
@@ -220,7 +219,7 @@ const Header = () => {
                 </div>
                 <span className="header-user-name">{user.firstName}</span>
                 <span className="header-user-role-badge">
-                  {user.role === 'ADMIN' ? 'Admin' : (user.role === 'PROFESSIONAL' || user.role === 'AGENCE' ? 'Agence' : 'Client')}
+                  {userRole === 'ADMIN' ? 'Admin' : (userRole === 'PROFESSIONAL' || userRole === 'AGENCE' ? 'Agence' : 'Client')}
                 </span>
               </button>
               <button

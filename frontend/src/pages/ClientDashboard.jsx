@@ -13,8 +13,8 @@ const ClientDashboard = () => {
   const { user } = useAuth();
   const location = useLocation();
 
-  // Onglet actif : 'annonces' (Mes Annonces), 'properties' (Biens), 'residences' (Résidences)
-  const [activeTab, setActiveTab] = useState('annonces');
+  // Onglet actif : 'properties' (Biens), 'residences' (Résidences), 'all' (Toutes)
+  const [activeTab, setActiveTab] = useState('properties');
   const [residences, setResidences] = useState([]);
   const [properties, setProperties] = useState([]);
   const [loadingRes, setLoadingRes] = useState(true);
@@ -26,14 +26,17 @@ const ClientDashboard = () => {
   // Règle métier : L'identité doit être vérifiée pour publier
   const isIdentityVerified = user?.isIdentityVerified === true;
 
-  // Gestion des paramètres URL (ex: ouvrir directement la création de bien)
+  // Gestion des paramètres URL (ex: ouvrir directement la création de bien ou un onglet)
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     if (params.get('newProperty') === 'true' && isIdentityVerified) {
       setActiveTab('properties');
       setShowPropertyModal(true);
     } else if (params.get('tab')) {
-      setActiveTab(params.get('tab'));
+      const tabParam = params.get('tab');
+      if (tabParam === 'properties' || tabParam === 'residences' || tabParam === 'all') {
+        setActiveTab(tabParam);
+      }
     }
   }, [location.search, isIdentityVerified]);
 
@@ -86,8 +89,15 @@ const ClientDashboard = () => {
     setProperties((prev) => prev.filter((p) => p.id !== id));
   };
 
-  const isLoading = loadingRes || loadingProps;
-  const totalAnnonces = properties.length + residences.length;
+  const propertiesCount = Array.isArray(properties) ? properties.length : 0;
+  const residencesCount = Array.isArray(residences) ? residences.length : 0;
+  const totalAnnonces = propertiesCount + residencesCount;
+  const isLoading =
+    activeTab === 'properties'
+      ? loadingProps
+      : activeTab === 'residences'
+      ? loadingRes
+      : loadingProps || loadingRes;
 
   return (
     <div className="urbanet-app-root">
@@ -112,19 +122,46 @@ const ClientDashboard = () => {
               </div>
             </div>
 
-            {/* Statistiques rapides */}
+            {/* Statistiques rapides (calculées dynamiquement) */}
             <div className="agency-stats-row">
-              <div className="agency-stat-pill">
+              <div
+                className={`agency-stat-pill ${activeTab === 'all' ? 'active-stat' : ''}`}
+                onClick={() => setActiveTab('all')}
+                style={{
+                  cursor: 'pointer',
+                  border: activeTab === 'all' ? '2px solid var(--color-primary)' : '1px solid var(--color-border)',
+                  transition: 'all 0.2s ease',
+                }}
+                title="Afficher toutes les annonces"
+              >
                 <span className="agency-stat-num">{totalAnnonces}</span>
                 <span className="agency-stat-label">Annonce{totalAnnonces > 1 ? 's' : ''}</span>
               </div>
-              <div className="agency-stat-pill">
-                <span className="agency-stat-num">{properties.length}</span>
-                <span className="agency-stat-label">Bien{properties.length > 1 ? 's' : ''}</span>
+              <div
+                className={`agency-stat-pill ${activeTab === 'properties' ? 'active-stat' : ''}`}
+                onClick={() => setActiveTab('properties')}
+                style={{
+                  cursor: 'pointer',
+                  border: activeTab === 'properties' ? '2px solid var(--color-primary)' : '1px solid var(--color-border)',
+                  transition: 'all 0.2s ease',
+                }}
+                title="Afficher mes biens"
+              >
+                <span className="agency-stat-num">{propertiesCount}</span>
+                <span className="agency-stat-label">Bien{propertiesCount > 1 ? 's' : ''}</span>
               </div>
-              <div className="agency-stat-pill">
-                <span className="agency-stat-num">{residences.length}</span>
-                <span className="agency-stat-label">Résidence{residences.length > 1 ? 's' : ''}</span>
+              <div
+                className={`agency-stat-pill ${activeTab === 'residences' ? 'active-stat' : ''}`}
+                onClick={() => setActiveTab('residences')}
+                style={{
+                  cursor: 'pointer',
+                  border: activeTab === 'residences' ? '2px solid var(--color-primary)' : '1px solid var(--color-border)',
+                  transition: 'all 0.2s ease',
+                }}
+                title="Afficher mes résidences"
+              >
+                <span className="agency-stat-num">{residencesCount}</span>
+                <span className="agency-stat-label">Résidence{residencesCount > 1 ? 's' : ''}</span>
               </div>
             </div>
           </div>
@@ -185,22 +222,6 @@ const ClientDashboard = () => {
             <div className="agency-tabs">
               <button
                 type="button"
-                className={`agency-tab ${activeTab === 'annonces' ? 'active' : ''}`}
-                onClick={() => setActiveTab('annonces')}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                  <polyline points="14 2 14 8 20 8" />
-                  <line x1="16" y1="13" x2="8" y2="13" />
-                  <line x1="16" y1="17" x2="8" y2="17" />
-                  <polyline points="10 9 9 9 8 9" />
-                </svg>
-                Mes Annonces
-                <span className="agency-tab-count">{totalAnnonces}</span>
-              </button>
-
-              <button
-                type="button"
                 className={`agency-tab ${activeTab === 'properties' ? 'active' : ''}`}
                 onClick={() => setActiveTab('properties')}
               >
@@ -209,7 +230,7 @@ const ClientDashboard = () => {
                   <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
                 </svg>
                 Mes Biens
-                <span className="agency-tab-count">{properties.length}</span>
+                <span className="agency-tab-count">{propertiesCount}</span>
               </button>
 
               <button
@@ -222,7 +243,23 @@ const ClientDashboard = () => {
                   <polyline points="9 22 9 12 15 12 15 22" />
                 </svg>
                 Mes Résidences
-                <span className="agency-tab-count">{residences.length}</span>
+                <span className="agency-tab-count">{residencesCount}</span>
+              </button>
+
+              <button
+                type="button"
+                className={`agency-tab ${activeTab === 'all' ? 'active' : ''}`}
+                onClick={() => setActiveTab('all')}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="16" y1="13" x2="8" y2="13" />
+                  <line x1="16" y1="17" x2="8" y2="17" />
+                  <polyline points="10 9 9 9 8 9" />
+                </svg>
+                Toutes les annonces
+                <span className="agency-tab-count">{totalAnnonces}</span>
               </button>
             </div>
 
@@ -269,49 +306,41 @@ const ClientDashboard = () => {
               </div>
             ) : (
               <>
-                {/* Onglet "Mes Annonces" : Affiche les tableaux de biens et résidences */}
-                {activeTab === 'annonces' && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
-                    <div>
+                {/* Tableau des Biens (affiché si activeTab === 'properties' ou 'all') */}
+                {(activeTab === 'properties' || activeTab === 'all') && (
+                  <div className="client-dashboard-tab-content" style={{ marginBottom: activeTab === 'all' ? '28px' : '0' }}>
+                    {activeTab === 'all' && (
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                        <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#0f172a', margin: 0 }}>
-                          Biens Immobiliers ({properties.length})
+                        <h3 style={{ fontSize: '1.05rem', fontWeight: 600, color: '#0f172a', margin: 0 }}>
+                          Mes Biens ({propertiesCount})
                         </h3>
                       </div>
-                      <AgencyPropertyList
-                        properties={properties}
-                        onDeleted={handlePropertyDeleted}
-                      />
-                    </div>
-
-                    <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '20px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                        <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#0f172a', margin: 0 }}>
-                          Résidences ({residences.length})
-                        </h3>
-                      </div>
-                      <AgencyResidenceList
-                        residences={residences}
-                        onDeleted={handleResidenceDeleted}
-                      />
-                    </div>
+                    )}
+                    <AgencyPropertyList
+                      properties={properties}
+                      onDeleted={handlePropertyDeleted}
+                    />
                   </div>
                 )}
 
-                {/* Onglet Biens uniquement */}
-                {activeTab === 'properties' && (
-                  <AgencyPropertyList
-                    properties={properties}
-                    onDeleted={handlePropertyDeleted}
-                  />
-                )}
-
-                {/* Onglet Résidences uniquement */}
-                {activeTab === 'residences' && (
-                  <AgencyResidenceList
-                    residences={residences}
-                    onDeleted={handleResidenceDeleted}
-                  />
+                {/* Tableau des Résidences (affiché si activeTab === 'residences' ou 'all') */}
+                {(activeTab === 'residences' || activeTab === 'all') && (
+                  <div
+                    className="client-dashboard-tab-content"
+                    style={activeTab === 'all' ? { borderTop: '1px solid #e2e8f0', paddingTop: '20px' } : {}}
+                  >
+                    {activeTab === 'all' && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                        <h3 style={{ fontSize: '1.05rem', fontWeight: 600, color: '#0f172a', margin: 0 }}>
+                          Mes Résidences ({residencesCount})
+                        </h3>
+                      </div>
+                    )}
+                    <AgencyResidenceList
+                      residences={residences}
+                      onDeleted={handleResidenceDeleted}
+                    />
+                  </div>
                 )}
               </>
             )}

@@ -49,7 +49,7 @@ public class AdminController {
         return ResponseEntity.ok(adminService.getPendingListings());
     }
 
-    @PatchMapping("/verify-listing/property/{id}")
+    @PatchMapping({"/verify-property/{id}", "/verify-listing/property/{id}"})
     public ResponseEntity<PropertyDTO> verifyPropertyListing(@PathVariable Long id) {
         try {
             return ResponseEntity.ok(adminService.verifyProperty(id));
@@ -58,7 +58,7 @@ public class AdminController {
         }
     }
 
-    @PatchMapping("/reject-listing/property/{id}")
+    @PatchMapping({"/reject-property/{id}", "/reject-listing/property/{id}"})
     public ResponseEntity<PropertyDTO> rejectPropertyListing(@PathVariable Long id) {
         try {
             return ResponseEntity.ok(adminService.rejectProperty(id));
@@ -67,7 +67,7 @@ public class AdminController {
         }
     }
 
-    @PatchMapping("/verify-listing/residence/{id}")
+    @PatchMapping({"/verify-residence/{id}", "/verify-listing/residence/{id}"})
     public ResponseEntity<ResidenceDTO> verifyResidenceListing(@PathVariable Long id) {
         try {
             return ResponseEntity.ok(adminService.verifyResidence(id));
@@ -76,7 +76,7 @@ public class AdminController {
         }
     }
 
-    @PatchMapping("/reject-listing/residence/{id}")
+    @PatchMapping({"/reject-residence/{id}", "/reject-listing/residence/{id}"})
     public ResponseEntity<ResidenceDTO> rejectResidenceListing(@PathVariable Long id) {
         try {
             return ResponseEntity.ok(adminService.rejectResidence(id));

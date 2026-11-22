@@ -11,6 +11,7 @@ import com.realestate.backend.entity.User;
 import com.realestate.backend.entity.enums.PropertyPurpose;
 import com.realestate.backend.entity.enums.PropertyType;
 import com.realestate.backend.entity.enums.Role;
+import com.realestate.backend.entity.enums.VerificationStatus;
 import com.realestate.backend.repository.AgencyProfileRepository;
 import com.realestate.backend.repository.PropertyRepository;
 import com.realestate.backend.repository.ResidenceRepository;
@@ -62,11 +63,12 @@ public class PropertyService {
                 if (!agencyProfile.isVerified()) {
                     throw new RuntimeException("Votre compte agence doit être vérifié par un administrateur avant de publier.");
                 }
+                property.setVerificationStatus(VerificationStatus.VERIFIED);
             } else if (owner.getRole() == Role.CLIENT) {
                 if (!Boolean.TRUE.equals(owner.getIsIdentityVerified())) {
                     throw new RuntimeException("Vous devez faire vérifier votre CIN avant de publier.");
                 }
-                property.setVerificationStatus(com.realestate.backend.entity.enums.VerificationStatus.PENDING);
+                property.setVerificationStatus(VerificationStatus.PENDING);
             }
         }
 
@@ -78,15 +80,31 @@ public class PropertyService {
             property.setResidence(null);
         }
 
+        if (property.getDocuments() != null) {
+            for (PropertyDocument doc : property.getDocuments()) {
+                doc.setProperty(property);
+            }
+        }
+
         if (property.getDocumentUrl() != null && !property.getDocumentUrl().isBlank()) {
-            PropertyDocument doc = PropertyDocument.builder()
-                    .property(property)
-                    .documentUrl(property.getDocumentUrl())
-                    .build();
             if (property.getDocuments() == null) {
                 property.setDocuments(new ArrayList<>());
             }
-            property.getDocuments().add(doc);
+            boolean exists = property.getDocuments().stream()
+                    .anyMatch(d -> property.getDocumentUrl().equals(d.getDocumentUrl()));
+            if (!exists) {
+                PropertyDocument doc = PropertyDocument.builder()
+                        .property(property)
+                        .documentUrl(property.getDocumentUrl())
+                        .build();
+                property.getDocuments().add(doc);
+            }
+        }
+
+        if (property.getOwner() != null && property.getOwner().getRole() == Role.CLIENT) {
+            if (property.getDocuments() == null || property.getDocuments().isEmpty()) {
+                throw new RuntimeException("Vous devez fournir au moins un document justificatif de propriété.");
+            }
         }
 
         if (property.getImages() != null && !property.getImages().isEmpty()) {

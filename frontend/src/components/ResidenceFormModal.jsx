@@ -16,11 +16,11 @@ const ResidenceFormModal = ({ onClose, onCreated }) => {
   const { user } = useAuth();
   const [formData, setFormData] = useState(EMPTY_FORM);
   const [selectedImages, setSelectedImages] = useState([]);
+  const [selectedDocuments, setSelectedDocuments] = useState([]);
 
   const [loading, setLoading] = useState(false);
   const [statusText, setStatusText] = useState('');
   const [error, setError] = useState('');
-  const [documentFile, setDocumentFile] = useState(null);
 
   const handleImagesChange = (e) => {
     if (e.target.files) {
@@ -61,6 +61,29 @@ const ResidenceFormModal = ({ onClose, onCreated }) => {
     });
   };
 
+  const handleDocumentsChange = (e) => {
+    if (e.target.files) {
+      const filesArray = Array.from(e.target.files);
+      const newDocs = filesArray.map((file) => ({
+        file,
+        name: file.name,
+        size: (file.size / 1024).toFixed(1),
+        isPdf: file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf'),
+        preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : null,
+      }));
+      setSelectedDocuments((prev) => [...prev, ...newDocs]);
+    }
+  };
+
+  const handleRemoveDocument = (index) => {
+    setSelectedDocuments((prev) => {
+      if (prev[index]?.preview) {
+        URL.revokeObjectURL(prev[index].preview);
+      }
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -70,20 +93,26 @@ const ResidenceFormModal = ({ onClose, onCreated }) => {
     e.preventDefault();
     setError('');
 
-    if (!documentFile) {
-      setError('Le document de propriété (Titre Foncier / Acte) est obligatoire.');
+    if (selectedDocuments.length === 0) {
+      setError('Au moins un document de propriété (Titre Foncier / Acte) est obligatoire.');
       return;
     }
 
     setLoading(true);
 
     try {
-      // 1. Upload du document de propriété
-      let documentUrl = null;
-      if (documentFile) {
-        setStatusText('Upload du document de propriété en cours...');
-        const docRes = await uploadFile(documentFile);
-        documentUrl = typeof docRes === 'string' ? docRes : (docRes?.url || docRes?.fileUrl || null);
+      // 1. Upload séquentiel des documents de propriété un par un
+      setStatusText('Upload des documents de propriété en cours...');
+      const uploadedDocUrls = [];
+      let docIndex = 1;
+      for (const docItem of selectedDocuments) {
+        setStatusText(`Upload du document ${docIndex}/${selectedDocuments.length}...`);
+        const docRes = await uploadFile(docItem.file);
+        const cleanUrl = typeof docRes === 'string' ? docRes : (docRes?.url || docRes?.fileUrl || '');
+        if (cleanUrl) {
+          uploadedDocUrls.push(cleanUrl);
+        }
+        docIndex++;
       }
 
       // 2. Upload séquentiel des photos de la résidence avec for...of
@@ -102,7 +131,7 @@ const ResidenceFormModal = ({ onClose, onCreated }) => {
         selectedImages[0].isPrimary = true;
       }
 
-      // 3. Création de la résidence avec verificationStatus: PENDING
+      // 3. Création de la résidence avec tableau de documents et verificationStatus: PENDING
       setStatusText('Création de la résidence...');
       const payload = {
         name: formData.name.trim(),
@@ -119,7 +148,8 @@ const ResidenceFormModal = ({ onClose, onCreated }) => {
             : -7.5898,
         owner: { id: user.id },
         verificationStatus: 'PENDING',
-        documentUrl: documentUrl,
+        documentUrl: uploadedDocUrls[0] || null,
+        documents: uploadedDocUrls.map((url) => ({ documentUrl: url })),
         images: selectedImages.map((img) => ({
           imageUrl: img.url,
           isPrimary: img.isPrimary === true, // S'assure que c'est un booléen strict
@@ -223,25 +253,82 @@ const ResidenceFormModal = ({ onClose, onCreated }) => {
             />
           </div>
 
-          {/* Document de propriété / Titre foncier */}
+          {/* Document de propriété / Titre foncier (Multi-documents) */}
           <div className="agency-field-group">
-            <label htmlFor="res-document" className="agency-label">
-              Document de propriété / Titre foncier <span style={{ color: '#ef4444' }}>*</span>
+            <label htmlFor="res-documents" className="agency-label">
+              Documents de propriété / Titre foncier <span style={{ color: '#ef4444' }}>*</span>
             </label>
             <input
-              id="res-document"
+              id="res-documents"
               type="file"
-              required
-              accept="image/jpeg,image/png,image/webp,application/pdf"
+              multiple
+              accept=".pdf,image/*"
               className="agency-input"
-              onChange={(e) => setDocumentFile(e.target.files[0] || null)}
+              onChange={handleDocumentsChange}
             />
             <small style={{ display: 'block', marginTop: '4px', color: '#6b7280', fontSize: '0.82rem' }}>
-              Formats autorisés : PDF, JPG, PNG (max. 10 Mo). Ce document servira à la validation légale de la résidence.
+              Formats autorisés : PDF, JPG, PNG (max. 10 Mo par document). Vous pouvez joindre plusieurs documents justificatifs.
             </small>
-            {documentFile && (
-              <div style={{ marginTop: '6px', fontSize: '0.85rem', color: '#166534', fontWeight: 500 }}>
-                ✓ Fichier sélectionné : {documentFile.name} ({(documentFile.size / 1024).toFixed(1)} Ko)
+
+            {/* Liste et aperçus des documents sélectionnés */}
+            {selectedDocuments.length > 0 && (
+              <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {selectedDocuments.map((doc, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid #e2e8f0',
+                      background: '#f8fafc',
+                      gap: '10px',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', overflow: 'hidden' }}>
+                      {doc.isPdf ? (
+                        <span style={{ fontSize: '22px' }}>📕</span>
+                      ) : doc.preview ? (
+                        <img
+                          src={doc.preview}
+                          alt={doc.name}
+                          style={{ width: '38px', height: '38px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #cbd5e1' }}
+                        />
+                      ) : (
+                        <span style={{ fontSize: '22px' }}>📄</span>
+                      )}
+                      <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <div style={{ fontSize: '0.86rem', fontWeight: 600, color: '#1e293b' }}>
+                          {doc.name}
+                        </div>
+                        <div style={{ fontSize: '0.76rem', color: '#64748b' }}>
+                          {doc.size} Ko
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveDocument(idx)}
+                      style={{
+                        background: '#fee2e2',
+                        color: '#b91c1c',
+                        border: '1px solid #fca5a5',
+                        borderRadius: '6px',
+                        padding: '4px 10px',
+                        fontSize: '0.78rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        flexShrink: 0,
+                      }}
+                      title="Supprimer ce document"
+                    >
+                      Supprimer
+                    </button>
+                  </div>
+                ))}
               </div>
             )}
           </div>

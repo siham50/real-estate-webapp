@@ -34,7 +34,7 @@ const PROPERTY_PURPOSES = [
 const PropertyForm = ({ onClose, onCreated, residences, isModal = false }) => {
   const { user, updateUserState } = useAuth();
   const [formData, setFormData] = useState(EMPTY_FORM);
-  const [propertyDocFile, setPropertyDocFile] = useState(null);
+  const [selectedDocuments, setSelectedDocuments] = useState([]);
   const [cinFile, setCinFile] = useState(null);
   const [selectedImages, setSelectedImages] = useState([]);
 
@@ -85,6 +85,29 @@ const PropertyForm = ({ onClose, onCreated, residences, isModal = false }) => {
     });
   };
 
+  const handleDocumentsChange = (e) => {
+    if (e.target.files) {
+      const filesArray = Array.from(e.target.files);
+      const newDocs = filesArray.map((file) => ({
+        file,
+        name: file.name,
+        size: (file.size / 1024).toFixed(1),
+        isPdf: file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf'),
+        preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : null,
+      }));
+      setSelectedDocuments((prev) => [...prev, ...newDocs]);
+    }
+  };
+
+  const handleRemoveDocument = (index) => {
+    setSelectedDocuments((prev) => {
+      if (prev[index]?.preview) {
+        URL.revokeObjectURL(prev[index].preview);
+      }
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -95,8 +118,8 @@ const PropertyForm = ({ onClose, onCreated, residences, isModal = false }) => {
     setError('');
 
     // Le document de propriété est obligatoire
-    if (!propertyDocFile) {
-      setError('Le document de propriété (Titre Foncier / Acte) est obligatoire.');
+    if (selectedDocuments.length === 0) {
+      setError('Au moins un document de propriété (Titre Foncier / Acte) est obligatoire.');
       return;
     }
 
@@ -108,11 +131,18 @@ const PropertyForm = ({ onClose, onCreated, residences, isModal = false }) => {
     setLoading(true);
 
     try {
-      // 1. Upload du fichier de propriété (si fourni)
-      let propertyDocUrl = null;
-      if (propertyDocFile) {
-        setStatusText('Upload du document de propriété en cours...');
-        propertyDocUrl = await uploadFile(propertyDocFile);
+      // 1. Upload séquentiel des documents de propriété un par un
+      setStatusText('Upload des documents de propriété en cours...');
+      const uploadedDocUrls = [];
+      let docIndex = 1;
+      for (const docItem of selectedDocuments) {
+        setStatusText(`Upload du document ${docIndex}/${selectedDocuments.length}...`);
+        const docRes = await uploadFile(docItem.file);
+        const cleanUrl = typeof docRes === 'string' ? docRes : (docRes?.url || docRes?.fileUrl || '');
+        if (cleanUrl) {
+          uploadedDocUrls.push(cleanUrl);
+        }
+        docIndex++;
       }
 
       // 2. (Si nécessaire) Upload de la CIN et mise à jour du profil utilisateur
@@ -140,11 +170,8 @@ const PropertyForm = ({ onClose, onCreated, residences, isModal = false }) => {
         selectedImages[0].isPrimary = true;
       }
 
-      // 4. Envoi de la requête de création avec documentUrl et images au format JSON
+      // 4. Envoi de la requête de création avec tableau de documents et images
       setStatusText('Création du bien en cours...');
-      const cleanDocUrl = typeof propertyDocUrl === 'string'
-        ? propertyDocUrl
-        : (propertyDocUrl?.url || propertyDocUrl?.fileUrl || null);
 
       const payload = {
         title: formData.title.trim(),
@@ -165,7 +192,8 @@ const PropertyForm = ({ onClose, onCreated, residences, isModal = false }) => {
             : -7.5898,
         owner: user?.id ? { id: user.id } : null,
         residence: formData.residenceId ? { id: parseInt(formData.residenceId, 10) } : null,
-        documentUrl: cleanDocUrl,
+        documentUrl: uploadedDocUrls[0] || null,
+        documents: uploadedDocUrls.map((url) => ({ documentUrl: url })),
         images: selectedImages.map((img) => ({
           imageUrl: img.url,
           isPrimary: img.isPrimary === true, // S'assure que c'est un booléen strict
@@ -480,26 +508,83 @@ const PropertyForm = ({ onClose, onCreated, residences, isModal = false }) => {
           )}
         </div>
 
-        {/* 1. Titre Foncier / Documents de propriété (Obligatoire) */}
+        {/* 1. Titre Foncier / Documents de propriété (Multi-documents) */}
         <div className="agency-field-group">
-          <label htmlFor="property-doc">
-            Document de propriété / Titre foncier <span style={{ color: '#ef4444' }}>*</span>
+          <label htmlFor="property-docs">
+            Documents de propriété / Titre foncier <span style={{ color: '#ef4444' }}>*</span>
           </label>
           <input
-            id="property-doc"
-            name="propertyDoc"
+            id="property-docs"
+            name="propertyDocs"
             type="file"
-            required
-            accept="image/jpeg,image/png,image/webp,application/pdf"
+            multiple
+            accept=".pdf,image/*"
             className="agency-input"
-            onChange={(e) => setPropertyDocFile(e.target.files[0] || null)}
+            onChange={handleDocumentsChange}
           />
           <small style={{ display: 'block', marginTop: '4px', color: '#6b7280', fontSize: '0.82rem' }}>
-            Formats autorisés : PDF, JPG, PNG (max. 10 Mo). Ce document servira à la validation légale de l'annonce.
+            Formats autorisés : PDF, JPG, PNG (max. 10 Mo par document). Vous pouvez joindre plusieurs documents justificatifs.
           </small>
-          {propertyDocFile && (
-            <div style={{ marginTop: '6px', fontSize: '0.85rem', color: '#166534', fontWeight: 500 }}>
-              ✓ Fichier sélectionné : {propertyDocFile.name} ({(propertyDocFile.size / 1024).toFixed(1)} Ko)
+
+          {/* Liste et aperçus des documents sélectionnés */}
+          {selectedDocuments.length > 0 && (
+            <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {selectedDocuments.map((doc, idx) => (
+                <div
+                  key={idx}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid #e2e8f0',
+                    background: '#f8fafc',
+                    gap: '10px',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', overflow: 'hidden' }}>
+                    {doc.isPdf ? (
+                      <span style={{ fontSize: '22px' }}>📕</span>
+                    ) : doc.preview ? (
+                      <img
+                        src={doc.preview}
+                        alt={doc.name}
+                        style={{ width: '38px', height: '38px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #cbd5e1' }}
+                      />
+                    ) : (
+                      <span style={{ fontSize: '22px' }}>📄</span>
+                    )}
+                    <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <div style={{ fontSize: '0.86rem', fontWeight: 600, color: '#1e293b' }}>
+                        {doc.name}
+                      </div>
+                      <div style={{ fontSize: '0.76rem', color: '#64748b' }}>
+                        {doc.size} Ko
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveDocument(idx)}
+                    style={{
+                      background: '#fee2e2',
+                      color: '#b91c1c',
+                      border: '1px solid #fca5a5',
+                      borderRadius: '6px',
+                      padding: '4px 10px',
+                      fontSize: '0.78rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      flexShrink: 0,
+                    }}
+                    title="Supprimer ce document"
+                  >
+                    Supprimer
+                  </button>
+                </div>
+              ))}
             </div>
           )}
         </div>

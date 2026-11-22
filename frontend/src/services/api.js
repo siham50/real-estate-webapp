@@ -535,39 +535,43 @@ export const getPendingListings = async () => {
 
 export const verifyPropertyListing = async (id) => {
   try {
-    const response = await api.patch(`/admin/verify-listing/property/${id}`);
+    const response = await api.patch(`/admin/verify-property/${id}`);
     return response.data;
   } catch (error) {
     throw new Error(error.response?.data?.message || error.response?.data?.error || error.message);
   }
 };
+export const verifyProperty = verifyPropertyListing;
 
 export const rejectPropertyListing = async (id) => {
   try {
-    const response = await api.patch(`/admin/reject-listing/property/${id}`);
+    const response = await api.patch(`/admin/reject-property/${id}`);
     return response.data;
   } catch (error) {
     throw new Error(error.response?.data?.message || error.response?.data?.error || error.message);
   }
 };
+export const rejectProperty = rejectPropertyListing;
 
 export const verifyResidenceListing = async (id) => {
   try {
-    const response = await api.patch(`/admin/verify-listing/residence/${id}`);
+    const response = await api.patch(`/admin/verify-residence/${id}`);
     return response.data;
   } catch (error) {
     throw new Error(error.response?.data?.message || error.response?.data?.error || error.message);
   }
 };
+export const verifyResidence = verifyResidenceListing;
 
 export const rejectResidenceListing = async (id) => {
   try {
-    const response = await api.patch(`/admin/reject-listing/residence/${id}`);
+    const response = await api.patch(`/admin/reject-residence/${id}`);
     return response.data;
   } catch (error) {
     throw new Error(error.response?.data?.message || error.response?.data?.error || error.message);
   }
 };
+export const rejectResidence = rejectResidenceListing;
 
 export const togglePropertyAvailability = async (id) => {
   try {

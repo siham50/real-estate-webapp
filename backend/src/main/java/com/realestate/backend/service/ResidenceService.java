@@ -70,15 +70,31 @@ public class ResidenceService {
             residence.setVerificationStatus(VerificationStatus.PENDING);
         }
 
+        if (residence.getDocuments() != null) {
+            for (com.realestate.backend.entity.ResidenceDocument doc : residence.getDocuments()) {
+                doc.setResidence(residence);
+            }
+        }
+
         if (residence.getDocumentUrl() != null && !residence.getDocumentUrl().isBlank()) {
-            com.realestate.backend.entity.ResidenceDocument doc = com.realestate.backend.entity.ResidenceDocument.builder()
-                    .residence(residence)
-                    .documentUrl(residence.getDocumentUrl())
-                    .build();
             if (residence.getDocuments() == null) {
                 residence.setDocuments(new ArrayList<>());
             }
-            residence.getDocuments().add(doc);
+            boolean exists = residence.getDocuments().stream()
+                    .anyMatch(d -> residence.getDocumentUrl().equals(d.getDocumentUrl()));
+            if (!exists) {
+                com.realestate.backend.entity.ResidenceDocument doc = com.realestate.backend.entity.ResidenceDocument.builder()
+                        .residence(residence)
+                        .documentUrl(residence.getDocumentUrl())
+                        .build();
+                residence.getDocuments().add(doc);
+            }
+        }
+
+        if (residence.getOwner() != null && residence.getOwner().getRole() == Role.CLIENT) {
+            if (residence.getDocuments() == null || residence.getDocuments().isEmpty()) {
+                throw new RuntimeException("Vous devez fournir au moins un document justificatif de propriété.");
+            }
         }
 
         if (residence.getImages() != null && !residence.getImages().isEmpty()) {

@@ -43,20 +43,42 @@ const AdminPendingListings = () => {
 
   // Normalisation des annonces pour affichage dans le tableau
   const allListings = [
-    ...properties.map((p) => ({
-      ...p,
-      itemType: 'PROPERTY',
-      displayTitle: p.title,
-      displayType: p.type ? `Bien (${p.type})` : 'Bien immobilier',
-      docUrl: p.documentUrl || (p.documents && p.documents[0]?.documentUrl) || null,
-    })),
-    ...residences.map((r) => ({
-      ...r,
-      itemType: 'RESIDENCE',
-      displayTitle: r.name,
-      displayType: 'Résidence',
-      docUrl: r.documentUrl || (r.documents && r.documents[0]?.documentUrl) || null,
-    })),
+    ...properties.map((p) => {
+      const docs = Array.isArray(p.documents) && p.documents.length > 0
+        ? p.documents.map((d) => (typeof d === 'string' ? d : d.documentUrl)).filter(Boolean)
+        : (p.documentUrl ? [p.documentUrl] : []);
+      const clientName = p.owner
+        ? `${p.owner.firstName || ''} ${p.owner.lastName || ''}`.trim() || p.owner.email
+        : 'Client inconnu';
+
+      return {
+        ...p,
+        itemType: 'PROPERTY',
+        displayTitle: p.title,
+        displayType: p.type ? `Bien (${p.type})` : 'Bien immobilier',
+        allDocs: docs,
+        docUrl: docs[0] || null,
+        clientName,
+      };
+    }),
+    ...residences.map((r) => {
+      const docs = Array.isArray(r.documents) && r.documents.length > 0
+        ? r.documents.map((d) => (typeof d === 'string' ? d : d.documentUrl)).filter(Boolean)
+        : (r.documentUrl ? [r.documentUrl] : []);
+      const clientName = r.owner
+        ? `${r.owner.firstName || ''} ${r.owner.lastName || ''}`.trim() || r.owner.email
+        : 'Client inconnu';
+
+      return {
+        ...r,
+        itemType: 'RESIDENCE',
+        displayTitle: r.name,
+        displayType: 'Résidence',
+        allDocs: docs,
+        docUrl: docs[0] || null,
+        clientName,
+      };
+    }),
   ];
 
   const handleApprove = async (item) => {
@@ -275,7 +297,7 @@ const AdminPendingListings = () => {
                     </td>
 
                     <td>
-                      {item.docUrl ? (
+                      {item.allDocs && item.allDocs.length > 0 ? (
                         <button
                           type="button"
                           className="btn-action btn-action-view"
@@ -294,7 +316,7 @@ const AdminPendingListings = () => {
                           }}
                           onClick={() => setSelectedItemForDocs(item)}
                         >
-                          <span>📄 Voir les documents</span>
+                          <span>📄 Voir les documents ({item.allDocs.length})</span>
                         </button>
                       ) : (
                         <span style={{ fontSize: '0.82rem', color: '#94a3b8' }}>Aucun document</span>
@@ -418,77 +440,96 @@ const AdminPendingListings = () => {
 
             {/* Corps de la modale */}
             <div style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
-              {selectedItemForDocs.docUrl ? (
+              {selectedItemForDocs.allDocs && selectedItemForDocs.allDocs.length > 0 ? (
                 <div>
                   <div style={{ marginBottom: '16px' }}>
-                    <span style={{ fontWeight: 600, color: '#334155', fontSize: '0.9rem' }}>
-                      Justificatif légal / Titre foncier
+                    <span style={{ fontWeight: 600, color: '#334155', fontSize: '0.95rem' }}>
+                      Documents de propriété / Titres fonciers ({selectedItemForDocs.allDocs.length})
                     </span>
                     <p style={{ margin: '4px 0 12px', fontSize: '0.84rem', color: '#64748b' }}>
-                      Document déposé par le propriétaire ({selectedItemForDocs.owner?.email || 'Client'}).
+                      Transmis par <strong>{selectedItemForDocs.clientName}</strong> ({selectedItemForDocs.owner?.email || 'Client'}).
                     </p>
                   </div>
 
-                  {/* Aperçu image ou iframe PDF */}
-                  {isPdf(selectedItemForDocs.docUrl) ? (
-                    <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '20px', textAlign: 'center', background: '#f8fafc' }}>
-                      <span style={{ fontSize: '40px', display: 'block', marginBottom: '8px' }}>📕</span>
-                      <p style={{ margin: '0 0 12px', color: '#334155', fontWeight: 500 }}>
-                        Document PDF : Titre foncier / Acte notarié
-                      </p>
-                      <a
-                        href={getImageUrl(selectedItemForDocs.docUrl)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="btn-action btn-action-approve"
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          textDecoration: 'none',
-                          padding: '8px 16px',
-                          borderRadius: '6px',
-                          background: '#0284c7',
-                          color: '#fff',
-                          fontWeight: 500,
-                        }}
-                      >
-                        Ouvrir le document PDF dans un nouvel onglet ↗
-                      </a>
-                    </div>
-                  ) : (
-                    <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', textAlign: 'center', background: '#f8fafc' }}>
-                      <img
-                        src={getImageUrl(selectedItemForDocs.docUrl)}
-                        alt="Document de propriété"
-                        style={{
-                          maxWidth: '100%',
-                          maxHeight: '380px',
-                          objectFit: 'contain',
-                          display: 'inline-block',
-                          margin: '0 auto',
-                        }}
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                        }}
-                      />
-                      <div style={{ padding: '12px', borderTop: '1px solid #e2e8f0' }}>
-                        <a
-                          href={getImageUrl(selectedItemForDocs.docUrl)}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    {selectedItemForDocs.allDocs.map((url, idx) => {
+                      const pdf = isPdf(url);
+                      const fullUrl = getImageUrl(url);
+                      return (
+                        <div
+                          key={idx}
                           style={{
-                            fontSize: '0.88rem',
-                            color: '#0284c7',
-                            textDecoration: 'none',
-                            fontWeight: 600,
+                            border: '1px solid #e2e8f0',
+                            borderRadius: '8px',
+                            overflow: 'hidden',
+                            background: '#f8fafc',
+                            padding: '16px',
                           }}
                         >
-                          Ouvrir l'image en pleine résolution ↗
-                        </a>
-                      </div>
-                    </div>
-                  )}
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                            <span style={{ fontWeight: 600, fontSize: '0.88rem', color: '#1e293b' }}>
+                              {pdf ? '📕 Document PDF' : '🖼️ Document Image'} #{idx + 1}
+                            </span>
+                            <a
+                              href={fullUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{
+                                fontSize: '0.84rem',
+                                color: '#0284c7',
+                                textDecoration: 'none',
+                                fontWeight: 600,
+                              }}
+                            >
+                              Ouvrir dans un nouvel onglet ↗
+                            </a>
+                          </div>
+
+                          {pdf ? (
+                            <div style={{ textAlign: 'center', padding: '16px', background: '#ffffff', borderRadius: '6px', border: '1px dashed #cbd5e1' }}>
+                              <span style={{ fontSize: '36px', display: 'block', marginBottom: '6px' }}>📕</span>
+                              <p style={{ margin: '0 0 10px', fontSize: '0.85rem', color: '#475569' }}>
+                                Titre foncier ou acte notarié au format PDF
+                              </p>
+                              <a
+                                href={fullUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '6px',
+                                  padding: '7px 14px',
+                                  borderRadius: '6px',
+                                  background: '#0284c7',
+                                  color: '#fff',
+                                  fontSize: '0.84rem',
+                                  fontWeight: 500,
+                                  textDecoration: 'none',
+                                }}
+                              >
+                                Consulter le PDF ↗
+                              </a>
+                            </div>
+                          ) : (
+                            <div style={{ textAlign: 'center', background: '#ffffff', borderRadius: '6px', overflow: 'hidden', padding: '10px' }}>
+                              <img
+                                src={fullUrl}
+                                alt={`Document ${idx + 1}`}
+                                style={{
+                                  maxWidth: '100%',
+                                  maxHeight: '340px',
+                                  objectFit: 'contain',
+                                  display: 'inline-block',
+                                  borderRadius: '4px',
+                                }}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               ) : (
                 <div style={{ textAlign: 'center', padding: '30px 20px', color: '#94a3b8' }}>
