@@ -10,6 +10,7 @@ const AuthContext = createContext({
   register: async () => {},
   logout: () => {},
   updateUserState: () => {},
+  updateUser: () => {},
 });
 
 export const AuthProvider = ({ children }) => {
@@ -132,6 +133,7 @@ export const AuthProvider = ({ children }) => {
         register,
         logout,
         updateUserState,
+        updateUser: updateUserState,
       }}
     >
       {children}

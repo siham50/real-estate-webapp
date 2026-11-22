@@ -65,13 +65,13 @@ const PropertyForm = ({ onClose, onCreated, residences, isModal = false }) => {
     }
   };
 
-  const handleSetPrimary = (targetIndex) => {
-    setSelectedImages((prev) =>
-      prev.map((item, idx) => ({
-        ...item,
-        isPrimary: idx === targetIndex,
-      }))
-    );
+  const handleSetPrimary = (indexToSelect) => {
+    const updatedImages = selectedImages.map((img, index) => ({
+      ...img,
+      // Force true SEULEMENT pour l'image cliquée, force false pour toutes les autres
+      isPrimary: index === indexToSelect,
+    }));
+    setSelectedImages(updatedImages);
   };
 
   const handleRemoveImage = (index) => {
@@ -94,8 +94,8 @@ const PropertyForm = ({ onClose, onCreated, residences, isModal = false }) => {
     e.preventDefault();
     setError('');
 
-    // Le document de propriété est obligatoire pour les clients, pas pour les agences
-    if (isClient && !propertyDocFile) {
+    // Le document de propriété est obligatoire
+    if (!propertyDocFile) {
       setError('Le document de propriété (Titre Foncier / Acte) est obligatoire.');
       return;
     }
@@ -140,13 +140,6 @@ const PropertyForm = ({ onClose, onCreated, residences, isModal = false }) => {
         selectedImages[0].isPrimary = true;
       }
 
-      const formattedImages = selectedImages
-        .filter((img) => img.url)
-        .map((img, index) => ({
-          imageUrl: img.url, // L'URL retournée par l'upload
-          isPrimary: img.isPrimary === true, // S'assurer que c'est bien un booléen
-        }));
-
       // 4. Envoi de la requête de création avec documentUrl et images au format JSON
       setStatusText('Création du bien en cours...');
       const cleanDocUrl = typeof propertyDocUrl === 'string'
@@ -173,7 +166,11 @@ const PropertyForm = ({ onClose, onCreated, residences, isModal = false }) => {
         owner: user?.id ? { id: user.id } : null,
         residence: formData.residenceId ? { id: parseInt(formData.residenceId, 10) } : null,
         documentUrl: cleanDocUrl,
-        images: formattedImages,
+        images: selectedImages.map((img) => ({
+          imageUrl: img.url,
+          isPrimary: img.isPrimary === true, // S'assure que c'est un booléen strict
+        })),
+        verificationStatus: 'PENDING',
         isAvailable: true,
         isDeleted: false,
       };
@@ -483,31 +480,29 @@ const PropertyForm = ({ onClose, onCreated, residences, isModal = false }) => {
           )}
         </div>
 
-        {/* 1. Titre Foncier / Documents de propriété (OBLIGATOIRE POUR CLIENT UNIQUEMENT, PAS POUR LES AGENCES) */}
-        {isClient && (
-          <div className="agency-field-group">
-            <label htmlFor="property-doc">
-              Titre Foncier / Documents de propriété (obligatoire) *
-            </label>
-            <input
-              id="property-doc"
-              name="propertyDoc"
-              type="file"
-              required
-              accept="image/jpeg,image/png,image/webp,application/pdf"
-              className="agency-input"
-              onChange={(e) => setPropertyDocFile(e.target.files[0] || null)}
-            />
-            <small style={{ display: 'block', marginTop: '4px', color: '#6b7280', fontSize: '0.82rem' }}>
-              Formats autorisés : PDF, JPG, PNG (max. 10 Mo). Ce document servira à la validation légale de l'annonce.
-            </small>
-            {propertyDocFile && (
-              <div style={{ marginTop: '6px', fontSize: '0.85rem', color: '#166534', fontWeight: 500 }}>
-                ✓ Fichier sélectionné : {propertyDocFile.name} ({(propertyDocFile.size / 1024).toFixed(1)} Ko)
-              </div>
-            )}
-          </div>
-        )}
+        {/* 1. Titre Foncier / Documents de propriété (Obligatoire) */}
+        <div className="agency-field-group">
+          <label htmlFor="property-doc">
+            Document de propriété / Titre foncier <span style={{ color: '#ef4444' }}>*</span>
+          </label>
+          <input
+            id="property-doc"
+            name="propertyDoc"
+            type="file"
+            required
+            accept="image/jpeg,image/png,image/webp,application/pdf"
+            className="agency-input"
+            onChange={(e) => setPropertyDocFile(e.target.files[0] || null)}
+          />
+          <small style={{ display: 'block', marginTop: '4px', color: '#6b7280', fontSize: '0.82rem' }}>
+            Formats autorisés : PDF, JPG, PNG (max. 10 Mo). Ce document servira à la validation légale de l'annonce.
+          </small>
+          {propertyDocFile && (
+            <div style={{ marginTop: '6px', fontSize: '0.85rem', color: '#166534', fontWeight: 500 }}>
+              ✓ Fichier sélectionné : {propertyDocFile.name} ({(propertyDocFile.size / 1024).toFixed(1)} Ko)
+            </div>
+          )}
+        </div>
 
         {/* 2. Document CIN si le client n'est pas vérifié */}
         {isClient && !isCinVerified && (

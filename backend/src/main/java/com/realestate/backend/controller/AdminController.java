@@ -1,14 +1,19 @@
 package com.realestate.backend.controller;
 
 import com.realestate.backend.dto.AdminStatsDTO;
+import com.realestate.backend.dto.PropertyDTO;
+import com.realestate.backend.dto.ResidenceDTO;
 import com.realestate.backend.dto.UserDTO;
 import com.realestate.backend.service.AdminService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/admin")
+@CrossOrigin(originPatterns = "*", allowCredentials = "true")
 @RequiredArgsConstructor
 public class AdminController {
 
@@ -34,6 +39,47 @@ public class AdminController {
     public ResponseEntity<UserDTO> verifyUser(@PathVariable Long userId) {
         try {
             return ResponseEntity.ok(adminService.verifyUser(userId));
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @GetMapping("/pending-listings")
+    public ResponseEntity<Map<String, Object>> getPendingListings() {
+        return ResponseEntity.ok(adminService.getPendingListings());
+    }
+
+    @PatchMapping("/verify-listing/property/{id}")
+    public ResponseEntity<PropertyDTO> verifyPropertyListing(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(adminService.verifyProperty(id));
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PatchMapping("/reject-listing/property/{id}")
+    public ResponseEntity<PropertyDTO> rejectPropertyListing(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(adminService.rejectProperty(id));
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PatchMapping("/verify-listing/residence/{id}")
+    public ResponseEntity<ResidenceDTO> verifyResidenceListing(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(adminService.verifyResidence(id));
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PatchMapping("/reject-listing/residence/{id}")
+    public ResponseEntity<ResidenceDTO> rejectResidenceListing(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(adminService.rejectResidence(id));
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }

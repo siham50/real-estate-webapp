@@ -27,7 +27,7 @@ const Header = () => {
     } else if (user?.role === 'PROFESSIONAL' || user?.role === 'AGENCE') {
       navigate('/agency/dashboard');
     } else {
-      navigate('/');
+      navigate('/client/dashboard');
     }
   };
 
@@ -156,6 +156,24 @@ const Header = () => {
                 <span className="header-messages-icon">✉️</span>
                 <span className="header-messages-text">Messages</span>
               </button>
+
+              {/* Bouton "Mon Espace" pour les clients */}
+              {user.role === 'CLIENT' && (
+                <button
+                  type="button"
+                  className="agency-header-dashboard-btn"
+                  onClick={() => navigate('/client/dashboard')}
+                  title="Tableau de bord client"
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="7" height="7" />
+                    <rect x="14" y="3" width="7" height="7" />
+                    <rect x="14" y="14" width="7" height="7" />
+                    <rect x="3" y="14" width="7" height="7" />
+                  </svg>
+                  Mon Espace
+                </button>
+              )}
 
               {/* Bouton "Mon Espace Agence" uniquement pour les professionnels */}
               {(user.role === 'PROFESSIONAL' || user.role === 'AGENCE') && (

@@ -23,7 +23,9 @@ export const getPropertyImages = (property) => {
 
   let displayImage = null;
   if (property.images && property.images.length > 0) {
-    const primaryImg = property.images.find((img) => img.isPrimary === true);
+    // Cherche spécifiquement l'image qui a isPrimary = true
+    const primaryImg = property.images.find((img) => img.isPrimary === true || img.primary === true);
+    // Si elle n'existe pas (bug), prend la première par défaut
     displayImage = primaryImg ? primaryImg : property.images[0];
     const others = property.images.filter((img) => img !== displayImage);
     const ordered = [displayImage, ...others];
@@ -63,20 +65,20 @@ const PropertyCard = ({
   // Logique stricte pour la récupération de l'image principale
   let displayImage = null;
   if (property.images && property.images.length > 0) {
-    // Cherche l'image avec isPrimary = true
-    const primaryImg = property.images.find((img) => img.isPrimary === true);
-    // Si elle existe, on la prend, sinon on prend la première par défaut
+    // Cherche spécifiquement l'image qui a isPrimary = true
+    const primaryImg = property.images.find((img) => img.isPrimary === true || img.primary === true);
+    // Si elle n'existe pas (bug), prend la première par défaut
     displayImage = primaryImg ? primaryImg : property.images[0];
   }
   const imageSrc = displayImage
-    ? getImageUrl(typeof displayImage === 'string' ? displayImage : displayImage.imageUrl)
+    ? getImageUrl(displayImage.imageUrl || displayImage)
     : (property.image ? getImageUrl(property.image) : DEFAULT_PLACEHOLDER_IMAGE);
 
   // Ordonne les images pour le carrousel (image principale isPrimary en premier)
   const images = useMemo(() => {
     if (!property.images || property.images.length === 0) return [];
 
-    const primaryImg = property.images.find((img) => img.isPrimary === true);
+    const primaryImg = property.images.find((img) => img.isPrimary === true || img.primary === true);
     const chosenFirst = primaryImg ? primaryImg : property.images[0];
     const others = property.images.filter((img) => img !== chosenFirst);
     const ordered = [chosenFirst, ...others];

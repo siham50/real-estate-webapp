@@ -66,6 +66,7 @@ public class PropertyService {
                 if (!Boolean.TRUE.equals(owner.getIsIdentityVerified())) {
                     throw new RuntimeException("Vous devez faire vérifier votre CIN avant de publier.");
                 }
+                property.setVerificationStatus(com.realestate.backend.entity.enums.VerificationStatus.PENDING);
             }
         }
 

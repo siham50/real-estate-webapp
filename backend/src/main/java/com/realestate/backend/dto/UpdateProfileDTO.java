@@ -13,6 +13,7 @@ public class UpdateProfileDTO {
 
     private String firstName;
     private String lastName;
+    private String email;
     private String phone;
 
     // Champs optionnels pour les professionnels / agences
@@ -20,4 +21,3 @@ public class UpdateProfileDTO {
     private String rcNumber;
     private String iceNumber;
 }
-

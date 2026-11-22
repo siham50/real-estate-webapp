@@ -524,6 +524,51 @@ export const verifyUser = async (id) => {
   }
 };
 
+export const getPendingListings = async () => {
+  try {
+    const response = await api.get('/admin/pending-listings');
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || error.response?.data?.error || error.message);
+  }
+};
+
+export const verifyPropertyListing = async (id) => {
+  try {
+    const response = await api.patch(`/admin/verify-listing/property/${id}`);
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || error.response?.data?.error || error.message);
+  }
+};
+
+export const rejectPropertyListing = async (id) => {
+  try {
+    const response = await api.patch(`/admin/reject-listing/property/${id}`);
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || error.response?.data?.error || error.message);
+  }
+};
+
+export const verifyResidenceListing = async (id) => {
+  try {
+    const response = await api.patch(`/admin/verify-listing/residence/${id}`);
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || error.response?.data?.error || error.message);
+  }
+};
+
+export const rejectResidenceListing = async (id) => {
+  try {
+    const response = await api.patch(`/admin/reject-listing/residence/${id}`);
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || error.response?.data?.error || error.message);
+  }
+};
+
 export const togglePropertyAvailability = async (id) => {
   try {
     const response = await api.patch(`/properties/${id}/toggle-availability`);

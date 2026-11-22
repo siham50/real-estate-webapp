@@ -54,13 +54,13 @@ const AgencyResidenceList = ({ residences, onDeleted }) => {
             {residences.map((r) => {
               let displayImage = null;
               if (r.images && r.images.length > 0) {
-                // Cherche l'image avec isPrimary = true
-                const primaryImg = r.images.find((img) => img.isPrimary === true);
-                // Si elle existe, on la prend, sinon on prend la première par défaut
+                // Cherche spécifiquement l'image qui a isPrimary = true
+                const primaryImg = r.images.find((img) => img.isPrimary === true || img.primary === true);
+                // Si elle n'existe pas (bug), prend la première par défaut
                 displayImage = primaryImg ? primaryImg : r.images[0];
               }
               const imageSrc = displayImage
-                ? getImageUrl(typeof displayImage === 'string' ? displayImage : displayImage.imageUrl)
+                ? getImageUrl(displayImage.imageUrl || displayImage)
                 : (r.image ? getImageUrl(r.image) : DEFAULT_PLACEHOLDER_IMAGE);
 
               return (

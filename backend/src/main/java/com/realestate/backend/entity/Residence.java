@@ -34,6 +34,10 @@ public class Residence {
     @Column(name = "name", nullable = false, length = 100)
     private String name;
 
+    @Transient
+    @JsonProperty("documentUrl")
+    private String documentUrl;
+
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 

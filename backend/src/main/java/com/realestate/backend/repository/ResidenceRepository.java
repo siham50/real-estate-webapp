@@ -9,4 +9,5 @@ import java.util.List;
 @Repository
 public interface ResidenceRepository extends JpaRepository<Residence, Long> {
     List<Residence> findByIsAvailableTrueAndIsDeletedFalse();
+    List<Residence> findByVerificationStatusAndIsDeletedFalse(com.realestate.backend.entity.enums.VerificationStatus verificationStatus);
 }

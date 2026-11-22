@@ -15,6 +15,7 @@ import java.util.List;
 public interface PropertyRepository extends JpaRepository<Property, Long> {
     List<Property> findByIsDeletedFalse();
     List<Property> findByIsAvailableTrueAndIsDeletedFalse();
+    List<Property> findByVerificationStatusAndIsDeletedFalse(com.realestate.backend.entity.enums.VerificationStatus verificationStatus);
 
     @Query("SELECT p FROM Property p WHERE p.isDeleted = false AND p.isAvailable = true " +
            "AND (:city IS NULL OR LOWER(p.city) LIKE LOWER(CONCAT('%', :city, '%'))) " +

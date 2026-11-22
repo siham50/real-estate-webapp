@@ -20,6 +20,7 @@ const ResidenceFormModal = ({ onClose, onCreated }) => {
   const [loading, setLoading] = useState(false);
   const [statusText, setStatusText] = useState('');
   const [error, setError] = useState('');
+  const [documentFile, setDocumentFile] = useState(null);
 
   const handleImagesChange = (e) => {
     if (e.target.files) {
@@ -40,13 +41,13 @@ const ResidenceFormModal = ({ onClose, onCreated }) => {
     }
   };
 
-  const handleSetPrimary = (targetIndex) => {
-    setSelectedImages((prev) =>
-      prev.map((item, idx) => ({
-        ...item,
-        isPrimary: idx === targetIndex,
-      }))
-    );
+  const handleSetPrimary = (indexToSelect) => {
+    const updatedImages = selectedImages.map((img, index) => ({
+      ...img,
+      // Force true SEULEMENT pour l'image cliquée, force false pour toutes les autres
+      isPrimary: index === indexToSelect,
+    }));
+    setSelectedImages(updatedImages);
   };
 
   const handleRemoveImage = (index) => {
@@ -68,10 +69,24 @@ const ResidenceFormModal = ({ onClose, onCreated }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    if (!documentFile) {
+      setError('Le document de propriété (Titre Foncier / Acte) est obligatoire.');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      // 1. Upload séquentiel des photos de la résidence avec for...of
+      // 1. Upload du document de propriété
+      let documentUrl = null;
+      if (documentFile) {
+        setStatusText('Upload du document de propriété en cours...');
+        const docRes = await uploadFile(documentFile);
+        documentUrl = typeof docRes === 'string' ? docRes : (docRes?.url || docRes?.fileUrl || null);
+      }
+
+      // 2. Upload séquentiel des photos de la résidence avec for...of
       if (selectedImages.length > 0) {
         let index = 1;
         for (const item of selectedImages) {
@@ -87,14 +102,7 @@ const ResidenceFormModal = ({ onClose, onCreated }) => {
         selectedImages[0].isPrimary = true;
       }
 
-      const formattedImages = selectedImages
-        .filter((img) => img.url)
-        .map((img, index) => ({
-          imageUrl: img.url, // L'URL retournée par l'upload
-          isPrimary: img.isPrimary === true, // S'assurer que c'est bien un booléen
-        }));
-
-      // 2. Création de la résidence avec verificationStatus: VERIFIED par défaut
+      // 3. Création de la résidence avec verificationStatus: PENDING
       setStatusText('Création de la résidence...');
       const payload = {
         name: formData.name.trim(),
@@ -110,8 +118,12 @@ const ResidenceFormModal = ({ onClose, onCreated }) => {
             ? parseFloat(formData.longitude)
             : -7.5898,
         owner: { id: user.id },
-        verificationStatus: 'VERIFIED',
-        images: formattedImages,
+        verificationStatus: 'PENDING',
+        documentUrl: documentUrl,
+        images: selectedImages.map((img) => ({
+          imageUrl: img.url,
+          isPrimary: img.isPrimary === true, // S'assure que c'est un booléen strict
+        })),
         isAvailable: true,
         isDeleted: false,
       };
@@ -209,6 +221,29 @@ const ResidenceFormModal = ({ onClose, onCreated }) => {
               value={formData.city}
               onChange={handleChange}
             />
+          </div>
+
+          {/* Document de propriété / Titre foncier */}
+          <div className="agency-field-group">
+            <label htmlFor="res-document" className="agency-label">
+              Document de propriété / Titre foncier <span style={{ color: '#ef4444' }}>*</span>
+            </label>
+            <input
+              id="res-document"
+              type="file"
+              required
+              accept="image/jpeg,image/png,image/webp,application/pdf"
+              className="agency-input"
+              onChange={(e) => setDocumentFile(e.target.files[0] || null)}
+            />
+            <small style={{ display: 'block', marginTop: '4px', color: '#6b7280', fontSize: '0.82rem' }}>
+              Formats autorisés : PDF, JPG, PNG (max. 10 Mo). Ce document servira à la validation légale de la résidence.
+            </small>
+            {documentFile && (
+              <div style={{ marginTop: '6px', fontSize: '0.85rem', color: '#166534', fontWeight: 500 }}>
+                ✓ Fichier sélectionné : {documentFile.name} ({(documentFile.size / 1024).toFixed(1)} Ko)
+              </div>
+            )}
           </div>
 
           {/* Upload et sélection de l'image principale pour la résidence */}

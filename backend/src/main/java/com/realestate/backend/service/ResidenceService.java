@@ -57,7 +57,28 @@ public class ResidenceService {
                 if (!agencyProfile.isVerified()) {
                     throw new RuntimeException("Votre compte agence doit être vérifié par un administrateur avant de publier une résidence.");
                 }
+                residence.setVerificationStatus(VerificationStatus.VERIFIED);
+            } else if (owner.getRole() == Role.CLIENT) {
+                if (!Boolean.TRUE.equals(owner.getIsIdentityVerified())) {
+                    throw new RuntimeException("Vous devez faire vérifier votre CIN avant de publier.");
+                }
+                residence.setVerificationStatus(VerificationStatus.PENDING);
             }
+        }
+
+        if (residence.getVerificationStatus() == null) {
+            residence.setVerificationStatus(VerificationStatus.PENDING);
+        }
+
+        if (residence.getDocumentUrl() != null && !residence.getDocumentUrl().isBlank()) {
+            com.realestate.backend.entity.ResidenceDocument doc = com.realestate.backend.entity.ResidenceDocument.builder()
+                    .residence(residence)
+                    .documentUrl(residence.getDocumentUrl())
+                    .build();
+            if (residence.getDocuments() == null) {
+                residence.setDocuments(new ArrayList<>());
+            }
+            residence.getDocuments().add(doc);
         }
 
         if (residence.getImages() != null && !residence.getImages().isEmpty()) {
@@ -72,8 +93,6 @@ public class ResidenceService {
             residence.setImages(new ArrayList<>());
         }
 
-        // Forcer le statut de vérification à VERIFIED pour les résidences d'agence
-        residence.setVerificationStatus(VerificationStatus.VERIFIED);
         if (residence.getViews() == null) {
             residence.setViews(0);
         }

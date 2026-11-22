@@ -160,9 +160,9 @@ const FeaturedProperties = ({ filterResidenceId }) => {
     if (!item) return DEFAULT_PLACEHOLDER_IMAGE;
     let displayImage = null;
     if (item.images && item.images.length > 0) {
-      // Cherche l'image avec isPrimary = true
-      const primaryImg = item.images.find((img) => img.isPrimary === true);
-      // Si elle existe, on la prend, sinon on prend la première par défaut
+      // Cherche spécifiquement l'image qui a isPrimary = true
+      const primaryImg = item.images.find((img) => img.isPrimary === true || img.primary === true);
+      // Si elle n'existe pas (bug), prend la première par défaut
       displayImage = primaryImg ? primaryImg : item.images[0];
     }
     if (displayImage) {

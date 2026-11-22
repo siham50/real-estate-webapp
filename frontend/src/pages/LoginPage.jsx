@@ -32,8 +32,10 @@ const LoginPage = () => {
         navigate('/admin');
       } else if (userRole === 'PROFESSIONAL' || userRole === 'AGENCE') {
         navigate('/agency/dashboard');
+      } else if (userRole === 'CLIENT') {
+        navigate('/client/dashboard');
       } else {
-        navigate('/');
+        navigate('/client/dashboard');
       }
     } catch (err) {
       setError(err.message || 'Identifiants incorrects ou serveur indisponible.');

@@ -109,6 +109,16 @@ public class UserService {
     public UserDTO updateProfile(Long userId, UpdateProfileDTO dto) {
         User existingUser = findUserById(userId);
 
+        if (dto.getEmail() != null && !dto.getEmail().trim().isEmpty()) {
+            String newEmail = dto.getEmail().trim();
+            if (!newEmail.equalsIgnoreCase(existingUser.getEmail())) {
+                if (userRepository.existsByEmail(newEmail)) {
+                    throw new RuntimeException("Cet email est déjà utilisé par un autre compte.");
+                }
+                existingUser.setEmail(newEmail);
+            }
+        }
+
         if (dto.getFirstName() != null) {
             existingUser.setFirstName(dto.getFirstName().trim());
         }

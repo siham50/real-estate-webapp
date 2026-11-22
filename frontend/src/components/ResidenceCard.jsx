@@ -9,20 +9,20 @@ const ResidenceCard = ({ residence, propertiesCount = 0, onSelect }) => {
   // Logique stricte pour la récupération de l'image principale
   let displayImage = null;
   if (residence.images && residence.images.length > 0) {
-    // Cherche l'image avec isPrimary = true
-    const primaryImg = residence.images.find((img) => img.isPrimary === true);
-    // Si elle existe, on la prend, sinon on prend la première par défaut
+    // Cherche spécifiquement l'image qui a isPrimary = true
+    const primaryImg = residence.images.find((img) => img.isPrimary === true || img.primary === true);
+    // Si elle n'existe pas (bug), prend la première par défaut
     displayImage = primaryImg ? primaryImg : residence.images[0];
   }
   const imageSrc = displayImage
-    ? getImageUrl(typeof displayImage === 'string' ? displayImage : displayImage.imageUrl)
+    ? getImageUrl(displayImage.imageUrl || displayImage)
     : (residence.image ? getImageUrl(residence.image) : DEFAULT_PLACEHOLDER_IMAGE);
 
   // Ordonne les images pour le carrousel (image principale isPrimary en premier)
   const images = useMemo(() => {
     if (!residence.images || residence.images.length === 0) return [];
 
-    const primaryImg = residence.images.find((img) => img.isPrimary === true);
+    const primaryImg = residence.images.find((img) => img.isPrimary === true || img.primary === true);
     const chosenFirst = primaryImg ? primaryImg : residence.images[0];
     const others = residence.images.filter((img) => img !== chosenFirst);
     const ordered = [chosenFirst, ...others];
