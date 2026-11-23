@@ -8,19 +8,32 @@ export const DEFAULT_PLACEHOLDER_IMAGE =
 
 /**
  * Construit l'URL complète de l'image :
- * Si le chemin commence par /uploads, retourne http://localhost:8080${path}.
- * Sinon, retourne le chemin tel quel.
+ * Si le chemin commence par /uploads ou uploads/, retourne http://localhost:8080${path}.
+ * Sinon, retourne le chemin tel quel ou normalisé.
  */
 export const getImageUrl = (path) => {
   if (!path) return '';
-  if (typeof path !== 'string') return '';
-  if (path.startsWith('/uploads')) {
-    return `http://localhost:8080${path}`;
+  let str = String(path).trim().replace(/^[\[\]"']+|[\[\]"']+$/g, '').trim();
+  if (!str) return '';
+
+  if (str.includes('localhost:5173') || str.includes('localhost:3000')) {
+    str = str.replace(/http:\/\/localhost:(5173|3000)/, 'http://localhost:8080');
   }
-  if (path.startsWith('uploads/')) {
-    return `http://localhost:8080/${path}`;
+
+  if (str.startsWith('http://') || str.startsWith('https://') || str.startsWith('data:')) {
+    return str;
   }
-  return path;
+
+  if (str.startsWith('/uploads') || str.startsWith('/api/')) {
+    return `http://localhost:8080${str}`;
+  }
+
+  if (str.startsWith('uploads/')) {
+    return `http://localhost:8080/${str}`;
+  }
+
+  // Nom de fichier nu (ex: uuid.png)
+  return `http://localhost:8080/uploads/${str.startsWith('/') ? str.substring(1) : str}`;
 };
 
 export default getImageUrl;
