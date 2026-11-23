@@ -14,6 +14,10 @@ import java.time.LocalDateTime;
 public class ReviewDTO {
     private Long id;
     private Long bookingId;
+    private Long propertyId;
+    private String propertyTitle;
+    private String propertyCity;
+    private String propertyImageUrl;
     private UserSummaryDTO client;
     private String clientFirstName;
     private String clientLastName;

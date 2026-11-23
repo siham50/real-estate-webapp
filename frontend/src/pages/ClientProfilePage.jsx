@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import ClientBookings from '../components/client/ClientBookings';
+import ClientReviewsList from '../components/client/ClientReviewsList';
 import EditProfileForm from '../components/profile/EditProfileForm';
 import { useAuth } from '../context/AuthContext';
 import { uploadFile, uploadCin } from '../services/api';
@@ -335,8 +336,13 @@ const ClientProfilePage = () => {
           </div>
 
           {/* Section Mes réservations */}
-          <section className="client-reservations-section">
+          <section className="client-reservations-section" id="reservations">
             <ClientBookings />
+          </section>
+
+          {/* Section Mes avis et notes sur d'autres annonces */}
+          <section className="client-reviews-section" style={{ marginTop: '30px' }}>
+            <ClientReviewsList clientId={user?.id} />
           </section>
         </div>
       </main>

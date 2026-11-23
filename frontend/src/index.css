@@ -2707,7 +2707,15 @@ img {
   border-radius: var(--radius-card);
   box-shadow: var(--shadow-subtle);
   overflow: hidden;
-  min-height: 200px;
+  min-height: auto;
+}
+
+.table-title {
+  margin-top: 20px;
+  margin-bottom: 15px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  padding: 0 20px;
 }
 
 /* Empty State */

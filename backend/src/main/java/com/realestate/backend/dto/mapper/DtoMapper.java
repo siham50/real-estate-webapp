@@ -219,9 +219,28 @@ public class DtoMapper {
         String clientFirstName = (review.getClient() != null) ? review.getClient().getFirstName() : null;
         String clientLastName = (review.getClient() != null) ? review.getClient().getLastName() : null;
 
+        Long propertyId = null;
+        String propertyTitle = null;
+        String propertyCity = null;
+        String propertyImageUrl = null;
+
+        if (review.getBooking() != null && review.getBooking().getProperty() != null) {
+            Property prop = review.getBooking().getProperty();
+            propertyId = prop.getId();
+            propertyTitle = prop.getTitle();
+            propertyCity = prop.getCity();
+            if (prop.getImages() != null && !prop.getImages().isEmpty()) {
+                propertyImageUrl = prop.getImages().get(0).getImageUrl();
+            }
+        }
+
         return ReviewDTO.builder()
                 .id(review.getId())
                 .bookingId(review.getBooking() != null ? review.getBooking().getId() : null)
+                .propertyId(propertyId)
+                .propertyTitle(propertyTitle)
+                .propertyCity(propertyCity)
+                .propertyImageUrl(propertyImageUrl)
                 .client(toUserSummaryDTO(review.getClient()))
                 .clientFirstName(clientFirstName)
                 .clientLastName(clientLastName)

@@ -10,19 +10,23 @@ import AgencyBookings from '../components/agency/AgencyBookings';
 import AgencyAvailabilities from '../components/agency/AgencyAvailabilities';
 import ResidenceFormModal from '../components/ResidenceFormModal';
 import PropertyFormModal from '../components/PropertyFormModal';
+import PropertyReviewsModal from '../components/property/PropertyReviewsModal';
 
 const AgencyDashboard = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [activeTab, setActiveTab] = useState('residences'); // 'residences', 'properties', 'bookings', 'availabilities'
+  const [activeTab, setActiveTab] = useState('properties'); // 'properties', 'residences', 'bookings', 'availabilities'
   const [residences, setResidences] = useState([]);
   const [properties, setProperties] = useState([]);
   const [loadingRes, setLoadingRes] = useState(true);
   const [loadingProps, setLoadingProps] = useState(true);
   const [showResidenceModal, setShowResidenceModal] = useState(false);
   const [showPropertyModal, setShowPropertyModal] = useState(false);
+  const [editingProperty, setEditingProperty] = useState(null);
+  const [editingResidence, setEditingResidence] = useState(null);
+  const [selectedPropertyForReviews, setSelectedPropertyForReviews] = useState(null);
   const [fetchError, setFetchError] = useState('');
 
   // Gestion des paramètres URL (ex: ouvrir directement la création de bien)
@@ -77,6 +81,16 @@ const AgencyDashboard = () => {
     setProperties((prev) => [newProperty, ...prev]);
   };
 
+  const handleResidenceUpdated = (updatedResidence) => {
+    setResidences((prev) => prev.map((r) => (r.id === updatedResidence.id ? updatedResidence : r)));
+    setEditingResidence(null);
+  };
+
+  const handlePropertyUpdated = (updatedProperty) => {
+    setProperties((prev) => prev.map((p) => (p.id === updatedProperty.id ? updatedProperty : p)));
+    setEditingProperty(null);
+  };
+
   const handleResidenceDeleted = (id) => {
     setResidences((prev) => prev.filter((r) => r.id !== id));
   };
@@ -85,6 +99,9 @@ const AgencyDashboard = () => {
     setProperties((prev) => prev.filter((p) => p.id !== id));
   };
 
+  const propertiesCount = Array.isArray(properties) ? properties.length : 0;
+  const residencesCount = Array.isArray(residences) ? residences.length : 0;
+  const totalAnnonces = propertiesCount + residencesCount;
   const isLoading = (activeTab === 'residences' && loadingRes) || (activeTab === 'properties' && loadingProps);
 
   return (
@@ -110,15 +127,46 @@ const AgencyDashboard = () => {
               </div>
             </div>
 
-            {/* Stats rapides */}
+            {/* Stats rapides (calculées dynamiquement, même design que l'espace client) */}
             <div className="agency-stats-row">
-              <div className="agency-stat-pill">
-                <span className="agency-stat-num">{residences.length}</span>
-                <span className="agency-stat-label">Résidence{residences.length > 1 ? 's' : ''}</span>
+              <div
+                className={`agency-stat-pill ${activeTab === 'properties' ? 'active-stat' : ''}`}
+                onClick={() => setActiveTab('properties')}
+                style={{
+                  cursor: 'pointer',
+                  border: activeTab === 'properties' ? '2px solid var(--color-primary)' : '1px solid var(--color-border)',
+                  transition: 'all 0.2s ease',
+                }}
+                title="Afficher mes biens"
+              >
+                <span className="agency-stat-num">{totalAnnonces}</span>
+                <span className="agency-stat-label">Annonce{totalAnnonces > 1 ? 's' : ''}</span>
               </div>
-              <div className="agency-stat-pill">
-                <span className="agency-stat-num">{properties.length}</span>
-                <span className="agency-stat-label">Bien{properties.length > 1 ? 's' : ''}</span>
+              <div
+                className={`agency-stat-pill ${activeTab === 'properties' ? 'active-stat' : ''}`}
+                onClick={() => setActiveTab('properties')}
+                style={{
+                  cursor: 'pointer',
+                  border: activeTab === 'properties' ? '2px solid var(--color-primary)' : '1px solid var(--color-border)',
+                  transition: 'all 0.2s ease',
+                }}
+                title="Afficher mes biens"
+              >
+                <span className="agency-stat-num">{propertiesCount}</span>
+                <span className="agency-stat-label">Bien{propertiesCount > 1 ? 's' : ''}</span>
+              </div>
+              <div
+                className={`agency-stat-pill ${activeTab === 'residences' ? 'active-stat' : ''}`}
+                onClick={() => setActiveTab('residences')}
+                style={{
+                  cursor: 'pointer',
+                  border: activeTab === 'residences' ? '2px solid var(--color-primary)' : '1px solid var(--color-border)',
+                  transition: 'all 0.2s ease',
+                }}
+                title="Afficher mes résidences"
+              >
+                <span className="agency-stat-num">{residencesCount}</span>
+                <span className="agency-stat-label">Résidence{residencesCount > 1 ? 's' : ''}</span>
               </div>
             </div>
           </div>
@@ -128,22 +176,9 @@ const AgencyDashboard = () => {
             <div className="agency-alert-error" style={{ marginBottom: '16px' }}>{fetchError}</div>
           )}
 
-          {/* Tabs + Add Button */}
+          {/* Tabs + Add Buttons (même disposition que l'espace client) */}
           <div className="agency-tabs-bar">
             <div className="agency-tabs">
-              <button
-                type="button"
-                className={`agency-tab ${activeTab === 'residences' ? 'active' : ''}`}
-                onClick={() => setActiveTab('residences')}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                  <polyline points="9 22 9 12 15 12 15 22" />
-                </svg>
-                Mes Résidences
-                <span className="agency-tab-count">{residences.length}</span>
-              </button>
-
               <button
                 type="button"
                 className={`agency-tab ${activeTab === 'properties' ? 'active' : ''}`}
@@ -154,7 +189,20 @@ const AgencyDashboard = () => {
                   <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
                 </svg>
                 Mes Biens
-                <span className="agency-tab-count">{properties.length}</span>
+                <span className="agency-tab-count">{propertiesCount}</span>
+              </button>
+
+              <button
+                type="button"
+                className={`agency-tab ${activeTab === 'residences' ? 'active' : ''}`}
+                onClick={() => setActiveTab('residences')}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                  <polyline points="9 22 9 12 15 12 15 22" />
+                </svg>
+                Mes Résidences
+                <span className="agency-tab-count">{residencesCount}</span>
               </button>
 
               <button
@@ -187,22 +235,33 @@ const AgencyDashboard = () => {
               </button>
             </div>
 
-            {(activeTab === 'residences' || activeTab === 'properties') && (
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
               <button
                 type="button"
                 className="agency-btn-add"
-                onClick={() => {
-                  if (activeTab === 'residences') setShowResidenceModal(true);
-                  else setShowPropertyModal(true);
-                }}
+                onClick={() => setShowPropertyModal(true)}
+                title="Ajouter un nouveau bien"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="12" y1="5" x2="12" y2="19" />
                   <line x1="5" y1="12" x2="19" y2="12" />
                 </svg>
-                {activeTab === 'residences' ? 'Ajouter une résidence' : 'Ajouter un bien'}
+                Ajouter un bien
               </button>
-            )}
+
+              <button
+                type="button"
+                className="agency-btn-add"
+                onClick={() => setShowResidenceModal(true)}
+                title="Ajouter une nouvelle résidence"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                Ajouter une résidence
+              </button>
+            </div>
           </div>
 
           {/* Content Panel */}
@@ -214,17 +273,26 @@ const AgencyDashboard = () => {
               </div>
             ) : (
               <>
-                {activeTab === 'residences' && (
-                  <AgencyResidenceList
-                    residences={residences}
-                    onDeleted={handleResidenceDeleted}
-                  />
-                )}
                 {activeTab === 'properties' && (
-                  <AgencyPropertyList
-                    properties={properties}
-                    onDeleted={handlePropertyDeleted}
-                  />
+                  <div>
+                    <h3 className="table-title">Biens Immobiliers ({propertiesCount})</h3>
+                    <AgencyPropertyList
+                      properties={properties}
+                      onDeleted={handlePropertyDeleted}
+                      onEdit={(prop) => setEditingProperty(prop)}
+                      onViewReviews={(prop) => setSelectedPropertyForReviews(prop)}
+                    />
+                  </div>
+                )}
+                {activeTab === 'residences' && (
+                  <div>
+                    <h3 className="table-title">Résidences ({residencesCount})</h3>
+                    <AgencyResidenceList
+                      residences={residences}
+                      onDeleted={handleResidenceDeleted}
+                      onEdit={(res) => setEditingResidence(res)}
+                    />
+                  </div>
                 )}
                 {activeTab === 'bookings' && <AgencyBookings />}
                 {activeTab === 'availabilities' && <AgencyAvailabilities />}
@@ -235,11 +303,18 @@ const AgencyDashboard = () => {
       </main>
       <Footer />
 
-      {/* Modals */}
+      {/* Modals de création et d'édition */}
       {showResidenceModal && (
         <ResidenceFormModal
           onClose={() => setShowResidenceModal(false)}
           onCreated={handleResidenceCreated}
+        />
+      )}
+      {editingResidence && (
+        <ResidenceFormModal
+          residenceToEdit={editingResidence}
+          onClose={() => setEditingResidence(null)}
+          onUpdated={handleResidenceUpdated}
         />
       )}
       {showPropertyModal && (
@@ -247,6 +322,22 @@ const AgencyDashboard = () => {
           onClose={() => setShowPropertyModal(false)}
           onCreated={handlePropertyCreated}
           residences={residences}
+        />
+      )}
+      {editingProperty && (
+        <PropertyFormModal
+          propertyToEdit={editingProperty}
+          onClose={() => setEditingProperty(null)}
+          onUpdated={handlePropertyUpdated}
+          residences={residences}
+        />
+      )}
+
+      {/* Modal de consultation des avis par annonce */}
+      {selectedPropertyForReviews && (
+        <PropertyReviewsModal
+          property={selectedPropertyForReviews}
+          onClose={() => setSelectedPropertyForReviews(null)}
         />
       )}
     </div>

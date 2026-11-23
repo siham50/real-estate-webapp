@@ -90,4 +90,16 @@ public class ReviewService {
     public List<ReviewDTO> getReviewsByTargetUser(Long targetUserId) {
         return getReviewsByTargetUserId(targetUserId);
     }
+
+    public List<ReviewDTO> getReviewsByClientId(Long clientId) {
+        return reviewRepository.findByClientIdOrderByCreatedAtDesc(clientId).stream()
+                .map(DtoMapper::toReviewDTO)
+                .toList();
+    }
+
+    public List<ReviewDTO> getReviewsByPropertyId(Long propertyId) {
+        return reviewRepository.findByPropertyIdOrderByCreatedAtDesc(propertyId).stream()
+                .map(DtoMapper::toReviewDTO)
+                .toList();
+    }
 }

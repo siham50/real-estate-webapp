@@ -33,7 +33,8 @@ public class PropertyService {
     private final AgencyProfileRepository agencyProfileRepository;
 
     public List<PropertyDTO> getAllProperties() {
-        return propertyRepository.findByIsAvailableTrueAndIsDeletedFalse().stream()
+        return propertyRepository.findByVerificationStatusAndIsDeletedFalse(VerificationStatus.VERIFIED).stream()
+                .filter(p -> !p.isDeleted() && p.getVerificationStatus() == VerificationStatus.VERIFIED)
                 .map(DtoMapper::toPropertyDTO)
                 .toList();
     }
@@ -64,11 +65,13 @@ public class PropertyService {
                     throw new RuntimeException("Votre compte agence doit être vérifié par un administrateur avant de publier.");
                 }
                 property.setVerificationStatus(VerificationStatus.VERIFIED);
+                property.setAvailable(true);
             } else if (owner.getRole() == Role.CLIENT) {
                 if (!Boolean.TRUE.equals(owner.getIsIdentityVerified())) {
                     throw new RuntimeException("Vous devez faire vérifier votre CIN avant de publier.");
                 }
                 property.setVerificationStatus(VerificationStatus.PENDING);
+                property.setAvailable(false);
             }
         }
 

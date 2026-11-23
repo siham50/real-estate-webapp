@@ -8,12 +8,17 @@ import AgencyResidenceList from '../components/AgencyResidenceList';
 import AgencyPropertyList from '../components/AgencyPropertyList';
 import ResidenceFormModal from '../components/ResidenceFormModal';
 import PropertyFormModal from '../components/PropertyFormModal';
+import PropertyReviewsModal from '../components/property/PropertyReviewsModal';
+
+// Alias pour PropertyList et ResidenceList
+const PropertyList = AgencyPropertyList;
+const ResidenceList = AgencyResidenceList;
 
 const ClientDashboard = () => {
   const { user } = useAuth();
   const location = useLocation();
 
-  // Onglet actif : 'properties' (Biens), 'residences' (Résidences), 'all' (Toutes)
+  // Onglet actif : 'properties' ou 'residences'
   const [activeTab, setActiveTab] = useState('properties');
   const [residences, setResidences] = useState([]);
   const [properties, setProperties] = useState([]);
@@ -21,6 +26,9 @@ const ClientDashboard = () => {
   const [loadingProps, setLoadingProps] = useState(true);
   const [showResidenceModal, setShowResidenceModal] = useState(false);
   const [showPropertyModal, setShowPropertyModal] = useState(false);
+  const [editingProperty, setEditingProperty] = useState(null);
+  const [editingResidence, setEditingResidence] = useState(null);
+  const [selectedPropertyForReviews, setSelectedPropertyForReviews] = useState(null);
   const [fetchError, setFetchError] = useState('');
 
   // Règle métier : L'identité doit être vérifiée pour publier
@@ -34,7 +42,7 @@ const ClientDashboard = () => {
       setShowPropertyModal(true);
     } else if (params.get('tab')) {
       const tabParam = params.get('tab');
-      if (tabParam === 'properties' || tabParam === 'residences' || tabParam === 'all') {
+      if (tabParam === 'properties' || tabParam === 'residences') {
         setActiveTab(tabParam);
       }
     }
@@ -81,6 +89,16 @@ const ClientDashboard = () => {
     setProperties((prev) => [newProperty, ...prev]);
   };
 
+  const handleResidenceUpdated = (updatedResidence) => {
+    setResidences((prev) => prev.map((r) => (r.id === updatedResidence.id ? updatedResidence : r)));
+    setEditingResidence(null);
+  };
+
+  const handlePropertyUpdated = (updatedProperty) => {
+    setProperties((prev) => prev.map((p) => (p.id === updatedProperty.id ? updatedProperty : p)));
+    setEditingProperty(null);
+  };
+
   const handleResidenceDeleted = (id) => {
     setResidences((prev) => prev.filter((r) => r.id !== id));
   };
@@ -125,14 +143,14 @@ const ClientDashboard = () => {
             {/* Statistiques rapides (calculées dynamiquement) */}
             <div className="agency-stats-row">
               <div
-                className={`agency-stat-pill ${activeTab === 'all' ? 'active-stat' : ''}`}
-                onClick={() => setActiveTab('all')}
+                className={`agency-stat-pill ${activeTab === 'properties' ? 'active-stat' : ''}`}
+                onClick={() => setActiveTab('properties')}
                 style={{
                   cursor: 'pointer',
-                  border: activeTab === 'all' ? '2px solid var(--color-primary)' : '1px solid var(--color-border)',
+                  border: activeTab === 'properties' ? '2px solid var(--color-primary)' : '1px solid var(--color-border)',
                   transition: 'all 0.2s ease',
                 }}
-                title="Afficher toutes les annonces"
+                title="Afficher mes biens"
               >
                 <span className="agency-stat-num">{totalAnnonces}</span>
                 <span className="agency-stat-label">Annonce{totalAnnonces > 1 ? 's' : ''}</span>
@@ -245,26 +263,10 @@ const ClientDashboard = () => {
                 Mes Résidences
                 <span className="agency-tab-count">{residencesCount}</span>
               </button>
-
-              <button
-                type="button"
-                className={`agency-tab ${activeTab === 'all' ? 'active' : ''}`}
-                onClick={() => setActiveTab('all')}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                  <polyline points="14 2 14 8 20 8" />
-                  <line x1="16" y1="13" x2="8" y2="13" />
-                  <line x1="16" y1="17" x2="8" y2="17" />
-                  <polyline points="10 9 9 9 8 9" />
-                </svg>
-                Toutes les annonces
-                <span className="agency-tab-count">{totalAnnonces}</span>
-              </button>
             </div>
 
-            {/* Boutons d'ajout (Désactivés si CIN non vérifiée) */}
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            {/* Boutons d'action et d'ajout */}
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
               <button
                 type="button"
                 className="agency-btn-add"
@@ -306,39 +308,25 @@ const ClientDashboard = () => {
               </div>
             ) : (
               <>
-                {/* Tableau des Biens (affiché si activeTab === 'properties' ou 'all') */}
-                {(activeTab === 'properties' || activeTab === 'all') && (
-                  <div className="client-dashboard-tab-content" style={{ marginBottom: activeTab === 'all' ? '28px' : '0' }}>
-                    {activeTab === 'all' && (
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                        <h3 style={{ fontSize: '1.05rem', fontWeight: 600, color: '#0f172a', margin: 0 }}>
-                          Mes Biens ({propertiesCount})
-                        </h3>
-                      </div>
-                    )}
-                    <AgencyPropertyList
+                {activeTab === 'properties' && (
+                  <div>
+                    <h3 className="table-title">Biens Immobiliers ({properties.length})</h3>
+                    <PropertyList
                       properties={properties}
                       onDeleted={handlePropertyDeleted}
+                      onEdit={(prop) => setEditingProperty(prop)}
+                      onViewReviews={(prop) => setSelectedPropertyForReviews(prop)}
                     />
                   </div>
                 )}
 
-                {/* Tableau des Résidences (affiché si activeTab === 'residences' ou 'all') */}
-                {(activeTab === 'residences' || activeTab === 'all') && (
-                  <div
-                    className="client-dashboard-tab-content"
-                    style={activeTab === 'all' ? { borderTop: '1px solid #e2e8f0', paddingTop: '20px' } : {}}
-                  >
-                    {activeTab === 'all' && (
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                        <h3 style={{ fontSize: '1.05rem', fontWeight: 600, color: '#0f172a', margin: 0 }}>
-                          Mes Résidences ({residencesCount})
-                        </h3>
-                      </div>
-                    )}
-                    <AgencyResidenceList
+                {activeTab === 'residences' && (
+                  <div>
+                    <h3 className="table-title">Résidences ({residences.length})</h3>
+                    <ResidenceList
                       residences={residences}
                       onDeleted={handleResidenceDeleted}
+                      onEdit={(res) => setEditingResidence(res)}
                     />
                   </div>
                 )}
@@ -349,11 +337,18 @@ const ClientDashboard = () => {
       </main>
       <Footer />
 
-      {/* Modals de création (réutilisation des formulaires) */}
+      {/* Modals de création et d'édition */}
       {showResidenceModal && (
         <ResidenceFormModal
           onClose={() => setShowResidenceModal(false)}
           onCreated={handleResidenceCreated}
+        />
+      )}
+      {editingResidence && (
+        <ResidenceFormModal
+          residenceToEdit={editingResidence}
+          onClose={() => setEditingResidence(null)}
+          onUpdated={handleResidenceUpdated}
         />
       )}
       {showPropertyModal && (
@@ -361,6 +356,22 @@ const ClientDashboard = () => {
           onClose={() => setShowPropertyModal(false)}
           onCreated={handlePropertyCreated}
           residences={residences}
+        />
+      )}
+      {editingProperty && (
+        <PropertyFormModal
+          propertyToEdit={editingProperty}
+          onClose={() => setEditingProperty(null)}
+          onUpdated={handlePropertyUpdated}
+          residences={residences}
+        />
+      )}
+
+      {/* Modal de consultation des avis par annonce */}
+      {selectedPropertyForReviews && (
+        <PropertyReviewsModal
+          property={selectedPropertyForReviews}
+          onClose={() => setSelectedPropertyForReviews(null)}
         />
       )}
     </div>

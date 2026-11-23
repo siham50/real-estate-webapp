@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
   getPendingListings,
+  approveProperty,
+  approveResidence,
   verifyPropertyListing,
   rejectPropertyListing,
   verifyResidenceListing,
@@ -25,8 +27,13 @@ const AdminPendingListings = () => {
     setFeedback({ type: '', message: '' });
     try {
       const data = await getPendingListings();
-      setProperties(Array.isArray(data?.properties) ? data.properties : []);
-      setResidences(Array.isArray(data?.residences) ? data.residences : []);
+      if (Array.isArray(data)) {
+        setProperties(data.filter((item) => item.itemType === 'PROPERTY' || item.type || item.purpose));
+        setResidences(data.filter((item) => item.itemType === 'RESIDENCE' || (!item.type && !item.purpose)));
+      } else {
+        setProperties(Array.isArray(data?.properties) ? data.properties : []);
+        setResidences(Array.isArray(data?.residences) ? data.residences : []);
+      }
     } catch (err) {
       setFeedback({
         type: 'error',
@@ -89,11 +96,9 @@ const AdminPendingListings = () => {
 
     try {
       if (isProp) {
-        await verifyPropertyListing(item.id);
-        setProperties((prev) => prev.filter((p) => p.id !== item.id));
+        await approveProperty(item.id);
       } else {
-        await verifyResidenceListing(item.id);
-        setResidences((prev) => prev.filter((r) => r.id !== item.id));
+        await approveResidence(item.id);
       }
 
       setFeedback({
@@ -104,6 +109,9 @@ const AdminPendingListings = () => {
       if (selectedItemForDocs && selectedItemForDocs.id === item.id && selectedItemForDocs.itemType === item.itemType) {
         setSelectedItemForDocs(null);
       }
+
+      // Rafraîchir la liste des annonces en attente
+      await fetchListings();
     } catch (err) {
       setFeedback({
         type: 'error',

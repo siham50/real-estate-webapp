@@ -49,7 +49,7 @@ public class AdminController {
         return ResponseEntity.ok(adminService.getPendingListings());
     }
 
-    @PatchMapping({"/verify-property/{id}", "/verify-listing/property/{id}"})
+    @PatchMapping({"/approve-property/{id}", "/verify-property/{id}", "/verify-listing/property/{id}"})
     public ResponseEntity<PropertyDTO> verifyPropertyListing(@PathVariable Long id) {
         try {
             return ResponseEntity.ok(adminService.verifyProperty(id));
@@ -67,7 +67,7 @@ public class AdminController {
         }
     }
 
-    @PatchMapping({"/verify-residence/{id}", "/verify-listing/residence/{id}"})
+    @PatchMapping({"/approve-residence/{id}", "/verify-residence/{id}", "/verify-listing/residence/{id}"})
     public ResponseEntity<ResidenceDTO> verifyResidenceListing(@PathVariable Long id) {
         try {
             return ResponseEntity.ok(adminService.verifyResidence(id));

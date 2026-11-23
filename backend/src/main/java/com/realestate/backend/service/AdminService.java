@@ -9,6 +9,7 @@ import com.realestate.backend.entity.Property;
 import com.realestate.backend.entity.Residence;
 import com.realestate.backend.entity.User;
 import com.realestate.backend.entity.enums.ReportStatus;
+import com.realestate.backend.entity.enums.Role;
 import com.realestate.backend.entity.enums.VerificationStatus;
 import com.realestate.backend.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -68,11 +69,13 @@ public class AdminService {
     public Map<String, Object> getPendingListings() {
         List<PropertyDTO> properties = propertyRepository.findByVerificationStatusAndIsDeletedFalse(VerificationStatus.PENDING)
                 .stream()
+                .filter(p -> p.getOwner() != null && p.getOwner().getRole() == Role.CLIENT)
                 .map(DtoMapper::toPropertyDTO)
                 .toList();
 
         List<ResidenceDTO> residences = residenceRepository.findByVerificationStatusAndIsDeletedFalse(VerificationStatus.PENDING)
                 .stream()
+                .filter(r -> r.getOwner() != null && r.getOwner().getRole() == Role.CLIENT)
                 .map(DtoMapper::toResidenceDTO)
                 .toList();
 
@@ -87,6 +90,7 @@ public class AdminService {
         Property property = propertyRepository.findById(propertyId)
                 .orElseThrow(() -> new RuntimeException("Bien introuvable avec l'id : " + propertyId));
         property.setVerificationStatus(VerificationStatus.VERIFIED);
+        property.setAvailable(true);
         Property saved = propertyRepository.save(property);
         return DtoMapper.toPropertyDTO(saved);
     }
@@ -96,6 +100,7 @@ public class AdminService {
         Property property = propertyRepository.findById(propertyId)
                 .orElseThrow(() -> new RuntimeException("Bien introuvable avec l'id : " + propertyId));
         property.setVerificationStatus(VerificationStatus.REJECTED);
+        property.setAvailable(false);
         Property saved = propertyRepository.save(property);
         return DtoMapper.toPropertyDTO(saved);
     }
@@ -105,6 +110,7 @@ public class AdminService {
         Residence residence = residenceRepository.findById(residenceId)
                 .orElseThrow(() -> new RuntimeException("Résidence introuvable avec l'id : " + residenceId));
         residence.setVerificationStatus(VerificationStatus.VERIFIED);
+        residence.setAvailable(true);
         Residence saved = residenceRepository.save(residence);
         return DtoMapper.toResidenceDTO(saved);
     }
@@ -114,6 +120,7 @@ public class AdminService {
         Residence residence = residenceRepository.findById(residenceId)
                 .orElseThrow(() -> new RuntimeException("Résidence introuvable avec l'id : " + residenceId));
         residence.setVerificationStatus(VerificationStatus.REJECTED);
+        residence.setAvailable(false);
         Residence saved = residenceRepository.save(residence);
         return DtoMapper.toResidenceDTO(saved);
     }

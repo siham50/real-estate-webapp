@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { createProperty, uploadFile, uploadCin } from '../services/api';
+import { createProperty, updateProperty, uploadFile, uploadCin } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { getImageUrl } from '../utils/imageUtils';
 import LocationPicker from './shared/LocationPicker';
 
 const EMPTY_FORM = {
@@ -31,18 +32,71 @@ const PROPERTY_PURPOSES = [
   { value: 'RENT', label: 'Location' },
 ];
 
-const PropertyForm = ({ onClose, onCreated, residences, isModal = false }) => {
+const PropertyForm = ({ onClose, onCreated, onUpdated, residences, isModal = false, propertyToEdit = null }) => {
   const { user, updateUserState } = useAuth();
-  const [formData, setFormData] = useState(EMPTY_FORM);
-  const [selectedDocuments, setSelectedDocuments] = useState([]);
+  const isEditing = Boolean(propertyToEdit && propertyToEdit.id);
+
+  const [formData, setFormData] = useState(() => {
+    if (propertyToEdit) {
+      return {
+        title: propertyToEdit.title || '',
+        description: propertyToEdit.description || '',
+        type: propertyToEdit.type || 'APARTMENT',
+        purpose: propertyToEdit.purpose || 'SALE',
+        price: propertyToEdit.price != null ? propertyToEdit.price : '',
+        surfaceArea: propertyToEdit.surfaceArea != null ? propertyToEdit.surfaceArea : '',
+        address: propertyToEdit.address || '',
+        city: propertyToEdit.city || '',
+        latitude: propertyToEdit.latitude || '',
+        longitude: propertyToEdit.longitude || '',
+        residenceId: propertyToEdit.residence?.id || propertyToEdit.residenceId || '',
+      };
+    }
+    return EMPTY_FORM;
+  });
+
+  const [selectedDocuments, setSelectedDocuments] = useState(() => {
+    if (propertyToEdit?.documents && propertyToEdit.documents.length > 0) {
+      return propertyToEdit.documents.map((doc, idx) => {
+        const url = typeof doc === 'string' ? doc : doc.documentUrl;
+        return {
+          existingUrl: url,
+          name: `Document ${idx + 1}`,
+          size: '-',
+          isPdf: url.toLowerCase().includes('.pdf'),
+          preview: !url.toLowerCase().includes('.pdf') ? getImageUrl(url) : null,
+        };
+      });
+    }
+    return [];
+  });
+
   const [cinFile, setCinFile] = useState(null);
-  const [selectedImages, setSelectedImages] = useState([]);
+
+  const [selectedImages, setSelectedImages] = useState(() => {
+    if (propertyToEdit?.images && propertyToEdit.images.length > 0) {
+      return propertyToEdit.images.map((img) => ({
+        url: img.imageUrl,
+        preview: getImageUrl(img.imageUrl),
+        isPrimary: Boolean(img.isPrimary || img.primary),
+      }));
+    }
+    return [];
+  });
 
   const [loading, setLoading] = useState(false);
   const [statusText, setStatusText] = useState('');
   const [error, setError] = useState('');
 
-  const isClient = user?.role === 'CLIENT';
+  const userRole = String(user?.role || '').toUpperCase();
+  const isAgency =
+    userRole === 'PROFESSIONAL' ||
+    userRole === 'AGENCE' ||
+    userRole === 'AGENCY' ||
+    userRole.includes('PRO') ||
+    userRole.includes('AGENC') ||
+    Boolean(user?.companyName);
+  const isClient = user?.role === 'CLIENT' || (!isAgency && Boolean(user?.id));
   const isCinVerified = user?.isIdentityVerified === true;
   const hasExistingCin = Boolean(user?.identityDocumentUrl);
 
@@ -76,7 +130,9 @@ const PropertyForm = ({ onClose, onCreated, residences, isModal = false }) => {
 
   const handleRemoveImage = (index) => {
     setSelectedImages((prev) => {
-      URL.revokeObjectURL(prev[index]?.preview);
+      if (prev[index]?.file && prev[index]?.preview) {
+        URL.revokeObjectURL(prev[index].preview);
+      }
       const next = prev.filter((_, i) => i !== index);
       if (next.length > 0 && !next.some((item) => item.isPrimary)) {
         next[0] = { ...next[0], isPrimary: true };
@@ -101,7 +157,7 @@ const PropertyForm = ({ onClose, onCreated, residences, isModal = false }) => {
 
   const handleRemoveDocument = (index) => {
     setSelectedDocuments((prev) => {
-      if (prev[index]?.preview) {
+      if (prev[index]?.preview && prev[index]?.file) {
         URL.revokeObjectURL(prev[index].preview);
       }
       return prev.filter((_, i) => i !== index);
@@ -117,13 +173,13 @@ const PropertyForm = ({ onClose, onCreated, residences, isModal = false }) => {
     e.preventDefault();
     setError('');
 
-    // Le document de propriété est obligatoire
-    if (selectedDocuments.length === 0) {
+    // Le document de propriété est obligatoire lors de la création pour les clients (non requis pour les agences)
+    if (!isEditing && isClient && selectedDocuments.length === 0) {
       setError('Au moins un document de propriété (Titre Foncier / Acte) est obligatoire.');
       return;
     }
 
-    if (isClient && !isCinVerified && !hasExistingCin && !cinFile) {
+    if (!isEditing && isClient && !isCinVerified && !hasExistingCin && !cinFile) {
       setError("Veuillez sélectionner votre CIN. Votre identité doit être vérifiée avant de publier.");
       return;
     }
@@ -131,16 +187,20 @@ const PropertyForm = ({ onClose, onCreated, residences, isModal = false }) => {
     setLoading(true);
 
     try {
-      // 1. Upload séquentiel des documents de propriété un par un
-      setStatusText('Upload des documents de propriété en cours...');
+      // 1. Upload séquentiel des nouveaux documents de propriété
+      setStatusText('Traitement des documents de propriété...');
       const uploadedDocUrls = [];
       let docIndex = 1;
       for (const docItem of selectedDocuments) {
-        setStatusText(`Upload du document ${docIndex}/${selectedDocuments.length}...`);
-        const docRes = await uploadFile(docItem.file);
-        const cleanUrl = typeof docRes === 'string' ? docRes : (docRes?.url || docRes?.fileUrl || '');
-        if (cleanUrl) {
-          uploadedDocUrls.push(cleanUrl);
+        if (docItem.file) {
+          setStatusText(`Upload du document ${docIndex}/${selectedDocuments.length}...`);
+          const docRes = await uploadFile(docItem.file);
+          const cleanUrl = typeof docRes === 'string' ? docRes : (docRes?.url || docRes?.fileUrl || '');
+          if (cleanUrl) {
+            uploadedDocUrls.push(cleanUrl);
+          }
+        } else if (docItem.existingUrl) {
+          uploadedDocUrls.push(docItem.existingUrl);
         }
         docIndex++;
       }
@@ -153,14 +213,16 @@ const PropertyForm = ({ onClose, onCreated, residences, isModal = false }) => {
         updateUserState(updatedUser);
       }
 
-      // 3. Upload séquentiel des photos du bien avec for...of
+      // 3. Upload des nouvelles photos du bien
       if (selectedImages.length > 0) {
         let index = 1;
         for (const item of selectedImages) {
-          setStatusText(`Upload de l'image ${index}/${selectedImages.length}...`);
-          const res = await uploadFile(item.file);
-          const cleanUrl = typeof res === 'string' ? res : (res?.url || res?.fileUrl || res?.imageUrl || '');
-          item.url = cleanUrl;
+          if (item.file) {
+            setStatusText(`Upload de l'image ${index}/${selectedImages.length}...`);
+            const res = await uploadFile(item.file);
+            const cleanUrl = typeof res === 'string' ? res : (res?.url || res?.fileUrl || res?.imageUrl || '');
+            item.url = cleanUrl;
+          }
           index++;
         }
       }
@@ -170,8 +232,8 @@ const PropertyForm = ({ onClose, onCreated, residences, isModal = false }) => {
         selectedImages[0].isPrimary = true;
       }
 
-      // 4. Envoi de la requête de création avec tableau de documents et images
-      setStatusText('Création du bien en cours...');
+      // 4. Construction du payload
+      setStatusText(isEditing ? 'Mise à jour du bien...' : 'Création du bien en cours...');
 
       const payload = {
         title: formData.title.trim(),
@@ -194,24 +256,36 @@ const PropertyForm = ({ onClose, onCreated, residences, isModal = false }) => {
         residence: formData.residenceId ? { id: parseInt(formData.residenceId, 10) } : null,
         documentUrl: uploadedDocUrls[0] || null,
         documents: uploadedDocUrls.map((url) => ({ documentUrl: url })),
-        images: selectedImages.map((img) => ({
-          imageUrl: img.url,
-          isPrimary: img.isPrimary === true, // S'assure que c'est un booléen strict
-        })),
-        verificationStatus: 'PENDING',
+        images: selectedImages
+          .filter((img) => img.url)
+          .map((img) => ({
+            imageUrl: img.url,
+            isPrimary: img.isPrimary === true,
+          })),
         isAvailable: true,
         isDeleted: false,
       };
 
-      const created = await createProperty(payload);
-      if (onCreated) {
-        onCreated(created);
+      if (isEditing) {
+        const updated = await updateProperty(propertyToEdit.id, payload);
+        if (onUpdated) {
+          onUpdated(updated);
+        } else if (onCreated) {
+          onCreated(updated);
+        }
+      } else {
+        payload.verificationStatus = 'PENDING';
+        const created = await createProperty(payload);
+        if (onCreated) {
+          onCreated(created);
+        }
       }
+
       if (onClose) {
         onClose();
       }
     } catch (err) {
-      setError(err.message || 'Erreur lors de la création du bien.');
+      setError(err.message || (isEditing ? 'Erreur lors de la modification du bien.' : 'Erreur lors de la création du bien.'));
     } finally {
       setLoading(false);
       setStatusText('');
@@ -221,7 +295,7 @@ const PropertyForm = ({ onClose, onCreated, residences, isModal = false }) => {
   const formContent = (
     <div className="agency-modal-card agency-modal-card-wide" onClick={(e) => e.stopPropagation()}>
       <div className="agency-modal-header">
-        <h2 className="agency-modal-title">Nouveau bien immobilier</h2>
+        <h2 className="agency-modal-title">{isEditing ? 'Modifier le bien immobilier' : 'Nouveau bien immobilier'}</h2>
         {onClose && (
           <button type="button" className="agency-modal-close" onClick={onClose} aria-label="Fermer">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -508,86 +582,88 @@ const PropertyForm = ({ onClose, onCreated, residences, isModal = false }) => {
           )}
         </div>
 
-        {/* 1. Titre Foncier / Documents de propriété (Multi-documents) */}
-        <div className="agency-field-group">
-          <label htmlFor="property-docs">
-            Documents de propriété / Titre foncier <span style={{ color: '#ef4444' }}>*</span>
-          </label>
-          <input
-            id="property-docs"
-            name="propertyDocs"
-            type="file"
-            multiple
-            accept=".pdf,image/*"
-            className="agency-input"
-            onChange={handleDocumentsChange}
-          />
-          <small style={{ display: 'block', marginTop: '4px', color: '#6b7280', fontSize: '0.82rem' }}>
-            Formats autorisés : PDF, JPG, PNG (max. 10 Mo par document). Vous pouvez joindre plusieurs documents justificatifs.
-          </small>
+        {/* 1. Titre Foncier / Documents de propriété (Multi-documents) - Réservé aux clients */}
+        {isClient && (
+          <div className="agency-field-group">
+            <label htmlFor="property-docs">
+              Documents de propriété / Titre foncier <span style={{ color: '#ef4444' }}>*</span>
+            </label>
+            <input
+              id="property-docs"
+              name="propertyDocs"
+              type="file"
+              multiple
+              accept=".pdf,image/*"
+              className="agency-input"
+              onChange={handleDocumentsChange}
+            />
+            <small style={{ display: 'block', marginTop: '4px', color: '#6b7280', fontSize: '0.82rem' }}>
+              Formats autorisés : PDF, JPG, PNG (max. 10 Mo par document). Vous pouvez joindre plusieurs documents justificatifs.
+            </small>
 
-          {/* Liste et aperçus des documents sélectionnés */}
-          {selectedDocuments.length > 0 && (
-            <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {selectedDocuments.map((doc, idx) => (
-                <div
-                  key={idx}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '8px 12px',
-                    borderRadius: '8px',
-                    border: '1px solid #e2e8f0',
-                    background: '#f8fafc',
-                    gap: '10px',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', overflow: 'hidden' }}>
-                    {doc.isPdf ? (
-                      <span style={{ fontSize: '22px' }}>📕</span>
-                    ) : doc.preview ? (
-                      <img
-                        src={doc.preview}
-                        alt={doc.name}
-                        style={{ width: '38px', height: '38px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #cbd5e1' }}
-                      />
-                    ) : (
-                      <span style={{ fontSize: '22px' }}>📄</span>
-                    )}
-                    <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      <div style={{ fontSize: '0.86rem', fontWeight: 600, color: '#1e293b' }}>
-                        {doc.name}
-                      </div>
-                      <div style={{ fontSize: '0.76rem', color: '#64748b' }}>
-                        {doc.size} Ko
+            {/* Liste et aperçus des documents sélectionnés */}
+            {selectedDocuments.length > 0 && (
+              <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {selectedDocuments.map((doc, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid #e2e8f0',
+                      background: '#f8fafc',
+                      gap: '10px',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', overflow: 'hidden' }}>
+                      {doc.isPdf ? (
+                        <span style={{ fontSize: '22px' }}>📕</span>
+                      ) : doc.preview ? (
+                        <img
+                          src={doc.preview}
+                          alt={doc.name}
+                          style={{ width: '38px', height: '38px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #cbd5e1' }}
+                        />
+                      ) : (
+                        <span style={{ fontSize: '22px' }}>📄</span>
+                      )}
+                      <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <div style={{ fontSize: '0.86rem', fontWeight: 600, color: '#1e293b' }}>
+                          {doc.name}
+                        </div>
+                        <div style={{ fontSize: '0.76rem', color: '#64748b' }}>
+                          {doc.size} Ko
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveDocument(idx)}
-                    style={{
-                      background: '#fee2e2',
-                      color: '#b91c1c',
-                      border: '1px solid #fca5a5',
-                      borderRadius: '6px',
-                      padding: '4px 10px',
-                      fontSize: '0.78rem',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      flexShrink: 0,
-                    }}
-                    title="Supprimer ce document"
-                  >
-                    Supprimer
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveDocument(idx)}
+                      style={{
+                        background: '#fee2e2',
+                        color: '#b91c1c',
+                        border: '1px solid #fca5a5',
+                        borderRadius: '6px',
+                        padding: '4px 10px',
+                        fontSize: '0.78rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        flexShrink: 0,
+                      }}
+                      title="Supprimer ce document"
+                    >
+                      Supprimer
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* 2. Document CIN si le client n'est pas vérifié */}
         {isClient && !isCinVerified && (
@@ -624,7 +700,7 @@ const PropertyForm = ({ onClose, onCreated, residences, isModal = false }) => {
             </button>
           )}
           <button type="submit" className="agency-btn-submit" disabled={loading}>
-            {loading ? (statusText || 'Envoi en cours...') : 'Créer le bien'}
+            {loading ? (statusText || 'Envoi en cours...') : isEditing ? 'Enregistrer les modifications' : 'Créer le bien'}
           </button>
         </div>
       </form>

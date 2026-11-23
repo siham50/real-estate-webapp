@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { createResidence, uploadFile } from '../services/api';
+import { createResidence, updateResidence, uploadFile } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { getImageUrl } from '../utils/imageUtils';
 import LocationPicker from './shared/LocationPicker';
 
 const EMPTY_FORM = {
@@ -12,11 +13,60 @@ const EMPTY_FORM = {
   longitude: '',
 };
 
-const ResidenceFormModal = ({ onClose, onCreated }) => {
+const ResidenceFormModal = ({ onClose, onCreated, onUpdated, residenceToEdit = null }) => {
   const { user } = useAuth();
-  const [formData, setFormData] = useState(EMPTY_FORM);
-  const [selectedImages, setSelectedImages] = useState([]);
-  const [selectedDocuments, setSelectedDocuments] = useState([]);
+  const isEditing = Boolean(residenceToEdit && residenceToEdit.id);
+
+  const userRole = String(user?.role || '').toUpperCase();
+  const isAgency =
+    userRole === 'PROFESSIONAL' ||
+    userRole === 'AGENCE' ||
+    userRole === 'AGENCY' ||
+    userRole.includes('PRO') ||
+    userRole.includes('AGENC') ||
+    Boolean(user?.companyName);
+  const isClient = user?.role === 'CLIENT' || (!isAgency && Boolean(user?.id));
+
+  const [formData, setFormData] = useState(() => {
+    if (residenceToEdit) {
+      return {
+        name: residenceToEdit.name || '',
+        description: residenceToEdit.description || '',
+        address: residenceToEdit.address || '',
+        city: residenceToEdit.city || '',
+        latitude: residenceToEdit.latitude || '',
+        longitude: residenceToEdit.longitude || '',
+      };
+    }
+    return EMPTY_FORM;
+  });
+
+  const [selectedImages, setSelectedImages] = useState(() => {
+    if (residenceToEdit?.images && residenceToEdit.images.length > 0) {
+      return residenceToEdit.images.map((img) => ({
+        url: img.imageUrl,
+        preview: getImageUrl(img.imageUrl),
+        isPrimary: Boolean(img.isPrimary || img.primary),
+      }));
+    }
+    return [];
+  });
+
+  const [selectedDocuments, setSelectedDocuments] = useState(() => {
+    if (residenceToEdit?.documents && residenceToEdit.documents.length > 0) {
+      return residenceToEdit.documents.map((doc, idx) => {
+        const url = typeof doc === 'string' ? doc : doc.documentUrl;
+        return {
+          existingUrl: url,
+          name: `Document ${idx + 1}`,
+          size: '-',
+          isPdf: url.toLowerCase().includes('.pdf'),
+          preview: !url.toLowerCase().includes('.pdf') ? getImageUrl(url) : null,
+        };
+      });
+    }
+    return [];
+  });
 
   const [loading, setLoading] = useState(false);
   const [statusText, setStatusText] = useState('');
@@ -52,7 +102,9 @@ const ResidenceFormModal = ({ onClose, onCreated }) => {
 
   const handleRemoveImage = (index) => {
     setSelectedImages((prev) => {
-      URL.revokeObjectURL(prev[index]?.preview);
+      if (prev[index]?.file && prev[index]?.preview) {
+        URL.revokeObjectURL(prev[index].preview);
+      }
       const next = prev.filter((_, i) => i !== index);
       if (next.length > 0 && !next.some((item) => item.isPrimary)) {
         next[0] = { ...next[0], isPrimary: true };
@@ -77,7 +129,7 @@ const ResidenceFormModal = ({ onClose, onCreated }) => {
 
   const handleRemoveDocument = (index) => {
     setSelectedDocuments((prev) => {
-      if (prev[index]?.preview) {
+      if (prev[index]?.preview && prev[index]?.file) {
         URL.revokeObjectURL(prev[index].preview);
       }
       return prev.filter((_, i) => i !== index);
@@ -93,7 +145,8 @@ const ResidenceFormModal = ({ onClose, onCreated }) => {
     e.preventDefault();
     setError('');
 
-    if (selectedDocuments.length === 0) {
+    // Document de propriété obligatoire pour les clients uniquement
+    if (!isEditing && isClient && selectedDocuments.length === 0) {
       setError('Au moins un document de propriété (Titre Foncier / Acte) est obligatoire.');
       return;
     }
@@ -101,28 +154,36 @@ const ResidenceFormModal = ({ onClose, onCreated }) => {
     setLoading(true);
 
     try {
-      // 1. Upload séquentiel des documents de propriété un par un
-      setStatusText('Upload des documents de propriété en cours...');
+      // 1. Upload des nouveaux documents de propriété si client
       const uploadedDocUrls = [];
-      let docIndex = 1;
-      for (const docItem of selectedDocuments) {
-        setStatusText(`Upload du document ${docIndex}/${selectedDocuments.length}...`);
-        const docRes = await uploadFile(docItem.file);
-        const cleanUrl = typeof docRes === 'string' ? docRes : (docRes?.url || docRes?.fileUrl || '');
-        if (cleanUrl) {
-          uploadedDocUrls.push(cleanUrl);
+      if (isClient && selectedDocuments.length > 0) {
+        setStatusText('Traitement des documents de propriété...');
+        let docIndex = 1;
+        for (const docItem of selectedDocuments) {
+          if (docItem.file) {
+            setStatusText(`Upload du document ${docIndex}/${selectedDocuments.length}...`);
+            const docRes = await uploadFile(docItem.file);
+            const cleanUrl = typeof docRes === 'string' ? docRes : (docRes?.url || docRes?.fileUrl || '');
+            if (cleanUrl) {
+              uploadedDocUrls.push(cleanUrl);
+            }
+          } else if (docItem.existingUrl) {
+            uploadedDocUrls.push(docItem.existingUrl);
+          }
+          docIndex++;
         }
-        docIndex++;
       }
 
-      // 2. Upload séquentiel des photos de la résidence avec for...of
+      // 2. Upload des nouvelles photos de la résidence
       if (selectedImages.length > 0) {
         let index = 1;
         for (const item of selectedImages) {
-          setStatusText(`Upload de l'image ${index}/${selectedImages.length}...`);
-          const res = await uploadFile(item.file);
-          const cleanUrl = typeof res === 'string' ? res : (res?.url || res?.fileUrl || res?.imageUrl || '');
-          item.url = cleanUrl;
+          if (item.file) {
+            setStatusText(`Upload de l'image ${index}/${selectedImages.length}...`);
+            const res = await uploadFile(item.file);
+            const cleanUrl = typeof res === 'string' ? res : (res?.url || res?.fileUrl || res?.imageUrl || '');
+            item.url = cleanUrl;
+          }
           index++;
         }
       }
@@ -131,8 +192,8 @@ const ResidenceFormModal = ({ onClose, onCreated }) => {
         selectedImages[0].isPrimary = true;
       }
 
-      // 3. Création de la résidence avec tableau de documents et verificationStatus: PENDING
-      setStatusText('Création de la résidence...');
+      // 3. Construction du payload
+      setStatusText(isEditing ? 'Mise à jour de la résidence...' : 'Création de la résidence...');
       const payload = {
         name: formData.name.trim(),
         description: formData.description.trim(),
@@ -146,23 +207,40 @@ const ResidenceFormModal = ({ onClose, onCreated }) => {
           formData.longitude !== '' && formData.longitude !== null && !isNaN(Number(formData.longitude))
             ? parseFloat(formData.longitude)
             : -7.5898,
-        owner: { id: user.id },
-        verificationStatus: 'PENDING',
+        owner: user?.id ? { id: user.id } : null,
         documentUrl: uploadedDocUrls[0] || null,
         documents: uploadedDocUrls.map((url) => ({ documentUrl: url })),
-        images: selectedImages.map((img) => ({
-          imageUrl: img.url,
-          isPrimary: img.isPrimary === true, // S'assure que c'est un booléen strict
-        })),
+        images: selectedImages
+          .filter((img) => img.url)
+          .map((img) => ({
+            imageUrl: img.url,
+            isPrimary: img.isPrimary === true,
+          })),
         isAvailable: true,
         isDeleted: false,
       };
 
-      const created = await createResidence(payload);
-      onCreated(created);
-      onClose();
+      if (isEditing) {
+        const updated = await updateResidence(residenceToEdit.id, payload);
+        if (onUpdated) {
+          onUpdated(updated);
+        } else if (onCreated) {
+          onCreated(updated);
+        }
+      } else {
+        payload.verificationStatus = isAgency ? 'VERIFIED' : 'PENDING';
+        payload.isAvailable = isAgency;
+        const created = await createResidence(payload);
+        if (onCreated) {
+          onCreated(created);
+        }
+      }
+
+      if (onClose) {
+        onClose();
+      }
     } catch (err) {
-      setError(err.message || 'Erreur lors de la création de la résidence.');
+      setError(err.message || (isEditing ? 'Erreur lors de la modification de la résidence.' : 'Erreur lors de la création de la résidence.'));
     } finally {
       setLoading(false);
       setStatusText('');
@@ -171,15 +249,17 @@ const ResidenceFormModal = ({ onClose, onCreated }) => {
 
   return (
     <div className="agency-modal-overlay">
-      <div className="agency-modal-card" onClick={(e) => e.stopPropagation()}>
+      <div className="agency-modal-card agency-modal-card-wide" onClick={(e) => e.stopPropagation()}>
         <div className="agency-modal-header">
-          <h2 className="agency-modal-title">Nouvelle résidence</h2>
-          <button type="button" className="agency-modal-close" onClick={onClose} aria-label="Fermer">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </button>
+          <h2 className="agency-modal-title">{isEditing ? 'Modifier la résidence' : 'Nouvelle résidence'}</h2>
+          {onClose && (
+            <button type="button" className="agency-modal-close" onClick={onClose} aria-label="Fermer">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          )}
         </div>
 
         {loading && statusText && (
@@ -204,27 +284,27 @@ const ResidenceFormModal = ({ onClose, onCreated }) => {
 
         <form onSubmit={handleSubmit} className="agency-modal-form">
           <div className="agency-field-group">
-            <label htmlFor="res-name">Nom de la résidence *</label>
+            <label htmlFor="residence-name">Nom de la résidence *</label>
             <input
-              id="res-name"
+              id="residence-name"
               name="name"
               type="text"
               required
               className="agency-input"
-              placeholder="Ex : Résidence Al Amal"
+              placeholder="Ex : Résidence Les Jardins d'Anfa"
               value={formData.name}
               onChange={handleChange}
             />
           </div>
 
           <div className="agency-field-group">
-            <label htmlFor="res-description">Description</label>
+            <label htmlFor="residence-desc">Description</label>
             <textarea
-              id="res-description"
+              id="residence-desc"
               name="description"
               rows={3}
               className="agency-input agency-textarea"
-              placeholder="Décrivez la résidence..."
+              placeholder="Décrivez la résidence (équipements, sécurité, finitions, standing...)..."
               value={formData.description}
               onChange={handleChange}
             />
@@ -240,9 +320,9 @@ const ResidenceFormModal = ({ onClose, onCreated }) => {
           />
 
           <div className="agency-field-group">
-            <label htmlFor="res-city">Ville *</label>
+            <label htmlFor="residence-city">Ville *</label>
             <input
-              id="res-city"
+              id="residence-city"
               name="city"
               type="text"
               required
@@ -253,91 +333,11 @@ const ResidenceFormModal = ({ onClose, onCreated }) => {
             />
           </div>
 
-          {/* Document de propriété / Titre foncier (Multi-documents) */}
+          {/* Photos de la résidence (même style et grille que le formulaire des biens) */}
           <div className="agency-field-group">
-            <label htmlFor="res-documents" className="agency-label">
-              Documents de propriété / Titre foncier <span style={{ color: '#ef4444' }}>*</span>
-            </label>
+            <label htmlFor="residence-images">Photos de la résidence</label>
             <input
-              id="res-documents"
-              type="file"
-              multiple
-              accept=".pdf,image/*"
-              className="agency-input"
-              onChange={handleDocumentsChange}
-            />
-            <small style={{ display: 'block', marginTop: '4px', color: '#6b7280', fontSize: '0.82rem' }}>
-              Formats autorisés : PDF, JPG, PNG (max. 10 Mo par document). Vous pouvez joindre plusieurs documents justificatifs.
-            </small>
-
-            {/* Liste et aperçus des documents sélectionnés */}
-            {selectedDocuments.length > 0 && (
-              <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {selectedDocuments.map((doc, idx) => (
-                  <div
-                    key={idx}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '8px 12px',
-                      borderRadius: '8px',
-                      border: '1px solid #e2e8f0',
-                      background: '#f8fafc',
-                      gap: '10px',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', overflow: 'hidden' }}>
-                      {doc.isPdf ? (
-                        <span style={{ fontSize: '22px' }}>📕</span>
-                      ) : doc.preview ? (
-                        <img
-                          src={doc.preview}
-                          alt={doc.name}
-                          style={{ width: '38px', height: '38px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #cbd5e1' }}
-                        />
-                      ) : (
-                        <span style={{ fontSize: '22px' }}>📄</span>
-                      )}
-                      <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        <div style={{ fontSize: '0.86rem', fontWeight: 600, color: '#1e293b' }}>
-                          {doc.name}
-                        </div>
-                        <div style={{ fontSize: '0.76rem', color: '#64748b' }}>
-                          {doc.size} Ko
-                        </div>
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveDocument(idx)}
-                      style={{
-                        background: '#fee2e2',
-                        color: '#b91c1c',
-                        border: '1px solid #fca5a5',
-                        borderRadius: '6px',
-                        padding: '4px 10px',
-                        fontSize: '0.78rem',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        flexShrink: 0,
-                      }}
-                      title="Supprimer ce document"
-                    >
-                      Supprimer
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Upload et sélection de l'image principale pour la résidence */}
-          <div className="agency-field-group">
-            <label htmlFor="res-images">Photos de la résidence</label>
-            <input
-              id="res-images"
+              id="residence-images"
               type="file"
               multiple
               accept="image/*"
@@ -345,7 +345,7 @@ const ResidenceFormModal = ({ onClose, onCreated }) => {
               onChange={handleImagesChange}
             />
             <small style={{ display: 'block', marginTop: '4px', color: '#6b7280', fontSize: '0.82rem' }}>
-              Sélectionnez une ou plusieurs photos (JPG, PNG, WebP). Cliquez sur l'étoile ⭐ pour définir l'image principale.
+              Sélectionnez une ou plusieurs photos (JPG, PNG, WebP). Cliquez sur l'étoile ⭐ pour choisir l'image principale de votre résidence.
             </small>
 
             {selectedImages.length > 0 && (
@@ -430,12 +430,97 @@ const ResidenceFormModal = ({ onClose, onCreated }) => {
             )}
           </div>
 
+          {/* 1. Titre Foncier / Documents de propriété (Multi-documents) - Réservé aux clients uniquement */}
+          {isClient && (
+            <div className="agency-field-group">
+              <label htmlFor="residence-docs">
+                Documents de propriété / Titre foncier <span style={{ color: '#ef4444' }}>*</span>
+              </label>
+              <input
+                id="residence-docs"
+                name="residenceDocs"
+                type="file"
+                multiple
+                accept=".pdf,image/*"
+                className="agency-input"
+                onChange={handleDocumentsChange}
+              />
+              <small style={{ display: 'block', marginTop: '4px', color: '#6b7280', fontSize: '0.82rem' }}>
+                Formats autorisés : PDF, JPG, PNG (max. 10 Mo par document). Vous pouvez joindre plusieurs documents justificatifs.
+              </small>
+
+              {/* Liste et aperçus des documents sélectionnés */}
+              {selectedDocuments.length > 0 && (
+                <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {selectedDocuments.map((doc, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '8px 12px',
+                        borderRadius: '8px',
+                        border: '1px solid #e2e8f0',
+                        background: '#f8fafc',
+                        gap: '10px',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', overflow: 'hidden' }}>
+                        {doc.isPdf ? (
+                          <span style={{ fontSize: '22px' }}>📕</span>
+                        ) : doc.preview ? (
+                          <img
+                            src={doc.preview}
+                            alt={doc.name}
+                            style={{ width: '38px', height: '38px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #cbd5e1' }}
+                          />
+                        ) : (
+                          <span style={{ fontSize: '22px' }}>📄</span>
+                        )}
+                        <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          <div style={{ fontSize: '0.86rem', fontWeight: 600, color: '#1e293b' }}>
+                            {doc.name}
+                          </div>
+                          <div style={{ fontSize: '0.76rem', color: '#64748b' }}>
+                            {doc.size} Ko
+                          </div>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveDocument(idx)}
+                        style={{
+                          background: '#fee2e2',
+                          color: '#b91c1c',
+                          border: '1px solid #fca5a5',
+                          borderRadius: '6px',
+                          padding: '4px 10px',
+                          fontSize: '0.78rem',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          flexShrink: 0,
+                        }}
+                        title="Supprimer ce document"
+                      >
+                        Supprimer
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="agency-modal-actions">
-            <button type="button" className="agency-btn-cancel" onClick={onClose} disabled={loading}>
-              Annuler
-            </button>
+            {onClose && (
+              <button type="button" className="agency-btn-cancel" onClick={onClose} disabled={loading}>
+                Annuler
+              </button>
+            )}
             <button type="submit" className="agency-btn-submit" disabled={loading}>
-              {loading ? (statusText || 'Création...') : 'Créer la résidence'}
+              {loading ? (statusText || 'Envoi en cours...') : isEditing ? 'Enregistrer les modifications' : 'Créer la résidence'}
             </button>
           </div>
         </form>

@@ -18,6 +18,12 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     @Query("SELECT r FROM Review r WHERE r.targetUser.id = :targetUserId ORDER BY r.createdAt DESC")
     List<Review> findByTargetUserIdOrderByCreatedAtDesc(@Param("targetUserId") Long targetUserId);
 
+    @Query("SELECT r FROM Review r WHERE r.client.id = :clientId ORDER BY r.createdAt DESC")
+    List<Review> findByClientIdOrderByCreatedAtDesc(@Param("clientId") Long clientId);
+
+    @Query("SELECT r FROM Review r WHERE r.booking.property.id = :propertyId ORDER BY r.createdAt DESC")
+    List<Review> findByPropertyIdOrderByCreatedAtDesc(@Param("propertyId") Long propertyId);
+
     @Query("SELECT (COUNT(r) > 0) FROM Review r WHERE r.booking.id = :bookingId")
     boolean existsByBookingId(@Param("bookingId") Long bookingId);
 

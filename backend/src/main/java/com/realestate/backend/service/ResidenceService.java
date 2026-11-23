@@ -26,8 +26,8 @@ public class ResidenceService {
     private final AgencyProfileRepository agencyProfileRepository;
 
     public List<ResidenceDTO> getAllResidences() {
-        return residenceRepository.findByIsAvailableTrueAndIsDeletedFalse()
-                .stream()
+        return residenceRepository.findByVerificationStatusAndIsDeletedFalse(VerificationStatus.VERIFIED).stream()
+                .filter(r -> !r.isDeleted() && r.getVerificationStatus() == VerificationStatus.VERIFIED)
                 .map(DtoMapper::toResidenceDTO)
                 .toList();
     }
@@ -58,11 +58,13 @@ public class ResidenceService {
                     throw new RuntimeException("Votre compte agence doit être vérifié par un administrateur avant de publier une résidence.");
                 }
                 residence.setVerificationStatus(VerificationStatus.VERIFIED);
+                residence.setAvailable(true);
             } else if (owner.getRole() == Role.CLIENT) {
                 if (!Boolean.TRUE.equals(owner.getIsIdentityVerified())) {
                     throw new RuntimeException("Vous devez faire vérifier votre CIN avant de publier.");
                 }
                 residence.setVerificationStatus(VerificationStatus.PENDING);
+                residence.setAvailable(false);
             }
         }
 

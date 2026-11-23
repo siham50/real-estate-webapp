@@ -1,23 +1,37 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const Footer = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const isLoggedIn = Boolean(user && user.id);
+  const userRole = String(user?.role || '').toUpperCase();
+  const isAgency = userRole === 'PROFESSIONAL' || userRole === 'AGENCE';
+  const isAdmin = userRole === 'ADMIN';
 
   // Redirection selon la connexion et le rôle pour "Publier une annonce"
   const getPublishLink = () => {
     if (!isLoggedIn) {
       return '/login';
     }
-    if (user?.role === 'ADMIN') {
+    if (isAdmin) {
       return '/admin/properties';
     }
-    if (user?.role === 'PROFESSIONAL' || user?.role === 'AGENCE') {
+    if (isAgency) {
       return '/agency/dashboard?newProperty=true';
     }
     return '/agency/dashboard?newProperty=true';
+  };
+
+  const handleFooterLogoClick = (e) => {
+    if (isAdmin) {
+      e.preventDefault();
+      navigate('/admin');
+    } else if (isAgency) {
+      e.preventDefault();
+      navigate('/agency/dashboard');
+    }
   };
 
   return (
@@ -49,7 +63,12 @@ const Footer = () => {
         <div className="urbanet-footer-top">
           {/* Brand Column */}
           <div className="footer-brand-col">
-            <Link to="/" className="urbanet-logo footer-logo" style={{ textDecoration: 'none' }}>
+            <Link
+              to={isAdmin ? '/admin' : isAgency ? '/agency/dashboard' : '/'}
+              onClick={handleFooterLogoClick}
+              className="urbanet-logo footer-logo"
+              style={{ textDecoration: 'none' }}
+            >
               <div className="urbanet-footer-logo-badge">
                 <svg
                   width="18"
@@ -74,29 +93,44 @@ const Footer = () => {
 
           {/* 3 Links Columns */}
           <div className="footer-links-grid">
-            {/* Column 1: EXPLORER */}
-            <div className="footer-col">
-              <h4 className="footer-col-title">EXPLORER</h4>
-              <ul className="footer-links">
-                <li><Link to="/properties">Toutes les annonces</Link></li>
-                <li><Link to="/properties">Villas & maisons</Link></li>
-                <li><Link to="/properties?type=APARTMENT">Appartements</Link></li>
-                <li><Link to="/properties?type=LAND">Terrains & locaux</Link></li>
-              </ul>
-            </div>
+            {isAgency ? (
+              <div className="footer-col">
+                <h4 className="footer-col-title">ESPACE AGENCE</h4>
+                <ul className="footer-links">
+                  <li><Link to="/agency/dashboard">Tableau de bord</Link></li>
+                  <li><Link to="/agency/dashboard?tab=properties">Mes Biens</Link></li>
+                  <li><Link to="/agency/dashboard">Mes Résidences</Link></li>
+                  <li><Link to="/messages">Messagerie</Link></li>
+                  <li><Link to="/profile/agency">Profil de l'agence</Link></li>
+                </ul>
+              </div>
+            ) : (
+              <>
+                {/* Column 1: EXPLORER */}
+                <div className="footer-col">
+                  <h4 className="footer-col-title">EXPLORER</h4>
+                  <ul className="footer-links">
+                    <li><Link to="/properties">Toutes les annonces</Link></li>
+                    <li><Link to="/properties">Villas & maisons</Link></li>
+                    <li><Link to="/properties?type=APARTMENT">Appartements</Link></li>
+                    <li><Link to="/properties?type=LAND">Terrains & locaux</Link></li>
+                  </ul>
+                </div>
 
-            {/* Column 2: VILLES */}
-            <div className="footer-col">
-              <h4 className="footer-col-title">VILLES</h4>
-              <ul className="footer-links">
-                <li><Link to="/properties?city=Casablanca">Casablanca</Link></li>
-                <li><Link to="/properties?city=Rabat">Rabat</Link></li>
-                <li><Link to="/properties?city=Marrakech">Marrakech</Link></li>
-                <li><Link to="/properties?city=Tanger">Tanger</Link></li>
-                <li><Link to="/properties?city=Agadir">Agadir</Link></li>
-                <li><Link to="/properties?city=F%C3%A8s">Fès</Link></li>
-              </ul>
-            </div>
+                {/* Column 2: VILLES */}
+                <div className="footer-col">
+                  <h4 className="footer-col-title">VILLES</h4>
+                  <ul className="footer-links">
+                    <li><Link to="/properties?city=Casablanca">Casablanca</Link></li>
+                    <li><Link to="/properties?city=Rabat">Rabat</Link></li>
+                    <li><Link to="/properties?city=Marrakech">Marrakech</Link></li>
+                    <li><Link to="/properties?city=Tanger">Tanger</Link></li>
+                    <li><Link to="/properties?city=Agadir">Agadir</Link></li>
+                    <li><Link to="/properties?city=F%C3%A8s">Fès</Link></li>
+                  </ul>
+                </div>
+              </>
+            )}
 
             {/* Column 3: URBANET */}
             <div className="footer-col">

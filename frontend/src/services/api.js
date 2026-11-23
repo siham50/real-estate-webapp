@@ -207,6 +207,21 @@ export const createResidence = async (data) => {
   }
 };
 
+export const updateResidence = async (id, data) => {
+  try {
+    const response = await api.put(`/residences/${id}`, data);
+    return response.data;
+  } catch (error) {
+    const errorMsg =
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      (typeof error.response?.data === 'string' ? error.response.data : null) ||
+      error.message ||
+      'Erreur lors de la modification de la résidence.';
+    throw new Error(errorMsg);
+  }
+};
+
 export const deleteResidence = async (id) => {
   try {
     await api.delete(`/residences/${id}`);
@@ -314,6 +329,25 @@ export const createProperty = async (data) => {
       (typeof error.response?.data === 'string' ? error.response.data : null) ||
       error.message ||
       'Erreur lors de la création du bien.';
+    throw new Error(errorMsg);
+  }
+};
+
+export const updateProperty = async (id, data) => {
+  try {
+    const response = await api.put(`/properties/${id}`, data, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    return response.data;
+  } catch (error) {
+    const errorMsg =
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      (typeof error.response?.data === 'string' ? error.response.data : null) ||
+      error.message ||
+      'Erreur lors de la modification du bien.';
     throw new Error(errorMsg);
   }
 };
@@ -455,6 +489,34 @@ export const getReviewsByTargetUser = async (targetUserId) => {
   }
 };
 
+export const getReviewsByClient = async (clientId) => {
+  try {
+    const response = await api.get(`/reviews/client/${clientId}`);
+    return response.data;
+  } catch (error) {
+    throw new Error(
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      error.message ||
+      'Impossible de charger vos avis publiés.'
+    );
+  }
+};
+
+export const getReviewsByProperty = async (propertyId) => {
+  try {
+    const response = await api.get(`/reviews/property/${propertyId}`);
+    return response.data;
+  } catch (error) {
+    throw new Error(
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      error.message ||
+      'Impossible de charger les avis pour cette annonce.'
+    );
+  }
+};
+
 
 // ─── Administration ──────────────────────────────────────────────────────────
 
@@ -533,15 +595,16 @@ export const getPendingListings = async () => {
   }
 };
 
-export const verifyPropertyListing = async (id) => {
+export const approveProperty = async (id) => {
   try {
-    const response = await api.patch(`/admin/verify-property/${id}`);
+    const response = await api.patch(`/admin/approve-property/${id}`);
     return response.data;
   } catch (error) {
     throw new Error(error.response?.data?.message || error.response?.data?.error || error.message);
   }
 };
-export const verifyProperty = verifyPropertyListing;
+export const verifyPropertyListing = approveProperty;
+export const verifyProperty = approveProperty;
 
 export const rejectPropertyListing = async (id) => {
   try {
@@ -553,15 +616,16 @@ export const rejectPropertyListing = async (id) => {
 };
 export const rejectProperty = rejectPropertyListing;
 
-export const verifyResidenceListing = async (id) => {
+export const approveResidence = async (id) => {
   try {
-    const response = await api.patch(`/admin/verify-residence/${id}`);
+    const response = await api.patch(`/admin/approve-residence/${id}`);
     return response.data;
   } catch (error) {
     throw new Error(error.response?.data?.message || error.response?.data?.error || error.message);
   }
 };
-export const verifyResidence = verifyResidenceListing;
+export const verifyResidenceListing = approveResidence;
+export const verifyResidence = approveResidence;
 
 export const rejectResidenceListing = async (id) => {
   try {

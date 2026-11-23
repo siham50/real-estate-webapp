@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams, Link, Navigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import PropertyCard from '../components/PropertyCard';
@@ -10,6 +11,18 @@ import { MOROCCAN_CITIES } from '../components/SearchBar';
 const CITIES_LIST = MOROCCAN_CITIES;
 
 const SearchResultsPage = () => {
+  const { user } = useAuth();
+  const userRole = String(user?.role || '').toUpperCase();
+  const isAgency = userRole === 'PROFESSIONAL' || userRole === 'AGENCE';
+  const isAdmin = userRole === 'ADMIN';
+
+  if (isAgency) {
+    return <Navigate to="/agency/dashboard" replace />;
+  }
+  if (isAdmin) {
+    return <Navigate to="/admin" replace />;
+  }
+
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Filtres actifs issus de l'URL

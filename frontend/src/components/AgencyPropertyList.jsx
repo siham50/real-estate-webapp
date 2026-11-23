@@ -16,7 +16,7 @@ const PURPOSE_LABELS = {
   RENT: 'Location',
 };
 
-const AgencyPropertyList = ({ properties, onDeleted }) => {
+const AgencyPropertyList = ({ properties, onDeleted, onEdit, onViewReviews }) => {
   const [deletingId, setDeletingId] = useState(null);
   const [error, setError] = useState('');
 
@@ -141,24 +141,77 @@ const AgencyPropertyList = ({ properties, onDeleted }) => {
                 </td>
                 <td>{p.residence?.name || <span className="agency-table-muted">—</span>}</td>
                 <td>
-                  <button
-                    type="button"
-                    className="agency-btn-delete"
-                    onClick={() => handleDelete(p.id, p.title)}
-                    disabled={deletingId === p.id}
-                  >
-                    {deletingId === p.id ? (
-                      <span className="agency-spinner-sm" />
-                    ) : (
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="3 6 5 6 21 6" />
-                        <path d="M19 6l-1 14H6L5 6" />
-                        <path d="M10 11v6M14 11v6" />
-                        <path d="M9 6V4h6v2" />
-                      </svg>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                    {onEdit && (
+                      <button
+                        type="button"
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          background: '#f0fdf4',
+                          color: '#15803d',
+                          border: '1px solid #bbf7d0',
+                          borderRadius: '6px',
+                          padding: '5px 10px',
+                          fontSize: '0.8rem',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                        }}
+                        onClick={() => onEdit(p)}
+                        title="Modifier les infos et photos"
+                      >
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                        </svg>
+                        Modifier
+                      </button>
                     )}
-                    Supprimer
-                  </button>
+
+                    {onViewReviews && (
+                      <button
+                        type="button"
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          background: '#fefce8',
+                          color: '#854d0e',
+                          border: '1px solid #fef08a',
+                          borderRadius: '6px',
+                          padding: '5px 10px',
+                          fontSize: '0.8rem',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                        }}
+                        onClick={() => onViewReviews(p)}
+                        title="Voir les avis laissés sur cette annonce"
+                      >
+                        <span>⭐</span>
+                        Avis
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      className="agency-btn-delete"
+                      onClick={() => handleDelete(p.id, p.title)}
+                      disabled={deletingId === p.id}
+                    >
+                      {deletingId === p.id ? (
+                        <span className="agency-spinner-sm" />
+                      ) : (
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="3 6 5 6 21 6" />
+                          <path d="M19 6l-1 14H6L5 6" />
+                          <path d="M10 11v6M14 11v6" />
+                          <path d="M9 6V4h6v2" />
+                        </svg>
+                      )}
+                      Supprimer
+                    </button>
+                  </div>
                 </td>
               </tr>
             );

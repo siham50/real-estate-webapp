@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
+import { useParams, useNavigate, Link, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
   getPropertyById,
@@ -29,6 +29,16 @@ const PropertyDetailsPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isAuthenticated } = useAuth();
+  const userRole = String(user?.role || '').toUpperCase();
+  const isAgency = userRole === 'PROFESSIONAL' || userRole === 'AGENCE';
+  const isAdmin = userRole === 'ADMIN';
+
+  if (isAgency) {
+    return <Navigate to="/agency/dashboard" replace />;
+  }
+  if (isAdmin) {
+    return <Navigate to="/admin" replace />;
+  }
 
   // État du bien immobilier
   const [property, setProperty] = useState(null);
