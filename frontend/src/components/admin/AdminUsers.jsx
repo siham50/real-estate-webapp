@@ -118,54 +118,46 @@ const AdminUsers = () => {
 
   const getUserDocuments = (user) => {
     if (!user) return [];
-    const docs = [];
     const isClient = user.role === 'CLIENT';
     const isAgency = user.role === 'PROFESSIONAL' || user.role === 'AGENCE';
 
+    let rawSources = [];
     if (isClient) {
-      const clientUrls = [
-        ...parseDocumentUrls(user.identityDocumentUrl),
-        ...parseDocumentUrls(user.documentUrl),
-      ];
-      const uniqueUrls = Array.from(new Set(clientUrls));
-      uniqueUrls.forEach((url, idx) => {
-        docs.push({
-          title: uniqueUrls.length > 1 ? `Pièce d'identité (CIN) - Page ${idx + 1}` : "Pièce d'identité (CIN)",
-          url,
-        });
-      });
-      return docs;
+      if (user.identityDocumentUrl) rawSources.push(user.identityDocumentUrl);
+      else if (user.documentUrl) rawSources.push(user.documentUrl);
+      else if (user.documents) rawSources.push(user.documents);
+    } else if (isAgency) {
+      if (user.agencyDocumentUrl) rawSources.push(user.agencyDocumentUrl);
+      else if (user.documentUrl) rawSources.push(user.documentUrl);
+      else if (user.identityDocumentUrl) rawSources.push(user.identityDocumentUrl);
+      else if (user.documents) rawSources.push(user.documents);
+    } else {
+      if (user.identityDocumentUrl) rawSources.push(user.identityDocumentUrl);
+      if (user.agencyDocumentUrl) rawSources.push(user.agencyDocumentUrl);
+      if (user.documentUrl) rawSources.push(user.documentUrl);
+      if (user.documents) rawSources.push(user.documents);
     }
 
-    if (isAgency) {
-      const agencyUrls = [
-        ...parseDocumentUrls(user.agencyDocumentUrl),
-        ...parseDocumentUrls(user.documentUrl),
-        ...parseDocumentUrls(user.identityDocumentUrl),
-      ];
-      const uniqueUrls = Array.from(new Set(agencyUrls));
-      uniqueUrls.forEach((url, idx) => {
-        const isPdfDoc = url.toLowerCase().includes('.pdf');
-        docs.push({
-          title: `Justificatif légal ${idx + 1} (${isPdfDoc ? 'PDF' : 'Image'})`,
-          url,
-        });
-      });
-      return docs;
-    }
+    const allUrls = rawSources.flatMap(parseDocumentUrls);
+    const seenFilenames = new Set();
+    const docs = [];
 
-    // Fallback pour tout autre rôle
-    const otherUrls = [
-      ...parseDocumentUrls(user.identityDocumentUrl),
-      ...parseDocumentUrls(user.agencyDocumentUrl),
-      ...parseDocumentUrls(user.documentUrl),
-    ];
-    Array.from(new Set(otherUrls)).forEach((url, idx) => {
-      docs.push({
-        title: `Document Justificatif ${idx + 1}`,
-        url,
-      });
+    allUrls.forEach((url) => {
+      const clean = String(url).trim().replace(/^[\[\]"']+|[\[\]"']+$/g, '').trim();
+      const filename = clean.split(/[/\\]/).pop().toLowerCase();
+      if (filename && !seenFilenames.has(filename)) {
+        seenFilenames.add(filename);
+        const isPdfDoc = filename.endsWith('.pdf');
+        docs.push({
+          title: isClient
+            ? (allUrls.length > 1 ? `Pièce d'identité (CIN) - Page ${docs.length + 1}` : "Pièce d'identité (CIN)")
+            : `Justificatif légal ${docs.length + 1} (${isPdfDoc ? 'PDF' : 'Image'})`,
+          url: clean,
+          documentUrl: clean,
+        });
+      }
     });
+
     return docs;
   };
 

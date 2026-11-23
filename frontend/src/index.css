@@ -7433,150 +7433,44 @@ img {
   color: inherit;
 }
 
-/* ─── Styles pour les fiches et documents d'impression ─── */
-.print-container {
-  background: #ffffff;
-  color: #0f172a;
-}
-
-.print-header-info {
-  margin-bottom: 24px;
-  border-bottom: 2px solid #0284c7;
-  padding-bottom: 14px;
-}
-
-.print-header-info h2 {
-  margin: 0 0 10px 0;
-  font-size: 1.3rem;
-  color: #0284c7;
-  font-weight: 700;
-}
-
-.print-header-info p {
-  margin: 4px 0;
-  font-size: 0.9rem;
-  color: #334155;
-}
-
-.print-header-info strong {
-  color: #0f172a;
-}
-
-.print-document-page {
+/* ─── Styles pour la visualisation des documents justificatifs (Admin) ─── */
+.admin-doc-viewer-list {
   display: flex;
   flex-direction: column;
+  gap: 20px;
+}
+
+.admin-doc-item-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.admin-doc-item-header {
+  padding: 12px 18px;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-doc-item-preview {
+  padding: 16px;
+  display: flex;
   justify-content: center;
   align-items: center;
-  background: #f1f5f9;
-  border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 20px;
+  background: #0f172a;
 }
 
-.print-document-page:last-child {
-  margin-bottom: 0;
-}
-
-.print-document-page img {
+.admin-doc-item-preview img {
   max-width: 100%;
-  max-height: 650px;
+  max-height: 550px;
   object-fit: contain;
   border-radius: 6px;
-}
-
-/* ─── Styles d'impression pour les fiches de conformité et documents ─── */
-@media print {
-  /* 1. Force la page à ne pas avoir de marges par défaut */
-  @page {
-    margin: 10mm;
-  }
-
-  /* Empêche les conteneurs parents de forcer une hauteur ou de rogner */
-  html, body, #root, .admin-modal-overlay, .admin-modal-card, .admin-modal-body {
-    overflow: visible !important;
-    height: auto !important;
-    min-height: auto !important;
-    max-height: none !important;
-    border: none !important;
-    box-shadow: none !important;
-    background: transparent !important;
-    padding: 0 !important;
-    margin: 0 !important;
-  }
-
-  /* 2. Cache tout le contenu de la page avec visibility (et non display) */
-  body * {
-    visibility: hidden;
-  }
-
-  /* 3. Rend visible UNIQUEMENT la zone d'impression */
-  .print-container,
-  .print-container * {
-    visibility: visible;
-  }
-
-  /* 4. Positionne la zone d'impression en haut de la page */
-  .print-container {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: auto !important;
-    min-height: auto !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    background: transparent !important;
-  }
-
-  .print-header-info {
-    page-break-after: avoid;
-    break-after: avoid;
-    margin-bottom: 20px;
-    border-bottom: 2px solid #333;
-    padding-bottom: 10px;
-    background: transparent !important;
-  }
-
-  /* 5. Gère les sauts de page entre les images */
-  .print-document-page {
-    page-break-inside: avoid;
-    break-inside: avoid;
-    background: transparent !important;
-    padding: 0 !important;
-    margin: 0 0 20px 0 !important;
-  }
-
-  /* 6. Ne force le saut de page QUE pour les images suivantes (pas la première) */
-  .print-document-page:not(:first-of-type) {
-    page-break-before: always;
-    break-before: page;
-  }
-
-  /* 7. Empêche la création d'une page blanche après le dernier élément */
-  .print-document-page:last-child {
-    page-break-after: auto;
-    break-after: auto;
-    margin-bottom: 0 !important;
-  }
-
-  .print-document-page img {
-    max-width: 100% !important;
-    max-height: 650px !important;
-    object-fit: contain !important;
-    box-shadow: none !important;
-  }
-
-  .print-document-page iframe {
-    width: 100% !important;
-    height: 650px !important;
-    border: none !important;
-  }
-
-  /* Masque les éléments non imprimables */
-  .no-print,
-  .no-print * {
-    display: none !important;
-    visibility: hidden !important;
-  }
 }
 

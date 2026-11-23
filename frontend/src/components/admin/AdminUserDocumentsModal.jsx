@@ -1,6 +1,6 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
-import DocumentPrintPage from './DocumentPrintPage';
+import { getImageUrl } from '../../utils/imageUtils';
 
 export const AdminUserDocumentsModal = ({ user, onClose, onVerify, actionLoading = false }) => {
   if (!user) return null;
@@ -34,71 +34,62 @@ export const AdminUserDocumentsModal = ({ user, onClose, onVerify, actionLoading
 
   const getDocuments = (u) => {
     if (!u) return [];
-    const docs = [];
     const isClient = u.role === 'CLIENT';
     const isAgency = u.role === 'PROFESSIONAL' || u.role === 'AGENCE';
 
+    let rawSources = [];
     if (isClient) {
-      const urls = [
-        ...parseUrls(u.identityDocumentUrl),
-        ...parseUrls(u.documentUrl),
-        ...parseUrls(u.documents),
-      ];
-      Array.from(new Set(urls)).forEach((url, idx) => {
-        docs.push({
-          title: urls.length > 1 ? `Pièce d'identité (CIN) - Page ${idx + 1}` : "Pièce d'identité (CIN)",
-          documentUrl: url,
-        });
-      });
-      return docs;
+      if (u.identityDocumentUrl) rawSources.push(u.identityDocumentUrl);
+      else if (u.documentUrl) rawSources.push(u.documentUrl);
+      else if (u.documents) rawSources.push(u.documents);
+    } else if (isAgency) {
+      if (u.agencyDocumentUrl) rawSources.push(u.agencyDocumentUrl);
+      else if (u.documentUrl) rawSources.push(u.documentUrl);
+      else if (u.identityDocumentUrl) rawSources.push(u.identityDocumentUrl);
+      else if (u.documents) rawSources.push(u.documents);
+    } else {
+      if (u.identityDocumentUrl) rawSources.push(u.identityDocumentUrl);
+      if (u.agencyDocumentUrl) rawSources.push(u.agencyDocumentUrl);
+      if (u.documentUrl) rawSources.push(u.documentUrl);
+      if (u.documents) rawSources.push(u.documents);
     }
 
-    if (isAgency) {
-      const urls = [
-        ...parseUrls(u.agencyDocumentUrl),
-        ...parseUrls(u.documentUrl),
-        ...parseUrls(u.identityDocumentUrl),
-        ...parseUrls(u.documents),
-      ];
-      Array.from(new Set(urls)).forEach((url, idx) => {
-        const isPdfDoc = url.toLowerCase().includes('.pdf');
-        docs.push({
-          title: `Justificatif légal ${idx + 1} (${isPdfDoc ? 'PDF' : 'Image'})`,
-          documentUrl: url,
-        });
-      });
-      return docs;
-    }
+    const allUrls = rawSources.flatMap(parseUrls);
+    const seenFilenames = new Set();
+    const docs = [];
 
-    const otherUrls = [
-      ...parseUrls(u.identityDocumentUrl),
-      ...parseUrls(u.agencyDocumentUrl),
-      ...parseUrls(u.documentUrl),
-      ...parseUrls(u.documents),
-    ];
-    Array.from(new Set(otherUrls)).forEach((url, idx) => {
-      docs.push({
-        title: `Document ${idx + 1}`,
-        documentUrl: url,
-      });
+    allUrls.forEach((url) => {
+      const clean = String(url).trim().replace(/^[\[\]"']+|[\[\]"']+$/g, '').trim();
+      const filename = clean.split(/[/\\]/).pop().toLowerCase();
+      if (filename && !seenFilenames.has(filename)) {
+        seenFilenames.add(filename);
+        const isPdfDoc = filename.endsWith('.pdf');
+        docs.push({
+          title: isClient
+            ? (allUrls.length > 1 ? `Pièce d'identité (CIN) - Page ${docs.length + 1}` : "Pièce d'identité (CIN)")
+            : `Justificatif légal ${docs.length + 1} (${isPdfDoc ? 'PDF' : 'Image'})`,
+          documentUrl: clean,
+          url: clean,
+        });
+      }
     });
+
     return docs;
   };
 
-  // Liste de documents dédupliqués
+  // Liste de documents strictement dédupliqués
   const documents = getDocuments(user);
 
-  const handlePrint = () => {
-    setTimeout(() => {
-      window.print();
-    }, 500);
+  const isPdf = (url) => {
+    if (!url) return false;
+    return String(url).toLowerCase().includes('.pdf');
   };
 
   const firstName = user?.firstName || '';
   const lastName = user?.lastName || '';
   const userName = (firstName + ' ' + lastName).trim() || 'Utilisateur';
   const isAgency = user?.role === 'PROFESSIONAL' || user?.role === 'AGENCE';
-  const roleLabel = isAgency ? 'Agence Immobilière Professionnelle' : 'Client Particulier';
+  const roleLabel = isAgency ? 'Agence Immobilière' : 'Client Particulier';
   const isVerified = Boolean(user?.isIdentityVerified);
 
   return createPortal(
@@ -134,9 +125,8 @@ export const AdminUserDocumentsModal = ({ user, onClose, onVerify, actionLoading
           border: '1px solid #e2e8f0',
         }}
       >
-        {/* En-tête de la modale (masqué à l'impression) */}
+        {/* En-tête de la modale */}
         <div
-          className="no-print"
           style={{
             padding: '18px 24px',
             borderBottom: '1px solid #e2e8f0',
@@ -152,11 +142,11 @@ export const AdminUserDocumentsModal = ({ user, onClose, onVerify, actionLoading
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ fontSize: '1.25rem' }}>📄</span>
               <h3 style={{ margin: 0, fontSize: '1.18rem', color: '#0f172a', fontWeight: 700 }}>
-                Documents Justificatifs & Fiche de Conformité
+                Documents Justificatifs
               </h3>
             </div>
             <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: '#64748b' }}>
-              {roleLabel} • {userName} ({user.email}) — {documents.length} document{documents.length > 1 ? 's' : ''}
+              Dossier {roleLabel} • {userName} ({user.email})
             </p>
           </div>
 
@@ -178,27 +168,6 @@ export const AdminUserDocumentsModal = ({ user, onClose, onVerify, actionLoading
 
             <button
               type="button"
-              onClick={handlePrint}
-              style={{
-                background: '#0284c7',
-                color: '#ffffff',
-                padding: '7px 14px',
-                borderRadius: '6px',
-                border: 'none',
-                fontWeight: 600,
-                fontSize: '0.82rem',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-              }}
-              title="Lancer l'impression"
-            >
-              <span>🖨️ Imprimer cette fiche de conformité</span>
-            </button>
-
-            <button
-              type="button"
               onClick={onClose}
               style={{
                 background: 'transparent',
@@ -216,17 +185,161 @@ export const AdminUserDocumentsModal = ({ user, onClose, onVerify, actionLoading
           </div>
         </div>
 
-        {/* Corps défilable à l'écran, devenant la zone d'impression lors du print */}
+        {/* Corps défilable de la modale */}
         <div
           className="admin-modal-body"
           style={{ padding: '24px', overflowY: 'auto', flex: 1, background: '#f8fafc' }}
         >
-          <DocumentPrintPage user={user} documents={documents} />
+          {/* Bloc d'informations du titulaire */}
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: '12px',
+              padding: '16px 20px',
+              marginBottom: '20px',
+              border: '1px solid #e2e8f0',
+              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
+            }}
+          >
+            <h4
+              style={{
+                margin: '0 0 12px 0',
+                fontSize: '0.98rem',
+                color: '#0284c7',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}
+            >
+              <span>ℹ️</span> Informations du compte
+            </h4>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                gap: '12px',
+                fontSize: '0.88rem',
+              }}
+            >
+              <div>
+                <span style={{ color: '#64748b' }}>Titulaire :</span>{' '}
+                <strong style={{ color: '#0f172a' }}>{user.firstName} {user.lastName}</strong>
+              </div>
+              <div>
+                <span style={{ color: '#64748b' }}>Email :</span>{' '}
+                <strong style={{ color: '#0f172a' }}>{user.email}</strong>
+              </div>
+              <div>
+                <span style={{ color: '#64748b' }}>Téléphone :</span>{' '}
+                <strong style={{ color: '#0f172a' }}>{user.phone || 'Non renseigné'}</strong>
+              </div>
+              {isAgency && user.companyName && (
+                <div>
+                  <span style={{ color: '#64748b' }}>Entreprise :</span>{' '}
+                  <strong style={{ color: '#0f172a' }}>{user.companyName}</strong>
+                </div>
+              )}
+              {isAgency && user.rcNumber && (
+                <div>
+                  <span style={{ color: '#64748b' }}>Numéro RC :</span>{' '}
+                  <strong style={{ color: '#0f172a' }}>{user.rcNumber}</strong>
+                </div>
+              )}
+              {isAgency && user.iceNumber && (
+                <div>
+                  <span style={{ color: '#64748b' }}>Numéro ICE :</span>{' '}
+                  <strong style={{ color: '#0f172a' }}>{user.iceNumber}</strong>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Liste des documents */}
+          <div className="admin-doc-viewer-list">
+            {documents && documents.length > 0 ? (
+              documents.map((doc, index) => {
+                const docUrl = doc.documentUrl || doc.url;
+                return (
+                  <div key={index} className="admin-doc-item-card">
+                    <div className="admin-doc-item-header">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '1.1rem' }}>{isPdf(docUrl) ? '📄' : '🖼️'}</span>
+                        <strong style={{ fontSize: '0.92rem', color: '#1e293b' }}>
+                          {doc.title || `Document ${index + 1}`}
+                        </strong>
+                      </div>
+                      <a
+                        href={getImageUrl(docUrl)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          fontSize: '0.82rem',
+                          color: '#0284c7',
+                          textDecoration: 'none',
+                          fontWeight: 600,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          padding: '4px 10px',
+                          borderRadius: '6px',
+                          background: 'rgba(2, 132, 199, 0.08)',
+                          border: '1px solid rgba(2, 132, 199, 0.2)',
+                        }}
+                      >
+                        Ouvrir dans un nouvel onglet ↗
+                      </a>
+                    </div>
+                    <div className="admin-doc-item-preview">
+                      {isPdf(docUrl) ? (
+                        <iframe
+                          src={getImageUrl(docUrl)}
+                          title={doc.title}
+                          style={{
+                            width: '100%',
+                            height: '520px',
+                            border: 'none',
+                            borderRadius: '6px',
+                            background: '#ffffff',
+                          }}
+                        />
+                      ) : (
+                        <img
+                          src={getImageUrl(docUrl)}
+                          alt={doc.title || `Document ${index + 1}`}
+                          style={{
+                            maxWidth: '100%',
+                            maxHeight: '520px',
+                            objectFit: 'contain',
+                            display: 'block',
+                            margin: '0 auto',
+                            borderRadius: '6px',
+                          }}
+                        />
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div
+                style={{
+                  textAlign: 'center',
+                  padding: '40px 20px',
+                  color: '#64748b',
+                  background: '#ffffff',
+                  borderRadius: '12px',
+                  border: '1px solid #e2e8f0',
+                }}
+              >
+                <p style={{ margin: 0 }}>Aucun document justificatif téléversé pour cet utilisateur.</p>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Pied de la modale avec actions rapides (masqué à l'impression) */}
+        {/* Pied de la modale */}
         <div
-          className="no-print"
           style={{
             padding: '16px 24px',
             borderTop: '1px solid #e2e8f0',
@@ -238,49 +351,29 @@ export const AdminUserDocumentsModal = ({ user, onClose, onVerify, actionLoading
             gap: '12px',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <button
-              type="button"
-              onClick={onClose}
-              className="btn-action btn-secondary"
-              style={{
-                padding: '8px 16px',
-                borderRadius: '6px',
-                border: '1px solid #cbd5e1',
-                background: '#ffffff',
-                color: '#334155',
-                cursor: 'pointer',
-                fontWeight: 600,
-              }}
-            >
-              Fermer
-            </button>
-            <button
-              type="button"
-              onClick={handlePrint}
-              style={{
-                padding: '8px 16px',
-                borderRadius: '6px',
-                border: '1px solid #0284c7',
-                background: '#0284c7',
-                color: '#ffffff',
-                cursor: 'pointer',
-                fontWeight: 600,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-              }}
-            >
-              🖨️ Imprimer cette fiche de conformité
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="btn-action btn-secondary"
+            style={{
+              padding: '8px 18px',
+              borderRadius: '6px',
+              border: '1px solid #cbd5e1',
+              background: '#ffffff',
+              color: '#334155',
+              cursor: 'pointer',
+              fontWeight: 600,
+            }}
+          >
+            Fermer
+          </button>
 
           {!user.isIdentityVerified && onVerify && (
             <button
               type="button"
               className="btn-action btn-action-approve"
               style={{
-                padding: '8px 18px',
+                padding: '8px 20px',
                 fontSize: '0.88rem',
                 display: 'inline-flex',
                 alignItems: 'center',
