@@ -72,6 +72,15 @@ public class FileStorageService {
             }
 
             try {
+                Path parentUploadsPath = Paths.get("..", "uploads").toAbsolutePath().normalize();
+                if (!parentUploadsPath.equals(this.fileStorageLocation)) {
+                    Files.createDirectories(parentUploadsPath);
+                    Files.copy(targetLocation, parentUploadsPath.resolve(uniqueFilename), StandardCopyOption.REPLACE_EXISTING);
+                }
+            } catch (Exception ignored) {
+            }
+
+            try {
                 Path backendUploadsPath = Paths.get("backend", "uploads").toAbsolutePath().normalize();
                 if (!backendUploadsPath.equals(this.fileStorageLocation)) {
                     Files.createDirectories(backendUploadsPath);
@@ -127,6 +136,24 @@ public class FileStorageService {
                     Resource resource = new UrlResource(filePath.toUri());
                     if (resource.exists() && resource.isReadable()) {
                         return resource;
+                    }
+                }
+            }
+
+            // 2. Recherche tolérante (insensible à la casse)
+            for (Path dir : candidateDirs) {
+                if (Files.isDirectory(dir)) {
+                    try (var stream = Files.newDirectoryStream(dir)) {
+                        for (Path entry : stream) {
+                            String entryName = entry.getFileName().toString();
+                            if (entryName.equalsIgnoreCase(cleanedName)) {
+                                Resource res = new UrlResource(entry.toUri());
+                                if (res.exists() && res.isReadable()) {
+                                    return res;
+                                }
+                            }
+                        }
+                    } catch (Exception ignored) {
                     }
                 }
             }

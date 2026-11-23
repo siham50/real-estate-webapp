@@ -94,35 +94,96 @@ const AdminUsers = () => {
     }
   };
 
+  const parseDocumentUrls = (raw) => {
+    if (!raw) return [];
+    if (Array.isArray(raw)) {
+      return raw
+        .map((item) => (typeof item === 'string' ? item : item?.url || item?.documentUrl || ''))
+        .filter(Boolean);
+    }
+    const str = String(raw).trim();
+    if (!str) return [];
+    if (str.startsWith('[') && str.endsWith(']')) {
+      try {
+        const parsed = JSON.parse(str);
+        if (Array.isArray(parsed)) {
+          return parsed
+            .map((item) => (typeof item === 'string' ? item : item?.url || item?.documentUrl || ''))
+            .filter(Boolean);
+        }
+      } catch (e) {
+        // Fallback vers split classique
+      }
+    }
+    return str
+      .split(/[,;\n]+/)
+      .map((s) => s.replace(/^[\[\]"']+|[\[\]"']+$/g, '').trim())
+      .filter(Boolean);
+  };
+
   const getUserDocuments = (user) => {
     if (!user) return [];
-    if (user.role === 'CLIENT') {
-      if (user.identityDocumentUrl) {
-        return [{ title: "Pièce d'identité (CIN)", url: user.identityDocumentUrl }];
-      }
-      return [];
+    const docs = [];
+    const isClient = user.role === 'CLIENT';
+    const isAgency = user.role === 'PROFESSIONAL' || user.role === 'AGENCE';
+
+    if (isClient) {
+      const clientUrls = [
+        ...parseDocumentUrls(user.identityDocumentUrl),
+        ...parseDocumentUrls(user.documentUrl),
+      ];
+      const uniqueUrls = Array.from(new Set(clientUrls));
+      uniqueUrls.forEach((url, idx) => {
+        docs.push({
+          title: uniqueUrls.length > 1 ? `Pièce d'identité (CIN) - Page ${idx + 1}` : "Pièce d'identité (CIN)",
+          url,
+        });
+      });
+      return docs;
     }
-    if (user.role === 'PROFESSIONAL' || user.role === 'AGENCE') {
-      if (!user.agencyDocumentUrl) return [];
-      const parts = user.agencyDocumentUrl.split(',').map((s) => s.trim()).filter(Boolean);
-      return parts.map((url, idx) => ({
-        title: `Justificatif légal ${idx + 1} (${url.toLowerCase().endsWith('.pdf') ? 'PDF' : 'Image'})`,
+
+    if (isAgency) {
+      const agencyUrls = [
+        ...parseDocumentUrls(user.agencyDocumentUrl),
+        ...parseDocumentUrls(user.documentUrl),
+        ...parseDocumentUrls(user.identityDocumentUrl),
+      ];
+      const uniqueUrls = Array.from(new Set(agencyUrls));
+      uniqueUrls.forEach((url, idx) => {
+        const isPdfDoc = url.toLowerCase().includes('.pdf');
+        docs.push({
+          title: `Justificatif légal ${idx + 1} (${isPdfDoc ? 'PDF' : 'Image'})`,
+          url,
+        });
+      });
+      return docs;
+    }
+
+    // Fallback pour tout autre rôle
+    const otherUrls = [
+      ...parseDocumentUrls(user.identityDocumentUrl),
+      ...parseDocumentUrls(user.agencyDocumentUrl),
+      ...parseDocumentUrls(user.documentUrl),
+    ];
+    Array.from(new Set(otherUrls)).forEach((url, idx) => {
+      docs.push({
+        title: `Document Justificatif ${idx + 1}`,
         url,
-      }));
-    }
-    return [];
+      });
+    });
+    return docs;
   };
 
   const resolveDocUrl = (url, useApiFallback = false) => {
     if (!url) return '';
-    let trimmed = String(url).trim();
+    let trimmed = String(url).trim().replace(/^[\[\]"']+|[\[\]"']+$/g, '').trim();
 
     // Remplacer un éventuel port frontend par le port backend 8080
     if (trimmed.includes('localhost:5173') || trimmed.includes('localhost:3000')) {
       trimmed = trimmed.replace(/http:\/\/localhost:(5173|3000)/, 'http://localhost:8080');
     }
 
-    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('data:')) {
       return trimmed;
     }
 
@@ -147,7 +208,7 @@ const AdminUsers = () => {
     return url.toLowerCase().includes('.pdf');
   };
 
-  const handleOpenDoc = (e, fullUrl, title) => {
+  const handleOpenDoc = (e, fullUrl, title, autoPrint = false) => {
     if (e && e.preventDefault) e.preventDefault();
     if (!fullUrl) return;
 
@@ -157,138 +218,352 @@ const AdminUsers = () => {
       return;
     }
 
-    newWindow.document.title = (title || 'Document Justificatif') + ' - Urbanet';
+    const docName = (fullUrl || '').split('/').pop() || 'document';
+    const isDocPdf = isPdf(fullUrl);
+    const user = selectedUserForDocs;
+
+    const firstName = user?.firstName || '';
+    const lastName = user?.lastName || '';
+    const userName = (firstName + ' ' + lastName).trim() || 'Utilisateur';
+    const userEmail = user?.email || 'Non renseigné';
+    const userPhone = user?.phone || 'Non renseigné';
+    const isAgency = user?.role === 'PROFESSIONAL' || user?.role === 'AGENCE';
+    const roleLabel = isAgency ? 'Agence Immobilière Professionnelle' : 'Client Particulier';
+    const company = isAgency ? (user?.companyName || 'Agence Immobilière') : 'Client Particulier';
+    const rc = isAgency ? (user?.rcNumber || 'Enregistré') : 'Non applicable';
+    const ice = isAgency ? (user?.iceNumber || 'Enregistré') : 'Non applicable';
+    const isVerified = Boolean(user?.isIdentityVerified);
+    const statusBadge = isVerified ? '✓ Compte Vérifié & Approuvé' : '⏳ En attente de validation';
+    const printScript = autoPrint ? '<script>window.onload = function() { setTimeout(function() { window.print(); }, 400); };</script>' : '';
+    const currentDate = new Date().toLocaleDateString('fr-FR', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
+    newWindow.document.title = `${title || 'Document Justificatif'} - ${userName} • Urbanet`;
     newWindow.document.body.innerHTML = `
-      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #0f172a; color: #f8fafc;">
-        <div style="width: 44px; height: 44px; border: 4px solid #38bdf8; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 16px;"></div>
-        <p style="font-size: 15px; color: #94a3b8;">Ouverture du document en cours...</p>
-        <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
-      </div>
-    `;
+      <!DOCTYPE html>
+      <html lang="fr">
+        <head>
+          <meta charset="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <title>${title || 'Fiche de conformité'} - ${userName} • Urbanet Real Estate</title>
+          <style>
+            * {
+              box-sizing: border-box;
+            }
+            body {
+              margin: 0;
+              padding: 32px 16px;
+              background: #0b1120;
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+              color: #f8fafc;
+              display: flex;
+              justify-content: center;
+              align-items: flex-start;
+              min-height: 100vh;
+            }
+            .container {
+              max-width: 900px;
+              width: 100%;
+              margin: 0 auto;
+            }
+            .card {
+              background: #1e293b;
+              border: 1px solid #334155;
+              border-radius: 16px;
+              padding: 32px;
+              box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            }
+            .header {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              border-bottom: 1px solid #334155;
+              padding-bottom: 20px;
+              margin-bottom: 24px;
+              gap: 16px;
+            }
+            .logo-title {
+              display: flex;
+              align-items: center;
+              gap: 12px;
+            }
+            .logo-icon {
+              width: 44px;
+              height: 44px;
+              background: #0284c7;
+              border-radius: 10px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: white;
+              font-size: 22px;
+              font-weight: bold;
+            }
+            .title-area h2 {
+              margin: 0;
+              font-size: 20px;
+              font-weight: 700;
+              color: #38bdf8;
+              letter-spacing: -0.3px;
+            }
+            .title-area p {
+              margin: 4px 0 0 0;
+              color: #94a3b8;
+              font-size: 13px;
+            }
+            .badge {
+              background: rgba(16, 185, 129, 0.15);
+              color: #34d399;
+              border: 1px solid #10b981;
+              padding: 6px 14px;
+              border-radius: 20px;
+              font-size: 12px;
+              font-weight: 600;
+              white-space: nowrap;
+            }
+            .badge-pending {
+              background: rgba(245, 158, 11, 0.15);
+              color: #fbbf24;
+              border-color: #f59e0b;
+            }
+            .grid {
+              display: grid;
+              grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+              gap: 14px;
+              margin-bottom: 24px;
+              background: #0f172a;
+              padding: 20px;
+              border-radius: 12px;
+              border: 1px solid #1e293b;
+            }
+            .item-label {
+              font-size: 11px;
+              color: #94a3b8;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+              font-weight: 600;
+              margin-bottom: 4px;
+            }
+            .item-value {
+              font-size: 14px;
+              color: #f1f5f9;
+              font-weight: 600;
+              word-break: break-word;
+            }
+            .doc-preview-card {
+              background: #0f172a;
+              border: 1px solid #334155;
+              border-radius: 12px;
+              padding: 20px;
+              margin-top: 20px;
+              text-align: center;
+            }
+            .doc-meta-bar {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              flex-wrap: wrap;
+              gap: 10px;
+              padding-bottom: 14px;
+              margin-bottom: 16px;
+              border-bottom: 1px solid #1e293b;
+              font-size: 13px;
+              color: #cbd5e1;
+            }
+            .doc-media-wrapper {
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              background: #020617;
+              border-radius: 10px;
+              padding: 16px;
+              min-height: 380px;
+              border: 1px solid #1e293b;
+              overflow: hidden;
+            }
+            .doc-img {
+              max-width: 100%;
+              max-height: 650px;
+              object-fit: contain;
+              border-radius: 8px;
+              box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+            }
+            .doc-iframe {
+              width: 100%;
+              height: 680px;
+              border: none;
+              border-radius: 8px;
+              background: #ffffff;
+            }
+            .actions-bar {
+              display: flex;
+              justify-content: center;
+              gap: 14px;
+              margin-top: 24px;
+              flex-wrap: wrap;
+            }
+            .btn {
+              padding: 11px 22px;
+              border-radius: 8px;
+              cursor: pointer;
+              font-weight: 600;
+              font-size: 14px;
+              display: inline-flex;
+              align-items: center;
+              gap: 8px;
+              transition: all 0.2s ease;
+              text-decoration: none;
+              border: none;
+            }
+            .btn-primary {
+              background: #0284c7;
+              color: white;
+            }
+            .btn-primary:hover {
+              background: #0369a1;
+            }
+            .btn-outline {
+              background: transparent;
+              color: #94a3b8;
+              border: 1px solid #475569;
+            }
+            .btn-outline:hover {
+              background: #334155;
+              color: #f8fafc;
+            }
+            .footer-note {
+              margin-top: 20px;
+              text-align: center;
+              font-size: 12px;
+              color: #64748b;
+            }
 
-    fetch(fullUrl)
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error('HTTP ' + res.status);
-        }
-        return res.blob();
-      })
-      .then((blob) => {
-        const blobUrl = URL.createObjectURL(blob);
-        newWindow.location.href = blobUrl;
-      })
-      .catch(() => {
-        const docName = (fullUrl || '').split('/').pop() || 'document';
-        const userName = selectedUserForDocs ? ((selectedUserForDocs.firstName || '') + ' ' + (selectedUserForDocs.lastName || '')).trim() : 'Utilisateur';
-        const userEmail = selectedUserForDocs?.email || '';
-        const company = selectedUserForDocs?.companyName || 'Agence Immobilière';
-        const rc = selectedUserForDocs?.rcNumber || 'Enregistré';
-        const ice = selectedUserForDocs?.iceNumber || 'Enregistré';
-
-        newWindow.document.body.innerHTML = `
-          <!DOCTYPE html>
-          <html>
-            <head>
-              <meta charset="utf-8" />
-              <title>${title || 'Document Justificatif'} - Urbanet Real Estate</title>
-              <style>
-                body {
-                  margin: 0;
-                  padding: 40px 20px;
-                  background: #0f172a;
-                  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                  color: #f8fafc;
-                  display: flex;
-                  justify-content: center;
-                  align-items: center;
-                  min-height: 100vh;
-                  box-sizing: border-box;
-                }
-                .card {
-                  background: #1e293b;
-                  border: 1px solid #334155;
-                  border-radius: 16px;
-                  max-width: 760px;
-                  width: 100%;
-                  padding: 36px;
-                  box-shadow: 0 20px 40px rgba(0,0,0,0.5);
-                }
-                .header {
-                  display: flex;
-                  justify-content: space-between;
-                  align-items: center;
-                  border-bottom: 1px solid #334155;
-                  padding-bottom: 20px;
-                  margin-bottom: 24px;
-                }
-                .badge {
-                  background: rgba(16, 185, 129, 0.15);
-                  color: #34d399;
-                  border: 1px solid #10b981;
-                  padding: 6px 14px;
-                  border-radius: 20px;
-                  font-size: 13px;
-                  font-weight: 600;
-                }
-                .grid {
-                  display: grid;
-                  grid-template-columns: repeat(2, 1fr);
-                  gap: 16px;
-                  margin: 24px 0;
-                  background: #0f172a;
-                  padding: 20px;
-                  border-radius: 12px;
-                }
-                .item-label {
-                  font-size: 12px;
-                  color: #94a3b8;
-                  text-transform: uppercase;
-                  letter-spacing: 0.5px;
-                  margin-bottom: 4px;
-                }
-                .item-value {
-                  font-size: 15px;
-                  color: #f1f5f9;
-                  font-weight: 600;
-                }
-                .doc-box {
-                  border: 2px dashed #475569;
-                  border-radius: 12px;
-                  padding: 30px;
-                  text-align: center;
-                  background: rgba(15, 23, 42, 0.6);
-                  margin-top: 20px;
-                }
-                .btn {
-                  background: #0284c7;
-                  color: white;
-                  padding: 10px 20px;
-                  border: none;
-                  border-radius: 8px;
-                  cursor: pointer;
-                  font-weight: 600;
-                  margin-top: 16px;
-                }
-              </style>
-            </head>
-            <body>
-              <div class="card">
-                <div class="header">
-                  <div>
-                    <h2 style="margin: 0; font-size: 20px; color: #38bdf8;">Urbanet Real Estate • Document Justificatif</h2>
-                    <p style="margin: 4px 0 0 0; color: #94a3b8; font-size: 13px;">Dossier de conformité légale et vérification d'identité</p>
+            /* --- PRINT STYLES --- */
+            @media print {
+              @page {
+                margin: 12mm;
+                size: portrait;
+              }
+              body {
+                background: #ffffff !important;
+                color: #0f172a !important;
+                padding: 0 !important;
+              }
+              .card {
+                background: #ffffff !important;
+                border: 1px solid #cbd5e1 !important;
+                padding: 20px !important;
+                box-shadow: none !important;
+              }
+              .header {
+                border-bottom: 2px solid #0284c7 !important;
+              }
+              .title-area h2 {
+                color: #0284c7 !important;
+              }
+              .title-area p {
+                color: #475569 !important;
+              }
+              .logo-icon {
+                background: #0284c7 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+              }
+              .badge {
+                border: 1px solid #10b981 !important;
+                color: #047857 !important;
+                background: #ecfdf5 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+              }
+              .grid {
+                background: #f8fafc !important;
+                border: 1px solid #e2e8f0 !important;
+                gap: 10px !important;
+                padding: 14px !important;
+                page-break-inside: avoid;
+              }
+              .item-label {
+                color: #64748b !important;
+              }
+              .item-value {
+                color: #0f172a !important;
+              }
+              .doc-preview-card {
+                background: #ffffff !important;
+                border: 1px solid #cbd5e1 !important;
+                padding: 14px !important;
+                page-break-inside: avoid;
+              }
+              .doc-meta-bar {
+                color: #334155 !important;
+                border-bottom: 1px solid #e2e8f0 !important;
+              }
+              .doc-media-wrapper {
+                background: #ffffff !important;
+                border: 1px solid #e2e8f0 !important;
+                padding: 8px !important;
+                min-height: auto !important;
+                page-break-inside: avoid;
+              }
+              .doc-img {
+                max-height: 520px !important;
+                box-shadow: none !important;
+                border: 1px solid #cbd5e1 !important;
+              }
+              .no-print {
+                display: none !important;
+              }
+              .footer-note {
+                color: #475569 !important;
+                border-top: 1px solid #e2e8f0 !important;
+                padding-top: 10px !important;
+                margin-top: 16px !important;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="card">
+              <!-- Header -->
+              <div class="header">
+                <div class="logo-title">
+                  <div class="logo-icon">🏢</div>
+                  <div class="title-area">
+                    <h2>Urbanet Real Estate • Fiche de Conformité</h2>
+                    <p>Dossier de conformité légale et vérification d'identité officiel</p>
                   </div>
-                  <span class="badge">✓ Document Certifié</span>
                 </div>
-                <div class="grid">
-                  <div>
-                    <div class="item-label">Titulaire du compte</div>
-                    <div class="item-value">${userName}</div>
-                  </div>
-                  <div>
-                    <div class="item-label">Email</div>
-                    <div class="item-value">${userEmail}</div>
-                  </div>
+                <span class="badge ${isVerified ? '' : 'badge-pending'}">${statusBadge}</span>
+              </div>
+
+              <!-- Infos Utilisateur / Agence -->
+              <div class="grid">
+                <div>
+                  <div class="item-label">Titulaire du compte</div>
+                  <div class="item-value">${userName}</div>
+                </div>
+                <div>
+                  <div class="item-label">Rôle / Statut</div>
+                  <div class="item-value">${roleLabel}</div>
+                </div>
+                <div>
+                  <div class="item-label">Email</div>
+                  <div class="item-value">${userEmail}</div>
+                </div>
+                <div>
+                  <div class="item-label">Téléphone</div>
+                  <div class="item-value">${userPhone}</div>
+                </div>
+                ${
+                  isAgency
+                    ? `
                   <div>
                     <div class="item-label">Entreprise / Raison Sociale</div>
                     <div class="item-value">${company}</div>
@@ -297,19 +572,75 @@ const AdminUsers = () => {
                     <div class="item-label">RC / ICE</div>
                     <div class="item-value">RC: ${rc} • ICE: ${ice}</div>
                   </div>
+                `
+                    : `
+                  <div>
+                    <div class="item-label">Type de document</div>
+                    <div class="item-value">Pièce d'Identité (CIN)</div>
+                  </div>
+                  <div>
+                    <div class="item-label">Identifiant Compte</div>
+                    <div class="item-value">Client #${user?.id || '—'}</div>
+                  </div>
+                `
+                }
+              </div>
+
+              <!-- Aperçu du document soumis -->
+              <div class="doc-preview-card">
+                <div class="doc-meta-bar">
+                  <div style="font-weight: 600; color: #38bdf8;">
+                    📄 ${title || 'Document Justificatif'}
+                  </div>
+                  <div style="font-size: 12px; color: #94a3b8;">
+                    Fichier : ${docName}
+                  </div>
                 </div>
-                <div class="doc-box">
-                  <div style="font-size: 40px; margin-bottom: 12px;">📑</div>
-                  <h3 style="margin: 0 0 8px 0; color: #f8fafc;">${title || 'Justificatif Légal'}</h3>
-                  <p style="color: #94a3b8; font-size: 14px; margin: 0 0 16px 0; word-break: break-all;">Fichier : ${docName}</p>
-                  <p style="color: #64748b; font-size: 13px; max-width: 480px; margin: 0 auto;">Ce document officiel a été déposé lors de la soumission du dossier et validé par l'administration Urbanet.</p>
-                  <button class="btn" onclick="window.print()">Imprimer cette fiche de conformité</button>
+
+                <div class="doc-media-wrapper">
+                  ${
+                    isDocPdf
+                      ? `
+                    <iframe
+                      src="${fullUrl}"
+                      title="${title || 'Document'}"
+                      class="doc-iframe"
+                    ></iframe>
+                  `
+                      : `
+                    <img
+                      src="${fullUrl}"
+                      alt="${title || 'Justificatif'}"
+                      class="doc-img"
+                      onerror="if(!this.dataset.tried){this.dataset.tried='1'; this.src='http://localhost:8080/api/files/view/${docName}';}"
+                    />
+                  `
+                  }
                 </div>
               </div>
-            </body>
-          </html>
-        `;
-      });
+
+              <!-- Actions (non imprimées) -->
+              <div class="actions-bar no-print">
+                <button class="btn btn-primary" onclick="window.print()">
+                  🖨️ Imprimer cette fiche de conformité
+                </button>
+                <a class="btn btn-outline" href="${fullUrl}" target="_blank" download="${docName}">
+                  ⬇️ Télécharger le fichier
+                </a>
+                <button class="btn btn-outline" onclick="window.close()">
+                  ✕ Fermer l'onglet
+                </button>
+              </div>
+
+              <div class="footer-note">
+                Document officiel généré pour contrôle de conformité Urbanet Real Estate • Date d'édition : ${currentDate}
+              </div>
+            </div>
+          </div>
+          ${printScript}
+        </body>
+      </html>
+    `;
   };
 
   // Filtrage selon le rôle sélectionné et la recherche
@@ -679,32 +1010,55 @@ const AdminUsers = () => {
             <div style={{ padding: '20px 24px', overflowY: 'auto', flex: 1, minHeight: '380px', maxHeight: '550px' }}>
               {activeDoc ? (
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
                     <span style={{ fontWeight: 600, color: '#334155', fontSize: '0.9rem' }}>
                       {activeDoc.title}
                     </span>
-                    <button
-                      type="button"
-                      onClick={(e) => handleOpenDoc(e, activeDocFullUrl, activeDoc.title)}
-                      className="btn-action btn-action-approve"
-                      style={{
-                        textDecoration: 'none',
-                        fontSize: '0.8rem',
-                        padding: '6px 12px',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        cursor: 'pointer',
-                        border: 'none',
-                      }}
-                    >
-                      <span>Ouvrir dans un nouvel onglet</span>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                        <polyline points="15 3 21 3 21 9" />
-                        <line x1="10" y1="14" x2="21" y2="3" />
-                      </svg>
-                    </button>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                      <button
+                        type="button"
+                        onClick={(e) => handleOpenDoc(e, activeDocFullUrl, activeDoc.title, true)}
+                        className="btn-action"
+                        style={{
+                          background: '#0284c7',
+                          color: '#ffffff',
+                          fontSize: '0.8rem',
+                          padding: '6px 12px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          cursor: 'pointer',
+                          border: 'none',
+                          borderRadius: '6px',
+                          fontWeight: 600,
+                        }}
+                        title="Imprimer directement la fiche de conformité avec les informations et l'image"
+                      >
+                        <span>🖨️ Imprimer la fiche</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => handleOpenDoc(e, activeDocFullUrl, activeDoc.title, false)}
+                        className="btn-action btn-action-approve"
+                        style={{
+                          textDecoration: 'none',
+                          fontSize: '0.8rem',
+                          padding: '6px 12px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          cursor: 'pointer',
+                          border: 'none',
+                        }}
+                      >
+                        <span>Ouvrir dans un nouvel onglet</span>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                          <polyline points="15 3 21 3 21 9" />
+                          <line x1="10" y1="14" x2="21" y2="3" />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
 
                   {isPdf(activeDoc.url) ? (
@@ -805,7 +1159,7 @@ const AdminUsers = () => {
                           onError={(e) => {
                             const currentSrc = e.target.src;
                             if (currentSrc && currentSrc.includes('/uploads/') && !currentSrc.includes('/api/files/view/')) {
-                              const filename = currentSrc.substring(currentSrc.indexOf('/uploads/') + '/uploads/'.length());
+                              const filename = currentSrc.substring(currentSrc.indexOf('/uploads/') + '/uploads/'.length);
                               e.target.src = `http://localhost:8080/api/files/view/${filename}`;
                             } else {
                               setImageError(true);
