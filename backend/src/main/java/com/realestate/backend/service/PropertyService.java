@@ -34,7 +34,7 @@ public class PropertyService {
 
     public List<PropertyDTO> getAllProperties() {
         return propertyRepository.findByVerificationStatusAndIsDeletedFalse(VerificationStatus.VERIFIED).stream()
-                .filter(p -> !p.isDeleted() && p.getVerificationStatus() == VerificationStatus.VERIFIED)
+                .filter(p -> !p.isDeleted() && p.isAvailable() && p.getVerificationStatus() == VerificationStatus.VERIFIED)
                 .map(DtoMapper::toPropertyDTO)
                 .toList();
     }
@@ -205,6 +205,12 @@ public class PropertyService {
         property.setAvailable(!property.isAvailable());
         Property updated = propertyRepository.save(property);
         return DtoMapper.toPropertyDTO(updated);
+    }
+
+    public List<PropertyDTO> getPropertiesByOwnerId(Long ownerId) {
+        return propertyRepository.findByOwnerIdAndIsDeletedFalse(ownerId).stream()
+                .map(DtoMapper::toPropertyDTO)
+                .toList();
     }
 
     public List<PropertyDTO> getAllPropertiesAdmin() {

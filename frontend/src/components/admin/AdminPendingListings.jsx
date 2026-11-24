@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import {
   getPendingListings,
+  getPendingResidences,
   approveProperty,
   approveResidence,
-  verifyPropertyListing,
   rejectPropertyListing,
-  verifyResidenceListing,
   rejectResidenceListing,
 } from '../../services/api';
 import { getImageUrl } from '../../utils/imageUtils';
@@ -26,14 +25,28 @@ const AdminPendingListings = () => {
     setLoading(true);
     setFeedback({ type: '', message: '' });
     try {
-      const data = await getPendingListings();
-      if (Array.isArray(data)) {
-        setProperties(data.filter((item) => item.itemType === 'PROPERTY' || item.type || item.purpose));
-        setResidences(data.filter((item) => item.itemType === 'RESIDENCE' || (!item.type && !item.purpose)));
-      } else {
-        setProperties(Array.isArray(data?.properties) ? data.properties : []);
-        setResidences(Array.isArray(data?.residences) ? data.residences : []);
+      const [listingsData, residencesData] = await Promise.all([
+        getPendingListings().catch(() => ({ properties: [] })),
+        getPendingResidences().catch(() => []),
+      ]);
+
+      let propsList = [];
+      let resList = [];
+
+      if (listingsData && Array.isArray(listingsData.properties)) {
+        propsList = listingsData.properties;
+      } else if (Array.isArray(listingsData)) {
+        propsList = listingsData.filter((item) => item.itemType === 'PROPERTY' || item.type || item.purpose);
       }
+
+      if (Array.isArray(residencesData) && residencesData.length > 0) {
+        resList = residencesData;
+      } else if (listingsData && Array.isArray(listingsData.residences)) {
+        resList = listingsData.residences;
+      }
+
+      setProperties(propsList);
+      setResidences(resList);
     } catch (err) {
       setFeedback({
         type: 'error',
@@ -48,45 +61,44 @@ const AdminPendingListings = () => {
     fetchListings();
   }, []);
 
-  // Normalisation des annonces pour affichage dans le tableau
-  const allListings = [
-    ...properties.map((p) => {
-      const docs = Array.isArray(p.documents) && p.documents.length > 0
-        ? p.documents.map((d) => (typeof d === 'string' ? d : d.documentUrl)).filter(Boolean)
-        : (p.documentUrl ? [p.documentUrl] : []);
-      const clientName = p.owner
-        ? `${p.owner.firstName || ''} ${p.owner.lastName || ''}`.trim() || p.owner.email
-        : 'Client inconnu';
+  // Normalisation des annonces pour affichage dans les tableaux
+  const normalizedProperties = properties.map((p) => {
+    const docs = Array.isArray(p.documents) && p.documents.length > 0
+      ? p.documents.map((d) => (typeof d === 'string' ? d : d.documentUrl)).filter(Boolean)
+      : (p.documentUrl ? [p.documentUrl] : []);
+    const clientName = p.owner
+      ? `${p.owner.firstName || ''} ${p.owner.lastName || ''}`.trim() || p.owner.email
+      : 'Client inconnu';
 
-      return {
-        ...p,
-        itemType: 'PROPERTY',
-        displayTitle: p.title,
-        displayType: p.type ? `Bien (${p.type})` : 'Bien immobilier',
-        allDocs: docs,
-        docUrl: docs[0] || null,
-        clientName,
-      };
-    }),
-    ...residences.map((r) => {
-      const docs = Array.isArray(r.documents) && r.documents.length > 0
-        ? r.documents.map((d) => (typeof d === 'string' ? d : d.documentUrl)).filter(Boolean)
-        : (r.documentUrl ? [r.documentUrl] : []);
-      const clientName = r.owner
-        ? `${r.owner.firstName || ''} ${r.owner.lastName || ''}`.trim() || r.owner.email
-        : 'Client inconnu';
+    return {
+      ...p,
+      itemType: 'PROPERTY',
+      displayTitle: p.title,
+      displayType: p.type ? `Bien (${p.type})` : 'Bien immobilier',
+      allDocs: docs,
+      docUrl: docs[0] || null,
+      clientName,
+    };
+  });
 
-      return {
-        ...r,
-        itemType: 'RESIDENCE',
-        displayTitle: r.name,
-        displayType: 'Résidence',
-        allDocs: docs,
-        docUrl: docs[0] || null,
-        clientName,
-      };
-    }),
-  ];
+  const normalizedResidences = residences.map((r) => {
+    const docs = Array.isArray(r.documents) && r.documents.length > 0
+      ? r.documents.map((d) => (typeof d === 'string' ? d : d.documentUrl)).filter(Boolean)
+      : (r.documentUrl ? [r.documentUrl] : []);
+    const clientName = r.owner
+      ? `${r.owner.firstName || ''} ${r.owner.lastName || ''}`.trim() || r.owner.email
+      : 'Client inconnu';
+
+    return {
+      ...r,
+      itemType: 'RESIDENCE',
+      displayTitle: r.name,
+      displayType: 'Résidence',
+      allDocs: docs,
+      docUrl: docs[0] || null,
+      clientName,
+    };
+  });
 
   const handleApprove = async (item) => {
     const isProp = item.itemType === 'PROPERTY';
@@ -110,7 +122,7 @@ const AdminPendingListings = () => {
         setSelectedItemForDocs(null);
       }
 
-      // Rafraîchir la liste des annonces en attente
+      // Rafraîchir les listes
       await fetchListings();
     } catch (err) {
       setFeedback({
@@ -159,25 +171,161 @@ const AdminPendingListings = () => {
     }
   };
 
-  const filteredListings = allListings.filter((item) => {
-    if (filterType !== 'ALL' && item.itemType !== filterType) {
-      return false;
-    }
-    if (searchQuery.trim() !== '') {
-      const q = searchQuery.toLowerCase();
+  const filterList = (list) => {
+    if (!searchQuery.trim()) return list;
+    const q = searchQuery.toLowerCase();
+    return list.filter((item) => {
       const title = (item.displayTitle || '').toLowerCase();
       const city = (item.city || '').toLowerCase();
+      const address = (item.address || '').toLowerCase();
       const owner = `${item.owner?.firstName || ''} ${item.owner?.lastName || ''} ${item.owner?.email || ''}`.toLowerCase();
-      return title.includes(q) || city.includes(q) || owner.includes(q);
-    }
-    return true;
-  });
+      return title.includes(q) || city.includes(q) || address.includes(q) || owner.includes(q);
+    });
+  };
 
-  const countTotal = allListings.length;
+  const filteredProps = filterList(normalizedProperties);
+  const filteredRes = filterList(normalizedResidences);
+
   const countProps = properties.length;
   const countRes = residences.length;
+  const countTotal = countProps + countRes;
 
   const isPdf = (url) => typeof url === 'string' && url.toLowerCase().includes('.pdf');
+
+  const renderTable = (items, itemTypeLabel) => {
+    if (items.length === 0) {
+      return (
+        <div className="admin-table-empty" style={{ padding: '30px 20px', background: '#fff', borderRadius: '10px', border: '1px solid #e2e8f0', marginBottom: '24px' }}>
+          <p className="empty-title" style={{ fontSize: '0.95rem', margin: 0, color: '#64748b' }}>
+            Aucun {itemTypeLabel.toLowerCase()} en attente de validation.
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="admin-table-container" style={{ marginBottom: '28px' }}>
+        <table className="admin-table">
+          <thead>
+            <tr>
+              <th>{itemTypeLabel === 'Bien' ? 'Titre du bien' : 'Nom de la résidence'}</th>
+              <th>Type / Catégorie</th>
+              <th>Propriétaire</th>
+              <th>Statut</th>
+              <th>Documents</th>
+              <th style={{ textAlign: 'right' }}>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((item) => {
+              const actionKey = `${item.itemType}-${item.id}`;
+              const isProcessing = actionLoading === actionKey;
+              const ownerName = item.owner
+                ? `${item.owner.firstName || ''} ${item.owner.lastName || ''}`.trim() || item.owner.email
+                : 'Client inconnu';
+
+              return (
+                <tr key={actionKey}>
+                  <td>
+                    <div style={{ fontWeight: 600, color: '#0f172a' }}>{item.displayTitle}</div>
+                    <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                      📍 {item.address ? `${item.address}, ` : ''}{item.city || 'Maroc'}
+                    </div>
+                  </td>
+
+                  <td>
+                    <span className={`admin-role-badge ${item.itemType === 'RESIDENCE' ? 'role-agency' : 'role-client'}`}>
+                      {item.displayType}
+                    </span>
+                  </td>
+
+                  <td>
+                    <div style={{ fontWeight: 500, color: '#334155' }}>{ownerName}</div>
+                    <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>{item.owner?.email || '-'}</div>
+                  </td>
+
+                  <td>
+                    <span className="admin-status-badge status-warning" style={{ background: '#fef3c7', color: '#b45309' }}>
+                      En attente
+                    </span>
+                  </td>
+
+                  <td>
+                    {item.allDocs && item.allDocs.length > 0 ? (
+                      <button
+                        type="button"
+                        className="btn-action btn-action-view"
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          background: '#f1f5f9',
+                          color: '#1e293b',
+                          border: '1px solid #cbd5e1',
+                          borderRadius: '6px',
+                          padding: '5px 10px',
+                          fontSize: '0.82rem',
+                          fontWeight: 500,
+                          cursor: 'pointer',
+                        }}
+                        onClick={() => setSelectedItemForDocs(item)}
+                      >
+                        <span>📄 Voir documents ({item.allDocs.length})</span>
+                      </button>
+                    ) : (
+                      <span style={{ fontSize: '0.82rem', color: '#94a3b8' }}>Aucun document</span>
+                    )}
+                  </td>
+
+                  <td style={{ textAlign: 'right' }}>
+                    <div style={{ display: 'inline-flex', gap: '8px', justifyContent: 'flex-end' }}>
+                      <button
+                        type="button"
+                        className="btn-action btn-action-approve"
+                        style={{
+                          background: '#dcfce7',
+                          color: '#15803d',
+                          border: '1px solid #86efac',
+                          borderRadius: '6px',
+                          padding: '6px 12px',
+                          fontSize: '0.82rem',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                        }}
+                        disabled={isProcessing}
+                        onClick={() => handleApprove(item)}
+                      >
+                        {isProcessing ? 'Traitement...' : '✓ Approuver'}
+                      </button>
+
+                      <button
+                        type="button"
+                        className="btn-action btn-action-delete"
+                        style={{
+                          background: '#fee2e2',
+                          color: '#b91c1c',
+                          border: '1px solid #fca5a5',
+                          borderRadius: '6px',
+                          padding: '6px 12px',
+                          fontSize: '0.82rem',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                        }}
+                        disabled={isProcessing}
+                        onClick={() => handleReject(item)}
+                      >
+                        ✕ Rejeter
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
 
   return (
     <div className="admin-properties-view">
@@ -242,143 +390,44 @@ const AdminPendingListings = () => {
         </div>
       </div>
 
-      {/* Tableau des annonces en attente */}
-      <div className="admin-table-container">
-        {loading ? (
-          <div className="admin-table-loading">
-            <div className="admin-spinner" />
-            <p>Chargement des annonces en attente...</p>
-          </div>
-        ) : filteredListings.length === 0 ? (
-          <div className="admin-table-empty">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="1.5">
-              <path d="M9 11l3 3L22 4" />
-              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
-            </svg>
-            <p className="empty-title">Aucune annonce en attente de validation</p>
-            <p className="empty-desc">Toutes les soumissions de biens et résidences ont été vérifiées et traitées.</p>
-          </div>
-        ) : (
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>Titre</th>
-                <th>Type</th>
-                <th>Propriétaire</th>
-                <th>Statut</th>
-                <th>Documents</th>
-                <th style={{ textAlign: 'right' }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredListings.map((item) => {
-                const actionKey = `${item.itemType}-${item.id}`;
-                const isProcessing = actionLoading === actionKey;
-                const ownerName = item.owner
-                  ? `${item.owner.firstName || ''} ${item.owner.lastName || ''}`.trim() || item.owner.email
-                  : 'Client inconnu';
+      {loading ? (
+        <div className="admin-table-loading" style={{ padding: '40px 0' }}>
+          <div className="admin-spinner" />
+          <p>Chargement des annonces en attente...</p>
+        </div>
+      ) : (
+        <>
+          {/* Tableau 1 : Biens en attente */}
+          {(filterType === 'ALL' || filterType === 'PROPERTY') && (
+            <div style={{ marginBottom: '32px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                <h3 style={{ fontSize: '1.05rem', fontWeight: 600, color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span>🏠 Biens en attente de validation</span>
+                  <span style={{ fontSize: '0.78rem', background: '#e0e7ff', color: '#3730a3', padding: '2px 8px', borderRadius: '12px', fontWeight: 600 }}>
+                    {filteredProps.length}
+                  </span>
+                </h3>
+              </div>
+              {renderTable(filteredProps, 'Bien')}
+            </div>
+          )}
 
-                return (
-                  <tr key={actionKey}>
-                    <td>
-                      <div style={{ fontWeight: 600, color: '#0f172a' }}>{item.displayTitle}</div>
-                      <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
-                        📍 {item.address ? `${item.address}, ` : ''}{item.city || 'Maroc'}
-                      </div>
-                    </td>
-
-                    <td>
-                      <span className={`admin-role-badge ${item.itemType === 'RESIDENCE' ? 'role-agency' : 'role-client'}`}>
-                        {item.displayType}
-                      </span>
-                    </td>
-
-                    <td>
-                      <div style={{ fontWeight: 500, color: '#334155' }}>{ownerName}</div>
-                      <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>{item.owner?.email || '-'}</div>
-                    </td>
-
-                    <td>
-                      <span className="admin-status-badge status-warning" style={{ background: '#fef3c7', color: '#b45309' }}>
-                        En attente
-                      </span>
-                    </td>
-
-                    <td>
-                      {item.allDocs && item.allDocs.length > 0 ? (
-                        <button
-                          type="button"
-                          className="btn-action btn-action-view"
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            background: '#f1f5f9',
-                            color: '#1e293b',
-                            border: '1px solid #cbd5e1',
-                            borderRadius: '6px',
-                            padding: '5px 10px',
-                            fontSize: '0.82rem',
-                            fontWeight: 500,
-                            cursor: 'pointer',
-                          }}
-                          onClick={() => setSelectedItemForDocs(item)}
-                        >
-                          <span>📄 Voir les documents ({item.allDocs.length})</span>
-                        </button>
-                      ) : (
-                        <span style={{ fontSize: '0.82rem', color: '#94a3b8' }}>Aucun document</span>
-                      )}
-                    </td>
-
-                    <td style={{ textAlign: 'right' }}>
-                      <div style={{ display: 'inline-flex', gap: '8px', justifyContent: 'flex-end' }}>
-                        <button
-                          type="button"
-                          className="btn-action btn-action-approve"
-                          style={{
-                            background: '#dcfce7',
-                            color: '#15803d',
-                            border: '1px solid #86efac',
-                            borderRadius: '6px',
-                            padding: '6px 12px',
-                            fontSize: '0.82rem',
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                          }}
-                          disabled={isProcessing}
-                          onClick={() => handleApprove(item)}
-                        >
-                          {isProcessing ? 'Traitement...' : '✓ Approuver'}
-                        </button>
-
-                        <button
-                          type="button"
-                          className="btn-action btn-action-delete"
-                          style={{
-                            background: '#fee2e2',
-                            color: '#b91c1c',
-                            border: '1px solid #fca5a5',
-                            borderRadius: '6px',
-                            padding: '6px 12px',
-                            fontSize: '0.82rem',
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                          }}
-                          disabled={isProcessing}
-                          onClick={() => handleReject(item)}
-                        >
-                          ✕ Rejeter
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
-      </div>
+          {/* Tableau 2 : Résidences en attente */}
+          {(filterType === 'ALL' || filterType === 'RESIDENCE') && (
+            <div style={{ marginBottom: '32px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                <h3 style={{ fontSize: '1.05rem', fontWeight: 600, color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span>🏢 Résidences en attente de validation</span>
+                  <span style={{ fontSize: '0.78rem', background: '#fef3c7', color: '#92400e', padding: '2px 8px', borderRadius: '12px', fontWeight: 600 }}>
+                    {filteredRes.length}
+                  </span>
+                </h3>
+              </div>
+              {renderTable(filteredRes, 'Résidence')}
+            </div>
+          )}
+        </>
+      )}
 
       {/* Modale de visualisation des documents de propriété */}
       {selectedItemForDocs && (
@@ -617,3 +666,4 @@ const AdminPendingListings = () => {
 };
 
 export default AdminPendingListings;
+

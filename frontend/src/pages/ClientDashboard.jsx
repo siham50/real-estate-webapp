@@ -48,38 +48,26 @@ const ClientDashboard = () => {
     }
   }, [location.search, isIdentityVerified]);
 
-  const fetchResidences = useCallback(async () => {
-    if (!user?.id) return;
-    setLoadingRes(true);
-    setFetchError('');
-    try {
-      const data = await getResidencesByOwner(user.id);
-      setResidences(Array.isArray(data) ? data : []);
-    } catch (err) {
-      setFetchError(err.message || 'Erreur lors du chargement de vos résidences.');
-    } finally {
-      setLoadingRes(false);
-    }
-  }, [user?.id]);
-
-  const fetchProperties = useCallback(async () => {
-    if (!user?.id) return;
-    setLoadingProps(true);
-    setFetchError('');
-    try {
-      const data = await getPropertiesByOwner(user.id);
-      setProperties(Array.isArray(data) ? data : []);
-    } catch (err) {
-      setFetchError(err.message || 'Erreur lors du chargement de vos biens.');
-    } finally {
-      setLoadingProps(false);
-    }
-  }, [user?.id]);
-
   useEffect(() => {
-    fetchResidences();
-    fetchProperties();
-  }, [fetchResidences, fetchProperties]);
+    const fetchData = async () => {
+      if (!user?.id) return;
+      setLoadingProps(true);
+      setLoadingRes(true);
+      try {
+        const propsRes = await getPropertiesByOwner(user.id);
+        const resRes = await getResidencesByOwner(user.id);
+        setProperties(propsRes.data || (Array.isArray(propsRes) ? propsRes : []));
+        setResidences(resRes.data || (Array.isArray(resRes) ? resRes : []));
+      } catch (error) {
+        console.error(error);
+        setFetchError(error.message || 'Erreur lors du chargement de vos annonces.');
+      } finally {
+        setLoadingProps(false);
+        setLoadingRes(false);
+      }
+    };
+    fetchData();
+  }, [user?.id]);
 
   const handleResidenceCreated = (newResidence) => {
     setResidences((prev) => [newResidence, ...prev]);

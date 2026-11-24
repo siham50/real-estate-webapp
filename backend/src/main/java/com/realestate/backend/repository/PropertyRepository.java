@@ -18,6 +18,7 @@ public interface PropertyRepository extends JpaRepository<Property, Long> {
     List<Property> findByIsAvailableTrueAndIsDeletedFalse();
     List<Property> findByVerificationStatus(VerificationStatus verificationStatus);
     List<Property> findByVerificationStatusAndIsDeletedFalse(VerificationStatus verificationStatus);
+    List<Property> findByOwnerIdAndIsDeletedFalse(Long ownerId);
 
     @Query("SELECT p FROM Property p WHERE p.isDeleted = false AND p.isAvailable = true " +
            "AND p.verificationStatus = com.realestate.backend.entity.enums.VerificationStatus.VERIFIED " +

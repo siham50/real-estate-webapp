@@ -46,7 +46,7 @@ const AgencyDashboard = () => {
     setFetchError('');
     try {
       const data = await getResidencesByOwner(user.id);
-      setResidences(data);
+      setResidences(Array.isArray(data) ? data : (data?.data || []));
     } catch (err) {
       setFetchError(err.message || 'Erreur lors du chargement des résidences.');
     } finally {
@@ -60,7 +60,7 @@ const AgencyDashboard = () => {
     setFetchError('');
     try {
       const data = await getPropertiesByOwner(user.id);
-      setProperties(data);
+      setProperties(Array.isArray(data) ? data : (data?.data || []));
     } catch (err) {
       setFetchError(err.message || 'Erreur lors du chargement des biens.');
     } finally {

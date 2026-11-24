@@ -183,13 +183,7 @@ export const getAllResidences = async () => {
 };
 
 export const getResidencesByOwner = async (ownerId) => {
-  try {
-    const response = await api.get('/residences');
-    // Filtrage côté frontend car le backend n'expose pas /owner/{id}
-    return response.data.filter((r) => r.owner?.id === ownerId);
-  } catch (error) {
-    throw new Error(error.response?.data?.message || error.response?.data?.error || error.message);
-  }
+  return await api.get(`/residences/owner/${ownerId}`);
 };
 
 export const createResidence = async (data) => {
@@ -305,13 +299,7 @@ export const incrementResidenceViews = async (id) => {
 };
 
 export const getPropertiesByOwner = async (ownerId) => {
-  try {
-    const response = await api.get('/properties');
-    // Filtrage côté frontend car le backend n'expose pas /owner/{id}
-    return response.data.filter((p) => p.owner?.id === ownerId);
-  } catch (error) {
-    throw new Error(error.response?.data?.message || error.response?.data?.error || error.message);
-  }
+  return await api.get(`/properties/owner/${ownerId}`);
 };
 
 export const createProperty = async (data) => {
@@ -589,6 +577,15 @@ export const verifyUser = async (id) => {
 export const getPendingListings = async () => {
   try {
     const response = await api.get('/admin/pending-listings');
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || error.response?.data?.error || error.message);
+  }
+};
+
+export const getPendingResidences = async () => {
+  try {
+    const response = await api.get('/admin/pending-residences');
     return response.data;
   } catch (error) {
     throw new Error(error.response?.data?.message || error.response?.data?.error || error.message);

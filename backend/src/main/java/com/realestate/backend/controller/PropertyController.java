@@ -25,6 +25,11 @@ public class PropertyController {
         return ResponseEntity.ok(propertyService.getAllProperties());
     }
 
+    @GetMapping({"/owner/{ownerId}", "/user/{ownerId}"})
+    public ResponseEntity<List<PropertyDTO>> getPropertiesByOwner(@PathVariable Long ownerId) {
+        return ResponseEntity.ok(propertyService.getPropertiesByOwnerId(ownerId));
+    }
+
     @GetMapping("/search")
     public ResponseEntity<List<PropertyDTO>> searchProperties(
             @RequestParam(required = false) String city,

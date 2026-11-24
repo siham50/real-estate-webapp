@@ -27,7 +27,7 @@ public class ResidenceService {
 
     public List<ResidenceDTO> getAllResidences() {
         return residenceRepository.findByVerificationStatusAndIsDeletedFalse(VerificationStatus.VERIFIED).stream()
-                .filter(r -> !r.isDeleted() && r.getVerificationStatus() == VerificationStatus.VERIFIED)
+                .filter(r -> !r.isDeleted() && r.isAvailable() && r.getVerificationStatus() == VerificationStatus.VERIFIED)
                 .map(DtoMapper::toResidenceDTO)
                 .toList();
     }
@@ -162,6 +162,12 @@ public class ResidenceService {
 
         Residence savedResidence = residenceRepository.save(existingResidence);
         return DtoMapper.toResidenceDTO(savedResidence);
+    }
+
+    public List<ResidenceDTO> getResidencesByOwnerId(Long ownerId) {
+        return residenceRepository.findByOwnerIdAndIsDeletedFalse(ownerId).stream()
+                .map(DtoMapper::toResidenceDTO)
+                .toList();
     }
 
     public void deleteResidence(Long id) {

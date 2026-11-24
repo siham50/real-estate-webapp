@@ -12,4 +12,5 @@ public interface ResidenceRepository extends JpaRepository<Residence, Long> {
     List<Residence> findByIsAvailableTrueAndIsDeletedFalse();
     List<Residence> findByVerificationStatus(VerificationStatus verificationStatus);
     List<Residence> findByVerificationStatusAndIsDeletedFalse(VerificationStatus verificationStatus);
+    List<Residence> findByOwnerIdAndIsDeletedFalse(Long ownerId);
 }

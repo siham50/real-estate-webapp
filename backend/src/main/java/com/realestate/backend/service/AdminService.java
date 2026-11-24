@@ -77,13 +77,11 @@ public class AdminService {
     public Map<String, Object> getPendingListings() {
         List<PropertyDTO> properties = propertyRepository.findByVerificationStatusAndIsDeletedFalse(VerificationStatus.PENDING)
                 .stream()
-                .filter(p -> p.getOwner() != null && p.getOwner().getRole() == Role.CLIENT)
                 .map(DtoMapper::toPropertyDTO)
                 .toList();
 
         List<ResidenceDTO> residences = residenceRepository.findByVerificationStatusAndIsDeletedFalse(VerificationStatus.PENDING)
                 .stream()
-                .filter(r -> r.getOwner() != null && r.getOwner().getRole() == Role.CLIENT)
                 .map(DtoMapper::toResidenceDTO)
                 .toList();
 
@@ -93,8 +91,22 @@ public class AdminService {
         return result;
     }
 
+    public List<ResidenceDTO> getPendingResidences() {
+        return residenceRepository.findByVerificationStatusAndIsDeletedFalse(VerificationStatus.PENDING)
+                .stream()
+                .map(DtoMapper::toResidenceDTO)
+                .toList();
+    }
+
+    public List<PropertyDTO> getPendingProperties() {
+        return propertyRepository.findByVerificationStatusAndIsDeletedFalse(VerificationStatus.PENDING)
+                .stream()
+                .map(DtoMapper::toPropertyDTO)
+                .toList();
+    }
+
     @Transactional
-    public PropertyDTO verifyProperty(Long propertyId) {
+    public PropertyDTO approveProperty(Long propertyId) {
         Property property = propertyRepository.findById(propertyId)
                 .orElseThrow(() -> new RuntimeException("Bien introuvable avec l'id : " + propertyId));
         property.setVerificationStatus(VerificationStatus.VERIFIED);
@@ -115,8 +127,8 @@ public class AdminService {
     }
 
     @Transactional
-    public PropertyDTO approveProperty(Long propertyId) {
-        return verifyProperty(propertyId);
+    public PropertyDTO verifyProperty(Long propertyId) {
+        return approveProperty(propertyId);
     }
 
     @Transactional

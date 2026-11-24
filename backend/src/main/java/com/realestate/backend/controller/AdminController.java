@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -49,10 +50,20 @@ public class AdminController {
         return ResponseEntity.ok(adminService.getPendingListings());
     }
 
+    @GetMapping("/pending-residences")
+    public ResponseEntity<List<ResidenceDTO>> getPendingResidences() {
+        return ResponseEntity.ok(adminService.getPendingResidences());
+    }
+
+    @GetMapping("/pending-properties")
+    public ResponseEntity<List<PropertyDTO>> getPendingProperties() {
+        return ResponseEntity.ok(adminService.getPendingProperties());
+    }
+
     @PatchMapping({"/approve-property/{id}", "/verify-property/{id}", "/verify-listing/property/{id}"})
-    public ResponseEntity<PropertyDTO> verifyPropertyListing(@PathVariable Long id) {
+    public ResponseEntity<PropertyDTO> approveProperty(@PathVariable Long id) {
         try {
-            return ResponseEntity.ok(adminService.verifyProperty(id));
+            return ResponseEntity.ok(adminService.approveProperty(id));
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
@@ -68,9 +79,9 @@ public class AdminController {
     }
 
     @PatchMapping({"/approve-residence/{id}", "/verify-residence/{id}", "/verify-listing/residence/{id}"})
-    public ResponseEntity<ResidenceDTO> verifyResidenceListing(@PathVariable Long id) {
+    public ResponseEntity<ResidenceDTO> approveResidence(@PathVariable Long id) {
         try {
-            return ResponseEntity.ok(adminService.verifyResidence(id));
+            return ResponseEntity.ok(adminService.approveResidence(id));
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }

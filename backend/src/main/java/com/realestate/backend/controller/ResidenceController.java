@@ -24,6 +24,11 @@ public class ResidenceController {
         return ResponseEntity.ok(residenceService.getAllResidences());
     }
 
+    @GetMapping({"/owner/{ownerId}", "/user/{ownerId}"})
+    public ResponseEntity<List<ResidenceDTO>> getResidencesByOwner(@PathVariable Long ownerId) {
+        return ResponseEntity.ok(residenceService.getResidencesByOwnerId(ownerId));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<ResidenceDTO> getResidenceById(@PathVariable Long id) {
         try {
