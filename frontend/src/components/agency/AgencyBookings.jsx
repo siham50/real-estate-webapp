@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { getOwnerBookings, updateBookingStatus } from '../../services/api';
+import RescheduleModal from './RescheduleModal';
 
 const STATUS_BADGES = {
   PENDING: { label: 'En attente', className: 'agency-badge-pending' },
@@ -17,6 +18,7 @@ const AgencyBookings = () => {
   const [error, setError] = useState('');
   const [updatingId, setUpdatingId] = useState(null);
   const [filterStatus, setFilterStatus] = useState('ALL');
+  const [selectedBookingForReschedule, setSelectedBookingForReschedule] = useState(null);
 
   const fetchBookings = useCallback(async () => {
     if (!user?.id) return;
@@ -128,6 +130,13 @@ const AgencyBookings = () => {
           </button>
           <button
             type="button"
+            className={`agency-filter-pill-btn ${filterStatus === 'RESCHEDULED' ? 'active' : ''}`}
+            onClick={() => setFilterStatus('RESCHEDULED')}
+          >
+            Replanifiées ({bookings.filter((b) => b.status === 'RESCHEDULED').length})
+          </button>
+          <button
+            type="button"
             className={`agency-filter-pill-btn ${filterStatus === 'COMPLETED' ? 'active' : ''}`}
             onClick={() => setFilterStatus('COMPLETED')}
           >
@@ -205,6 +214,25 @@ const AgencyBookings = () => {
                           {booking.client?.email && (
                             <span className="client-email-sub">{booking.client.email}</span>
                           )}
+                          {booking.status === 'CANCELLED' && (
+                            <div
+                              style={{
+                                marginTop: '4px',
+                                padding: '3px 8px',
+                                background: '#fee2e2',
+                                color: '#b91c1c',
+                                borderRadius: '4px',
+                                fontSize: '0.78rem',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                maxWidth: '240px',
+                                lineHeight: '1.25',
+                              }}
+                            >
+                              <span>⚠️ Raison : {booking.cancellationReason || 'Non précisée'}</span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </td>
@@ -253,6 +281,24 @@ const AgencyBookings = () => {
                                 </button>
                                 <button
                                   type="button"
+                                  onClick={() => setSelectedBookingForReschedule(booking)}
+                                  className="agency-btn-action"
+                                  style={{
+                                    background: '#eff6ff',
+                                    color: '#1d4ed8',
+                                    border: '1px solid #bfdbfe',
+                                    borderRadius: '6px',
+                                    padding: '5px 10px',
+                                    fontSize: '0.82rem',
+                                    fontWeight: 500,
+                                    cursor: 'pointer',
+                                  }}
+                                  title="Proposer une nouvelle date"
+                                >
+                                  Replanifier
+                                </button>
+                                <button
+                                  type="button"
                                   onClick={() => handleStatusChange(booking.id, 'CANCELLED')}
                                   className="agency-btn-action agency-btn-cancel"
                                   title="Annuler la visite"
@@ -264,14 +310,41 @@ const AgencyBookings = () => {
 
                             {/* Actions si CONFIRMED */}
                             {booking.status === 'CONFIRMED' && (
-                              <button
-                                type="button"
-                                onClick={() => handleStatusChange(booking.id, 'COMPLETED')}
-                                className="agency-btn-action agency-btn-complete"
-                                title="Marquer comme effectuée"
-                              >
-                                Marquer comme Terminée
-                              </button>
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedBookingForReschedule(booking)}
+                                  className="agency-btn-action"
+                                  style={{
+                                    background: '#eff6ff',
+                                    color: '#1d4ed8',
+                                    border: '1px solid #bfdbfe',
+                                    borderRadius: '6px',
+                                    padding: '5px 10px',
+                                    fontSize: '0.82rem',
+                                    fontWeight: 500,
+                                    cursor: 'pointer',
+                                  }}
+                                  title="Proposer une nouvelle date"
+                                >
+                                  Replanifier
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleStatusChange(booking.id, 'COMPLETED')}
+                                  className="agency-btn-action agency-btn-complete"
+                                  title="Marquer comme effectuée"
+                                >
+                                  Marquer comme Terminée
+                                </button>
+                              </>
+                            )}
+
+                            {/* Si RESCHEDULED */}
+                            {booking.status === 'RESCHEDULED' && (
+                              <span style={{ fontSize: '0.82rem', color: '#2563eb', fontStyle: 'italic' }}>
+                                En attente de réponse du client
+                              </span>
                             )}
 
                             {/* Si CANCELLED ou COMPLETED */}
@@ -291,6 +364,17 @@ const AgencyBookings = () => {
           </table>
         </div>
       )}
+
+      {/* Modale de replanification */}
+      <RescheduleModal
+        booking={selectedBookingForReschedule}
+        isOpen={Boolean(selectedBookingForReschedule)}
+        onClose={() => setSelectedBookingForReschedule(null)}
+        onSuccess={() => {
+          setSelectedBookingForReschedule(null);
+          fetchBookings();
+        }}
+      />
     </div>
   );
 };
