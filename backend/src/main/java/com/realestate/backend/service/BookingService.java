@@ -13,6 +13,7 @@ import com.realestate.backend.repository.PropertyRepository;
 import com.realestate.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -29,6 +30,7 @@ public class BookingService {
     private final UserRepository userRepository;
     private final NotificationService notificationService;
 
+    @Transactional
     public BookingDTO createBooking(Booking booking) {
         Long clientId = booking.getResolvedClientId();
         Long propertyId = booking.getResolvedPropertyId();
@@ -65,7 +67,7 @@ public class BookingService {
         // Notification automatique pour le propriétaire / vendeur
         Long ownerId = property.getOwner() != null ? property.getOwner().getId() : (availability.getUser() != null ? availability.getUser().getId() : null);
         if (ownerId != null) {
-            notificationService.createNotification(ownerId, "Nouvelle demande de visite reçue", "BOOKING");
+            notificationService.createNotification(ownerId, "Nouvelle demande de visite pour votre bien.", "BOOKING");
         }
 
         return DtoMapper.toBookingDTO(savedBooking);
@@ -83,6 +85,7 @@ public class BookingService {
                 .toList();
     }
 
+    @Transactional
     public BookingDTO updateBookingStatus(Long id, BookingStatus newStatus) {
         Booking booking = bookingRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Réservation introuvable avec l'id : " + id));
@@ -125,6 +128,20 @@ public class BookingService {
 
         booking.setStatus(newStatus);
         Booking updatedBooking = bookingRepository.save(booking);
+
+        // Notifications automatiques pour le client
+        User client = updatedBooking.getClient();
+        Long clientId = client != null ? client.getId() : booking.getResolvedClientId();
+        if (clientId != null) {
+            if (newStatus == BookingStatus.CONFIRMED) {
+                notificationService.createNotification(clientId, "Votre visite a été confirmée.", "BOOKING");
+            } else if (newStatus == BookingStatus.CANCELLED) {
+                notificationService.createNotification(clientId, "Votre visite a été annulée.", "BOOKING");
+            } else if (newStatus == BookingStatus.COMPLETED) {
+                notificationService.createNotification(clientId, "Votre visite est terminée. Vous pouvez laisser un avis.", "BOOKING");
+            }
+        }
+
         return DtoMapper.toBookingDTO(updatedBooking);
     }
 }

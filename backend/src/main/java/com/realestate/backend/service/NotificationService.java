@@ -19,6 +19,7 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
 
+    @Transactional
     public NotificationDTO createNotification(Notification notification) {
         Long userId = notification.getResolvedUserId();
         if (userId == null) {
@@ -35,6 +36,7 @@ public class NotificationService {
         return DtoMapper.toNotificationDTO(saved);
     }
 
+    @Transactional
     public NotificationDTO createNotification(User user, String message, String type) {
         if (user == null) {
             throw new IllegalArgumentException("L'utilisateur destinataire est requis");
@@ -51,6 +53,7 @@ public class NotificationService {
         return DtoMapper.toNotificationDTO(saved);
     }
 
+    @Transactional
     public NotificationDTO createNotification(Long userId, String message, String type) {
         if (userId == null) {
             throw new IllegalArgumentException("L'identifiant de l'utilisateur (userId) est requis");

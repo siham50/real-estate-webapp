@@ -30,6 +30,7 @@ public class AdminService {
     private final BookingRepository bookingRepository;
     private final ReportRepository reportRepository;
     private final AgencyProfileRepository agencyProfileRepository;
+    private final NotificationService notificationService;
 
     public AdminStatsDTO getAdminStats() {
         long totalUsers = userRepository.count();
@@ -63,6 +64,13 @@ public class AdminService {
             agencyProfileRepository.save(profile);
         });
 
+        // Notification automatique à l'utilisateur
+        notificationService.createNotification(
+                userId,
+                "Votre compte a été approuvé par l'administrateur. Vous pouvez maintenant publier.",
+                "ACCOUNT"
+        );
+
         return mapUserWithAgencyProfile(savedUser);
     }
 
@@ -92,7 +100,23 @@ public class AdminService {
         property.setVerificationStatus(VerificationStatus.VERIFIED);
         property.setAvailable(true);
         Property saved = propertyRepository.save(property);
+
+        // Notification automatique pour le propriétaire de l'annonce
+        if (saved.getOwner() != null && saved.getOwner().getId() != null) {
+            String title = saved.getTitle() != null ? saved.getTitle() : "votre bien";
+            notificationService.createNotification(
+                    saved.getOwner().getId(),
+                    "Votre annonce " + title + " a été approuvée et est maintenant en ligne.",
+                    "PROPERTY"
+            );
+        }
+
         return DtoMapper.toPropertyDTO(saved);
+    }
+
+    @Transactional
+    public PropertyDTO approveProperty(Long propertyId) {
+        return verifyProperty(propertyId);
     }
 
     @Transactional
@@ -102,6 +126,16 @@ public class AdminService {
         property.setVerificationStatus(VerificationStatus.REJECTED);
         property.setAvailable(false);
         Property saved = propertyRepository.save(property);
+
+        if (saved.getOwner() != null && saved.getOwner().getId() != null) {
+            String title = saved.getTitle() != null ? saved.getTitle() : "votre bien";
+            notificationService.createNotification(
+                    saved.getOwner().getId(),
+                    "Votre annonce " + title + " n'a pas été approuvée par l'administrateur.",
+                    "PROPERTY"
+            );
+        }
+
         return DtoMapper.toPropertyDTO(saved);
     }
 
@@ -112,7 +146,23 @@ public class AdminService {
         residence.setVerificationStatus(VerificationStatus.VERIFIED);
         residence.setAvailable(true);
         Residence saved = residenceRepository.save(residence);
+
+        // Notification automatique pour le propriétaire de la résidence
+        if (saved.getOwner() != null && saved.getOwner().getId() != null) {
+            String name = saved.getName() != null ? saved.getName() : "votre résidence";
+            notificationService.createNotification(
+                    saved.getOwner().getId(),
+                    "Votre annonce " + name + " a été approuvée et est maintenant en ligne.",
+                    "RESIDENCE"
+            );
+        }
+
         return DtoMapper.toResidenceDTO(saved);
+    }
+
+    @Transactional
+    public ResidenceDTO approveResidence(Long residenceId) {
+        return verifyResidence(residenceId);
     }
 
     @Transactional
@@ -122,6 +172,16 @@ public class AdminService {
         residence.setVerificationStatus(VerificationStatus.REJECTED);
         residence.setAvailable(false);
         Residence saved = residenceRepository.save(residence);
+
+        if (saved.getOwner() != null && saved.getOwner().getId() != null) {
+            String name = saved.getName() != null ? saved.getName() : "votre résidence";
+            notificationService.createNotification(
+                    saved.getOwner().getId(),
+                    "Votre annonce " + name + " n'a pas été approuvée par l'administrateur.",
+                    "RESIDENCE"
+            );
+        }
+
         return DtoMapper.toResidenceDTO(saved);
     }
 
