@@ -32,8 +32,8 @@ public class Booking {
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Property property;
 
-    @OneToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "availability_id", unique = true, nullable = false)
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "availability_id", nullable = false)
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Availability availability;
 

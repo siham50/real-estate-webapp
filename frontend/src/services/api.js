@@ -25,15 +25,28 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
-      // Déconnecte l'utilisateur en supprimant les données du localStorage
-      localStorage.removeItem('token');
-      localStorage.removeItem('urbanet_token');
-      localStorage.removeItem('user');
-      localStorage.removeItem('urbanet_user');
+      const url = error.config?.url || '';
+      // Ne déconnecter QUE pour les routes de session/dashboard protégées
+      // Ne JAMAIS déconnecter lors d'actions utilisateur (réservations, consultations de listes/profils)
+      const isActionOrConsultationRoute =
+        url.includes('/bookings') ||
+        url.includes('/notifications') ||
+        url.includes('/availabilities') ||
+        url.includes('/properties') ||
+        url.includes('/reviews') ||
+        url.includes('/users/');
 
-      // Redirige vers /login
-      if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
-        window.location.href = '/login';
+      if (!isActionOrConsultationRoute) {
+        // Déconnecte l'utilisateur en supprimant les données du localStorage
+        localStorage.removeItem('token');
+        localStorage.removeItem('urbanet_token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('urbanet_user');
+
+        // Redirige vers /login
+        if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
       }
     }
     return Promise.reject(error);

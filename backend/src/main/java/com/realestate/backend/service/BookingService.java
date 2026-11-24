@@ -40,34 +40,81 @@ public class BookingService {
             throw new IllegalArgumentException("Les identifiants client, property et availability sont requis");
         }
 
-        User client = userRepository.findById(clientId)
-                .orElseThrow(() -> new RuntimeException("Client introuvable avec l'id : " + clientId));
+        User client = userRepository.findById(clientId).orElse(null);
+        if (client == null) {
+            org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.getName() != null && !"anonymousUser".equalsIgnoreCase(auth.getName())) {
+                client = userRepository.findByEmail(auth.getName()).orElse(null);
+            }
+        }
+        if (client == null) {
+            throw new IllegalArgumentException("Client introuvable avec l'id : " + clientId);
+        }
 
         Property property = propertyRepository.findById(propertyId)
-                .orElseThrow(() -> new RuntimeException("Propriété introuvable avec l'id : " + propertyId));
+                .orElseThrow(() -> new IllegalArgumentException("Propriété introuvable avec l'id : " + propertyId));
 
         Availability availability = availabilityRepository.findById(availabilityId)
-                .orElseThrow(() -> new RuntimeException("Créneau introuvable avec l'id : " + availabilityId));
+                .orElseThrow(() -> new IllegalArgumentException("Créneau introuvable avec l'id : " + availabilityId));
 
-        if (availability.isBooked()) {
+        // Recherche d'anciennes réservations associées à cette disponibilité
+        List<Booking> existing = bookingRepository.findAllByAvailabilityId(availabilityId);
+        Booking active = existing.stream()
+                .filter(b -> b.getStatus() != BookingStatus.CANCELLED)
+                .findFirst()
+                .orElse(null);
+
+        Booking bookingToSave;
+
+        if (availability.isBooked() && active != null) {
             throw new IllegalStateException("Le créneau sélectionné est déjà réservé");
+        }
+
+        if (active != null) {
+            // Créneau libre en base mais réservation existante orpheline/non-annulée
+            active.setClient(client);
+            active.setProperty(property);
+            active.setStatus(BookingStatus.PENDING);
+            active.setCancellationReason(null);
+            active.setUpdatedAt(LocalDateTime.now());
+            bookingToSave = active;
+        } else {
+            Booking cancelled = existing.stream()
+                    .filter(b -> b.getStatus() == BookingStatus.CANCELLED)
+                    .findFirst()
+                    .orElse(null);
+
+            if (cancelled != null) {
+                // Réutilisation de l'entrée existante pour respecter la contrainte d'unicité en base
+                cancelled.setClient(client);
+                cancelled.setProperty(property);
+                cancelled.setStatus(BookingStatus.PENDING);
+                cancelled.setCancellationReason(null);
+                cancelled.setUpdatedAt(LocalDateTime.now());
+                bookingToSave = cancelled;
+            } else {
+                booking.setClient(client);
+                booking.setProperty(property);
+                booking.setAvailability(availability);
+                booking.setStatus(BookingStatus.PENDING);
+                bookingToSave = booking;
+            }
         }
 
         // Marquer le créneau comme réservé
         availability.setBooked(true);
         availabilityRepository.save(availability);
 
-        booking.setClient(client);
-        booking.setProperty(property);
-        booking.setAvailability(availability);
-        booking.setStatus(BookingStatus.PENDING);
-
-        Booking savedBooking = bookingRepository.save(booking);
+        Booking savedBooking = bookingRepository.save(bookingToSave);
 
         // Notification automatique pour le propriétaire / vendeur
-        Long ownerId = property.getOwner() != null ? property.getOwner().getId() : (availability.getUser() != null ? availability.getUser().getId() : null);
-        if (ownerId != null) {
-            notificationService.createNotification(ownerId, "Nouvelle demande de visite pour votre bien.", "BOOKING");
+        try {
+            Long ownerId = property.getOwner() != null ? property.getOwner().getId() : (availability.getUser() != null ? availability.getUser().getId() : null);
+            if (ownerId != null) {
+                notificationService.createNotification(ownerId, "Nouvelle demande de visite pour votre bien.", "BOOKING");
+            }
+        } catch (Exception e) {
+            // Ne pas annuler la réservation si la création de la notification échoue
         }
 
         return DtoMapper.toBookingDTO(savedBooking);

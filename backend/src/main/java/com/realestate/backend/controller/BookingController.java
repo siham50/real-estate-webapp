@@ -12,10 +12,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/bookings")
-@CrossOrigin(origins = "*")
+@CrossOrigin(originPatterns = "*", allowCredentials = "true")
 @RequiredArgsConstructor
 public class BookingController {
 
@@ -23,11 +24,32 @@ public class BookingController {
     private final BookingService bookingService;
 
     @PostMapping
-    public ResponseEntity<BookingDTO> createBooking(@RequestBody Booking request) {
+    public ResponseEntity<?> createBooking(@RequestBody Booking request) {
         log.info("Requête POST /api/bookings reçue : client={}, property={}, availability={}",
                 request.getResolvedClientId(), request.getResolvedPropertyId(), request.getResolvedAvailabilityId());
-        BookingDTO created = bookingService.createBooking(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+        try {
+            BookingDTO created = bookingService.createBooking(request);
+            log.info("Réservation créée avec succès : ID #{}", created.getId());
+            return ResponseEntity.status(HttpStatus.CREATED).body(created);
+        } catch (IllegalStateException e) {
+            log.warn("Conflit de réservation : {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(
+                    "error", "Conflict",
+                    "message", e.getMessage() != null ? e.getMessage() : "Le créneau sélectionné est déjà réservé"
+            ));
+        } catch (IllegalArgumentException e) {
+            log.warn("Paramètre invalide pour la réservation : {}", e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", "Bad Request",
+                    "message", e.getMessage() != null ? e.getMessage() : "Données de réservation invalides"
+            ));
+        } catch (Exception e) {
+            log.error("Erreur inattendue lors de la réservation : {}", e.getMessage(), e);
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", "Booking Error",
+                    "message", e.getMessage() != null ? e.getMessage() : "Impossible d'effectuer la réservation"
+            ));
+        }
     }
 
     @GetMapping("/client/{clientId}")

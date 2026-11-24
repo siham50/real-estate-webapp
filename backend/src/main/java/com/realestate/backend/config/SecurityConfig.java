@@ -2,6 +2,8 @@ package com.realestate.backend.config;
 
 import com.realestate.backend.repository.UserRepository;
 import com.realestate.backend.security.JwtAuthenticationFilter;
+import jakarta.servlet.DispatcherType;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -69,15 +71,28 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            response.setContentType("application/json");
+                            response.getWriter().write("{\"error\": \"Unauthorized\", \"message\": \"" + authException.getMessage() + "\"}");
+                        })
+                )
                 .authorizeHttpRequests(auth -> auth
+                        .dispatcherTypeMatchers(DispatcherType.FORWARD, DispatcherType.ERROR).permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers("/error", "/error/**").permitAll()
                         .requestMatchers("/api/auth", "/api/auth/**").permitAll()
                         .requestMatchers("/api/properties", "/api/properties/**").permitAll()
                         .requestMatchers("/api/residences", "/api/residences/**").permitAll()
                         .requestMatchers("/api/files", "/api/files/**", "/files/**").permitAll()
                         .requestMatchers("/uploads", "/uploads/**").permitAll()
                         .requestMatchers("/api/uploads", "/api/uploads/**").permitAll()
-                        .requestMatchers("/api/notifications/**").authenticated()
+                        .requestMatchers("/api/bookings", "/api/bookings/**").permitAll()
+                        .requestMatchers("/api/availabilities", "/api/availabilities/**").permitAll()
+                        .requestMatchers("/api/reviews", "/api/reviews/**").permitAll()
+                        .requestMatchers("/api/notifications", "/api/notifications/**").permitAll()
+                        .requestMatchers("/api/users", "/api/users/**").permitAll()
                         .anyRequest().authenticated()
                 );
 
