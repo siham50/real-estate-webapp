@@ -284,21 +284,34 @@ const PropertyDetailsPage = () => {
     setBookingError(null);
 
     const payload = {
+      client: { id: user.id },
+      property: { id: Number(id) },
+      availability: { id: Number(selectedSlotId) },
       clientId: user.id,
       propertyId: Number(id),
       availabilityId: Number(selectedSlotId),
     };
 
+    console.log('Payload de réservation envoyé à createBooking :', payload);
+
     try {
       const res = await createBooking(payload);
+      console.log('Réponse réservation reçue du backend :', res);
+      const bookingData = res?.data || res;
       setBookingSuccess(true);
-      setBookingSuccessData(res || { slot: selectedSlot });
+      setBookingSuccessData(bookingData || { slot: selectedSlot });
       // Rafraîchir les créneaux pour retirer celui qui vient d'être réservé
       if (ownerId) {
         fetchAvailableSlots(ownerId);
       }
     } catch (err) {
-      setBookingError(err.message || 'Une erreur est survenue lors de la réservation.');
+      console.error('Erreur lors de la réservation :', err);
+      setBookingError(
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        err.message ||
+        'Une erreur est survenue lors de la réservation.'
+      );
     } finally {
       setBookingLoading(false);
     }

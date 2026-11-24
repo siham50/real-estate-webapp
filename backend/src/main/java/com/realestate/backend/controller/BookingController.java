@@ -5,6 +5,8 @@ import com.realestate.backend.entity.Booking;
 import com.realestate.backend.entity.enums.BookingStatus;
 import com.realestate.backend.service.BookingService;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,21 +15,29 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/bookings")
+@CrossOrigin(originPatterns = "*", allowCredentials = "true")
 @RequiredArgsConstructor
 public class BookingController {
 
+    private static final Logger log = LoggerFactory.getLogger(BookingController.class);
     private final BookingService bookingService;
 
     @PostMapping
     public ResponseEntity<BookingDTO> createBooking(@RequestBody Booking booking) {
+        log.info("Requête POST /api/bookings reçue : client={}, property={}, availability={}",
+                booking.getResolvedClientId(), booking.getResolvedPropertyId(), booking.getResolvedAvailabilityId());
         try {
             BookingDTO created = bookingService.createBooking(booking);
+            log.info("Réservation créée avec succès : ID #{}", created.getId());
             return ResponseEntity.status(HttpStatus.CREATED).body(created);
         } catch (IllegalStateException e) {
+            log.warn("Conflit lors de la création de la réservation : {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.CONFLICT).build();
         } catch (IllegalArgumentException e) {
+            log.warn("Paramètre invalide lors de la création de la réservation : {}", e.getMessage());
             return ResponseEntity.badRequest().build();
         } catch (RuntimeException e) {
+            log.error("Erreur serveur lors de la création de la réservation : {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
     }

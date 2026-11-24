@@ -394,17 +394,7 @@ export const deleteAvailability = async (id) => {
 };
 
 export const createBooking = async (data) => {
-  try {
-    const response = await api.post('/bookings', data);
-    return response.data;
-  } catch (error) {
-    throw new Error(
-      error.response?.data?.message ||
-      error.response?.data?.error ||
-      error.message ||
-      'Impossible de réserver ce créneau.'
-    );
-  }
+  return await api.post('/bookings', data);
 };
 
 export const getClientBookings = async (clientId) => {
