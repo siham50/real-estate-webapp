@@ -15,7 +15,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/bookings")
-@CrossOrigin(originPatterns = "*", allowCredentials = "true")
+@CrossOrigin(origins = "*")
 @RequiredArgsConstructor
 public class BookingController {
 
@@ -23,23 +23,11 @@ public class BookingController {
     private final BookingService bookingService;
 
     @PostMapping
-    public ResponseEntity<BookingDTO> createBooking(@RequestBody Booking booking) {
+    public ResponseEntity<BookingDTO> createBooking(@RequestBody Booking request) {
         log.info("Requête POST /api/bookings reçue : client={}, property={}, availability={}",
-                booking.getResolvedClientId(), booking.getResolvedPropertyId(), booking.getResolvedAvailabilityId());
-        try {
-            BookingDTO created = bookingService.createBooking(booking);
-            log.info("Réservation créée avec succès : ID #{}", created.getId());
-            return ResponseEntity.status(HttpStatus.CREATED).body(created);
-        } catch (IllegalStateException e) {
-            log.warn("Conflit lors de la création de la réservation : {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.CONFLICT).build();
-        } catch (IllegalArgumentException e) {
-            log.warn("Paramètre invalide lors de la création de la réservation : {}", e.getMessage());
-            return ResponseEntity.badRequest().build();
-        } catch (RuntimeException e) {
-            log.error("Erreur serveur lors de la création de la réservation : {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
+                request.getResolvedClientId(), request.getResolvedPropertyId(), request.getResolvedAvailabilityId());
+        BookingDTO created = bookingService.createBooking(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @GetMapping("/client/{clientId}")
