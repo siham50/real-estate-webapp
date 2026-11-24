@@ -45,12 +45,54 @@ public class BookingController {
     @PatchMapping("/{id}/status")
     public ResponseEntity<BookingDTO> updateBookingStatus(
             @PathVariable Long id,
-            @RequestParam("status") String status) {
+            @RequestParam("status") String status,
+            @RequestParam(value = "reason", required = false) String reason) {
         try {
             BookingStatus bookingStatus = BookingStatus.valueOf(status.trim().toUpperCase());
-            return ResponseEntity.ok(bookingService.updateBookingStatus(id, bookingStatus));
+            return ResponseEntity.ok(bookingService.updateBookingStatus(id, bookingStatus, reason));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PatchMapping("/{id}/cancel")
+    public ResponseEntity<BookingDTO> cancelBooking(
+            @PathVariable Long id,
+            @RequestParam(value = "reason", required = false) String reason) {
+        try {
+            return ResponseEntity.ok(bookingService.cancelBooking(id, reason));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PatchMapping("/{id}/reschedule")
+    public ResponseEntity<BookingDTO> rescheduleBooking(
+            @PathVariable Long id,
+            @RequestParam("newAvailabilityId") Long newAvailabilityId) {
+        try {
+            return ResponseEntity.ok(bookingService.rescheduleBooking(id, newAvailabilityId));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PatchMapping("/{id}/respond-reschedule")
+    public ResponseEntity<BookingDTO> respondToReschedule(
+            @PathVariable Long id,
+            @RequestParam("accept") boolean accept) {
+        try {
+            return ResponseEntity.ok(bookingService.respondToReschedule(id, accept));
         } catch (IllegalStateException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).build();
         } catch (RuntimeException e) {

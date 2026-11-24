@@ -48,6 +48,9 @@ public class Booking {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Column(name = "cancellation_reason", length = 500)
+    private String cancellationReason;
+
     @Transient
     private Long clientId;
 

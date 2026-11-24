@@ -435,9 +435,10 @@ export const getOwnerBookings = async (ownerId) => {
   }
 };
 
-export const updateBookingStatus = async (bookingId, status) => {
+export const updateBookingStatus = async (bookingId, status, reason) => {
   try {
-    const response = await api.patch(`/bookings/${bookingId}/status?status=${status}`);
+    const reasonParam = reason ? `&reason=${encodeURIComponent(reason)}` : '';
+    const response = await api.patch(`/bookings/${bookingId}/status?status=${status}${reasonParam}`);
     return response.data;
   } catch (error) {
     throw new Error(
@@ -445,6 +446,49 @@ export const updateBookingStatus = async (bookingId, status) => {
       error.response?.data?.error ||
       error.message ||
       'Impossible de mettre à jour le statut de la visite.'
+    );
+  }
+};
+
+export const cancelBooking = async (bookingId, reason) => {
+  try {
+    const reasonParam = reason ? `?reason=${encodeURIComponent(reason)}` : '';
+    const response = await api.patch(`/bookings/${bookingId}/cancel${reasonParam}`);
+    return response.data;
+  } catch (error) {
+    throw new Error(
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      error.message ||
+      "Impossible d'annuler la visite."
+    );
+  }
+};
+
+export const rescheduleBooking = async (bookingId, newAvailabilityId) => {
+  try {
+    const response = await api.patch(`/bookings/${bookingId}/reschedule?newAvailabilityId=${newAvailabilityId}`);
+    return response.data;
+  } catch (error) {
+    throw new Error(
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      error.message ||
+      'Impossible de replanifier la visite.'
+    );
+  }
+};
+
+export const respondToReschedule = async (bookingId, accept) => {
+  try {
+    const response = await api.patch(`/bookings/${bookingId}/respond-reschedule?accept=${accept}`);
+    return response.data;
+  } catch (error) {
+    throw new Error(
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      error.message ||
+      'Impossible de répondre à la replanification.'
     );
   }
 };

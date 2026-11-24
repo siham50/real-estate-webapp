@@ -207,6 +207,7 @@ public class DtoMapper {
                 .property(toPropertyDTO(booking.getProperty()))
                 .availability(toAvailabilityDTO(booking.getAvailability()))
                 .status(booking.getStatus())
+                .cancellationReason(booking.getCancellationReason())
                 .createdAt(booking.getCreatedAt())
                 .updatedAt(booking.getUpdatedAt())
                 .build();
