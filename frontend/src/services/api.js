@@ -465,9 +465,9 @@ export const cancelBooking = async (bookingId, reason) => {
   }
 };
 
-export const rescheduleBooking = async (bookingId, newAvailabilityId) => {
+export const rescheduleBooking = async (id, newAvailabilityId) => {
   try {
-    const response = await api.patch(`/bookings/${bookingId}/reschedule?newAvailabilityId=${newAvailabilityId}`);
+    const response = await api.patch(`/bookings/${id}/reschedule?newAvailabilityId=${newAvailabilityId}`);
     return response.data;
   } catch (error) {
     throw new Error(
@@ -479,9 +479,9 @@ export const rescheduleBooking = async (bookingId, newAvailabilityId) => {
   }
 };
 
-export const respondToReschedule = async (bookingId, accept) => {
+export const respondToReschedule = async (id, accept) => {
   try {
-    const response = await api.patch(`/bookings/${bookingId}/respond-reschedule?accept=${accept}`);
+    const response = await api.patch(`/bookings/${id}/respond-reschedule?accept=${accept}`);
     return response.data;
   } catch (error) {
     throw new Error(
