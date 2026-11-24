@@ -1,8 +1,31 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import SearchBar from './SearchBar';
 
 const Hero = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  const handlePublishClick = () => {
+    const isLoggedIn = Boolean(user && user.id);
+    if (!isLoggedIn) {
+      navigate('/login');
+      return;
+    }
+
+    const role = String(user?.role || '').toUpperCase();
+    if (role === 'CLIENT') {
+      navigate('/client/dashboard');
+    } else if (role === 'PROFESSIONAL' || role === 'AGENCE') {
+      navigate('/agency/dashboard');
+    } else if (role === 'ADMIN') {
+      navigate('/admin/properties');
+    } else {
+      navigate('/login');
+    }
+  };
+
   return (
     <section className="urbanet-hero-section">
       <div className="urbanet-hero-bg">
@@ -54,9 +77,14 @@ const Hero = () => {
                 <polyline points="12 5 19 12 12 19" />
               </svg>
             </a>
-            <Link to="/login" className="urbanet-hero-btn-secondary">
+            <button
+              type="button"
+              onClick={handlePublishClick}
+              className="urbanet-hero-btn-secondary"
+              style={{ cursor: 'pointer', fontFamily: 'inherit' }}
+            >
               Publier une annonce
-            </Link>
+            </button>
           </div>
         </div>
       </div>

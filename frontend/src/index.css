@@ -211,6 +211,73 @@ img {
   background-color: var(--color-bg-subtle);
 }
 
+/* Header Search Bar */
+.urbanet-header-search-wrap {
+  display: flex;
+  align-items: center;
+  background-color: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: var(--radius-pill);
+  padding: 3px 6px 3px 12px;
+  transition: all 0.2s ease;
+}
+
+.urbanet-header-search-wrap:focus-within {
+  border-color: #0284c7;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+}
+
+.urbanet-header-search-input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 0.84rem;
+  color: var(--color-primary);
+  width: 140px;
+  font-family: inherit;
+  transition: width 0.2s ease;
+}
+
+.urbanet-header-search-input::placeholder {
+  color: #94a3b8;
+  font-size: 0.8rem;
+}
+
+.urbanet-header-search-input:focus {
+  width: 180px;
+}
+
+.urbanet-header-search-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  color: #64748b;
+  padding: 0;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.urbanet-header-search-btn:hover {
+  background-color: #e2e8f0;
+  color: #0284c7;
+}
+
+@media (max-width: 640px) {
+  .urbanet-header-search-input {
+    width: 90px;
+  }
+  .urbanet-header-search-input:focus {
+    width: 120px;
+  }
+}
+
 .urbanet-btn-outline {
   display: inline-flex;
   align-items: center;
@@ -710,6 +777,86 @@ img {
   fill: #ef4444;
   stroke: #ef4444;
 }
+
+/* Carrousel sur les cartes de biens */
+.property-carousel-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(4px);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: opacity 0.2s ease, transform 0.2s ease, background 0.2s ease;
+  opacity: 0;
+  pointer-events: none;
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1;
+  user-select: none;
+}
+
+.urbanet-property-card:hover .property-carousel-btn {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.property-carousel-btn:hover {
+  background: rgba(15, 23, 42, 0.95);
+  transform: translateY(-50%) scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.property-carousel-btn-prev {
+  left: 10px;
+}
+
+.property-carousel-btn-next {
+  right: 10px;
+}
+
+.property-carousel-counter {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(4px);
+  color: #ffffff;
+  padding: 3px 9px;
+  border-radius: 12px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  z-index: 9;
+  pointer-events: none;
+}
+
+.property-media-badges-bottom {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 8;
+  max-width: 75%;
+}
+
+.property-media-badges-bottom .property-type-tag,
+.property-media-badges-bottom .property-residence-badge {
+  position: static;
+  bottom: auto;
+  left: auto;
+}
+
 
 /* Card Body */
 .property-body {
@@ -1584,6 +1731,20 @@ img {
   width: 100%;
   max-width: 500px;
   padding: 40px 36px;
+}
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 20px;
+  color: #64748b;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.9rem;
+  transition: color 0.2s ease;
+}
+
+.back-link:hover {
+  color: #000000;
 }
 
 .auth-header {
@@ -2546,7 +2707,15 @@ img {
   border-radius: var(--radius-card);
   box-shadow: var(--shadow-subtle);
   overflow: hidden;
-  min-height: 200px;
+  min-height: auto;
+}
+
+.table-title {
+  margin-top: 20px;
+  margin-bottom: 15px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  padding: 0 20px;
 }
 
 /* Empty State */
@@ -4121,11 +4290,13 @@ img {
 
 .property-details-sidebar-column {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 .urbanet-booking-sticky-widget {
-  position: sticky;
-  top: 96px;
+  position: relative;
   background: #ffffff;
   border-radius: 18px;
   padding: 28px;
@@ -5858,7 +6029,7 @@ img {
 }
 
 .property-map-card {
-  margin-bottom: 24px;
+  margin-bottom: 0;
 }
 
 .property-map-header {
@@ -5946,7 +6117,7 @@ img {
   padding: 26px;
   border: 1px solid #e2e8f0;
   box-shadow: 0 4px 20px rgba(15, 23, 42, 0.06);
-  margin-top: 24px;
+  margin-top: 0;
   transition: all 0.25s ease;
 }
 
@@ -7261,3 +7432,45 @@ img {
   font-size: 0.88rem;
   color: inherit;
 }
+
+/* ─── Styles pour la visualisation des documents justificatifs (Admin) ─── */
+.admin-doc-viewer-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.admin-doc-item-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.admin-doc-item-header {
+  padding: 12px 18px;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-doc-item-preview {
+  padding: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #0f172a;
+}
+
+.admin-doc-item-preview img {
+  max-width: 100%;
+  max-height: 550px;
+  object-fit: contain;
+  border-radius: 6px;
+}
+

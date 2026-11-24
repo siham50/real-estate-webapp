@@ -34,6 +34,10 @@ public class Residence {
     @Column(name = "name", nullable = false, length = 100)
     private String name;
 
+    @Transient
+    @JsonProperty("documentUrl")
+    private String documentUrl;
+
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
@@ -64,6 +68,10 @@ public class Residence {
     @Builder.Default
     private VerificationStatus verificationStatus = VerificationStatus.PENDING;
 
+    @Builder.Default
+    @Column(nullable = false)
+    private Integer views = 0;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -84,6 +92,9 @@ public class Residence {
 
     @PrePersist
     protected void onCreate() {
+        if (this.views == null) {
+            this.views = 0;
+        }
         if (this.createdAt == null) {
             this.createdAt = LocalDateTime.now();
         }

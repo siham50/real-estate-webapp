@@ -25,15 +25,28 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
-      // Déconnecte l'utilisateur en supprimant les données du localStorage
-      localStorage.removeItem('token');
-      localStorage.removeItem('urbanet_token');
-      localStorage.removeItem('user');
-      localStorage.removeItem('urbanet_user');
+      const url = error.config?.url || '';
+      // Ne déconnecter QUE pour les routes de session/dashboard protégées
+      // Ne JAMAIS déconnecter lors d'actions utilisateur (réservations, consultations de listes/profils)
+      const isActionOrConsultationRoute =
+        url.includes('/bookings') ||
+        url.includes('/notifications') ||
+        url.includes('/availabilities') ||
+        url.includes('/properties') ||
+        url.includes('/reviews') ||
+        url.includes('/users/');
 
-      // Redirige vers /login
-      if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
-        window.location.href = '/login';
+      if (!isActionOrConsultationRoute) {
+        // Déconnecte l'utilisateur en supprimant les données du localStorage
+        localStorage.removeItem('token');
+        localStorage.removeItem('urbanet_token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('urbanet_user');
+
+        // Redirige vers /login
+        if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
       }
     }
     return Promise.reject(error);
@@ -183,13 +196,7 @@ export const getAllResidences = async () => {
 };
 
 export const getResidencesByOwner = async (ownerId) => {
-  try {
-    const response = await api.get('/residences');
-    // Filtrage côté frontend car le backend n'expose pas /owner/{id}
-    return response.data.filter((r) => r.owner?.id === ownerId);
-  } catch (error) {
-    throw new Error(error.response?.data?.message || error.response?.data?.error || error.message);
-  }
+  return await api.get(`/residences/owner/${ownerId}`);
 };
 
 export const createResidence = async (data) => {
@@ -203,6 +210,21 @@ export const createResidence = async (data) => {
       (typeof error.response?.data === 'string' ? error.response.data : null) ||
       error.message ||
       'Erreur lors de la création de la résidence.';
+    throw new Error(errorMsg);
+  }
+};
+
+export const updateResidence = async (id, data) => {
+  try {
+    const response = await api.put(`/residences/${id}`, data);
+    return response.data;
+  } catch (error) {
+    const errorMsg =
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      (typeof error.response?.data === 'string' ? error.response.data : null) ||
+      error.message ||
+      'Erreur lors de la modification de la résidence.';
     throw new Error(errorMsg);
   }
 };
@@ -275,14 +297,22 @@ export const incrementPropertyViews = async (id) => {
   }
 };
 
-export const getPropertiesByOwner = async (ownerId) => {
+export const incrementResidenceViews = async (id) => {
   try {
-    const response = await api.get('/properties');
-    // Filtrage côté frontend car le backend n'expose pas /owner/{id}
-    return response.data.filter((p) => p.owner?.id === ownerId);
+    const response = await api.patch(`/residences/${id}/view`);
+    return response.data;
   } catch (error) {
-    throw new Error(error.response?.data?.message || error.response?.data?.error || error.message);
+    throw new Error(
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      error.message ||
+      "Impossible d'incrémenter le nombre de vues de la résidence."
+    );
   }
+};
+
+export const getPropertiesByOwner = async (ownerId) => {
+  return await api.get(`/properties/owner/${ownerId}`);
 };
 
 export const createProperty = async (data) => {
@@ -300,6 +330,25 @@ export const createProperty = async (data) => {
       (typeof error.response?.data === 'string' ? error.response.data : null) ||
       error.message ||
       'Erreur lors de la création du bien.';
+    throw new Error(errorMsg);
+  }
+};
+
+export const updateProperty = async (id, data) => {
+  try {
+    const response = await api.put(`/properties/${id}`, data, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    return response.data;
+  } catch (error) {
+    const errorMsg =
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      (typeof error.response?.data === 'string' ? error.response.data : null) ||
+      error.message ||
+      'Erreur lors de la modification du bien.';
     throw new Error(errorMsg);
   }
 };
@@ -358,17 +407,7 @@ export const deleteAvailability = async (id) => {
 };
 
 export const createBooking = async (data) => {
-  try {
-    const response = await api.post('/bookings', data);
-    return response.data;
-  } catch (error) {
-    throw new Error(
-      error.response?.data?.message ||
-      error.response?.data?.error ||
-      error.message ||
-      'Impossible de réserver ce créneau.'
-    );
-  }
+  return await api.post('/bookings', data);
 };
 
 export const getClientBookings = async (clientId) => {
@@ -399,9 +438,10 @@ export const getOwnerBookings = async (ownerId) => {
   }
 };
 
-export const updateBookingStatus = async (bookingId, status) => {
+export const updateBookingStatus = async (bookingId, status, reason) => {
   try {
-    const response = await api.patch(`/bookings/${bookingId}/status?status=${status}`);
+    const reasonParam = reason ? `&reason=${encodeURIComponent(reason)}` : '';
+    const response = await api.patch(`/bookings/${bookingId}/status?status=${status}${reasonParam}`);
     return response.data;
   } catch (error) {
     throw new Error(
@@ -409,6 +449,49 @@ export const updateBookingStatus = async (bookingId, status) => {
       error.response?.data?.error ||
       error.message ||
       'Impossible de mettre à jour le statut de la visite.'
+    );
+  }
+};
+
+export const cancelBooking = async (bookingId, reason) => {
+  try {
+    const reasonParam = reason ? `?reason=${encodeURIComponent(reason)}` : '';
+    const response = await api.patch(`/bookings/${bookingId}/cancel${reasonParam}`);
+    return response.data;
+  } catch (error) {
+    throw new Error(
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      error.message ||
+      "Impossible d'annuler la visite."
+    );
+  }
+};
+
+export const rescheduleBooking = async (id, newAvailabilityId) => {
+  try {
+    const response = await api.patch(`/bookings/${id}/reschedule?newAvailabilityId=${newAvailabilityId}`);
+    return response.data;
+  } catch (error) {
+    throw new Error(
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      error.message ||
+      'Impossible de replanifier la visite.'
+    );
+  }
+};
+
+export const respondToReschedule = async (id, accept) => {
+  try {
+    const response = await api.patch(`/bookings/${id}/respond-reschedule?accept=${accept}`);
+    return response.data;
+  } catch (error) {
+    throw new Error(
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      error.message ||
+      'Impossible de répondre à la replanification.'
     );
   }
 };
@@ -437,6 +520,34 @@ export const getReviewsByTargetUser = async (targetUserId) => {
       error.response?.data?.error ||
       error.message ||
       'Impossible de charger les avis.'
+    );
+  }
+};
+
+export const getReviewsByClient = async (clientId) => {
+  try {
+    const response = await api.get(`/reviews/client/${clientId}`);
+    return response.data;
+  } catch (error) {
+    throw new Error(
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      error.message ||
+      'Impossible de charger vos avis publiés.'
+    );
+  }
+};
+
+export const getReviewsByProperty = async (propertyId) => {
+  try {
+    const response = await api.get(`/reviews/property/${propertyId}`);
+    return response.data;
+  } catch (error) {
+    throw new Error(
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      error.message ||
+      'Impossible de charger les avis pour cette annonce.'
     );
   }
 };
@@ -509,6 +620,66 @@ export const verifyUser = async (id) => {
     throw new Error(error.response?.data?.message || error.response?.data?.error || error.message);
   }
 };
+
+export const getPendingListings = async () => {
+  try {
+    const response = await api.get('/admin/pending-listings');
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || error.response?.data?.error || error.message);
+  }
+};
+
+export const getPendingResidences = async () => {
+  try {
+    const response = await api.get('/admin/pending-residences');
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || error.response?.data?.error || error.message);
+  }
+};
+
+export const approveProperty = async (id) => {
+  try {
+    const response = await api.patch(`/admin/approve-property/${id}`);
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || error.response?.data?.error || error.message);
+  }
+};
+export const verifyPropertyListing = approveProperty;
+export const verifyProperty = approveProperty;
+
+export const rejectPropertyListing = async (id) => {
+  try {
+    const response = await api.patch(`/admin/reject-property/${id}`);
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || error.response?.data?.error || error.message);
+  }
+};
+export const rejectProperty = rejectPropertyListing;
+
+export const approveResidence = async (id) => {
+  try {
+    const response = await api.patch(`/admin/approve-residence/${id}`);
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || error.response?.data?.error || error.message);
+  }
+};
+export const verifyResidenceListing = approveResidence;
+export const verifyResidence = approveResidence;
+
+export const rejectResidenceListing = async (id) => {
+  try {
+    const response = await api.patch(`/admin/reject-residence/${id}`);
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || error.response?.data?.error || error.message);
+  }
+};
+export const rejectResidence = rejectResidenceListing;
 
 export const togglePropertyAvailability = async (id) => {
   try {

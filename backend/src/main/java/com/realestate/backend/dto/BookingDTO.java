@@ -18,6 +18,7 @@ public class BookingDTO {
     private PropertyDTO property;
     private AvailabilityDTO availability;
     private BookingStatus status;
+    private String cancellationReason;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

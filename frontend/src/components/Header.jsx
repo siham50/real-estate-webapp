@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import NotificationDropdown from './layout/NotificationDropdown';
@@ -6,14 +6,35 @@ import NotificationDropdown from './layout/NotificationDropdown';
 const Header = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [searchCity, setSearchCity] = useState('');
 
   // On considère l'utilisateur connecté uniquement s'il possède un id valide
   const isLoggedIn = Boolean(user && user.id);
+  const userRole = String(user?.role || '').toUpperCase();
+  const isAgency =
+    userRole === 'PROFESSIONAL' ||
+    userRole === 'AGENCE' ||
+    userRole === 'AGENCY' ||
+    userRole.includes('PRO') ||
+    userRole.includes('AGENC') ||
+    Boolean(user?.companyName);
+  const isAdmin = userRole === 'ADMIN' || userRole.includes('ADMIN');
+  const isClient = userRole === 'CLIENT' || (!isAgency && !isAdmin && isLoggedIn);
+
+  const handleHeaderSearch = (e) => {
+    e.preventDefault();
+    const trimmed = searchCity.trim();
+    if (trimmed) {
+      navigate(`/properties?city=${encodeURIComponent(trimmed)}`);
+    } else {
+      navigate('/properties');
+    }
+  };
 
   const handleLogoClick = () => {
-    if (user?.role === 'ADMIN') {
+    if (isAdmin) {
       navigate('/admin');
-    } else if (user?.role === 'PROFESSIONAL' || user?.role === 'AGENCE') {
+    } else if (isAgency) {
       navigate('/agency/dashboard');
     } else {
       navigate('/');
@@ -21,9 +42,9 @@ const Header = () => {
   };
 
   const handleProfileClick = () => {
-    if (user?.role === 'ADMIN') {
+    if (isAdmin) {
       navigate('/admin');
-    } else if (user?.role === 'PROFESSIONAL' || user?.role === 'AGENCE') {
+    } else if (isAgency) {
       navigate('/profile/agency');
     } else {
       navigate('/profile/client');
@@ -57,27 +78,9 @@ const Header = () => {
           <span className="urbanet-logo-title">Urbanet</span>
         </span>
 
-        {/* Navigation centrale */}
-        <nav className="urbanet-nav">
-          {user?.role === 'ADMIN' ? (
-            <NavLink
-              to="/admin"
-              className={({ isActive }) =>
-                `urbanet-nav-pill ${isActive ? 'active' : ''}`
-              }
-            >
-              Mon Espace
-            </NavLink>
-          ) : (user?.role === 'PROFESSIONAL' || user?.role === 'AGENCE') ? (
-            <NavLink
-              to="/agency/dashboard"
-              className={({ isActive }) =>
-                `urbanet-nav-pill ${isActive ? 'active' : ''}`
-              }
-            >
-              Mon Espace
-            </NavLink>
-          ) : (
+        {/* Navigation centrale (uniquement pour les visiteurs et clients, masquée pour l'agence et l'admin) */}
+        {!isAgency && !isAdmin && (
+          <nav className="urbanet-nav">
             <NavLink
               to="/"
               end
@@ -87,56 +90,60 @@ const Header = () => {
             >
               Accueil
             </NavLink>
-          )}
-          <a href="/#annonces" className="urbanet-nav-link">
-            Biens
-          </a>
-          <a href="/#residences" className="urbanet-nav-link">
-            Résidences
-          </a>
-        </nav>
+            <a href="/#annonces" className="urbanet-nav-link">
+              Biens
+            </a>
+            <a href="/#residences" className="urbanet-nav-link">
+              Résidences
+            </a>
+          </nav>
+        )}
 
         {/* Actions à droite */}
         <div className="urbanet-header-actions">
-          <button type="button" className="urbanet-icon-btn" aria-label="Recherche">
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-          </button>
+          {/* Barre de recherche dans le Header (masquée pour les agences et administrateurs) */}
+          {!isAgency && !isAdmin && (
+            <form onSubmit={handleHeaderSearch} className="urbanet-header-search-wrap">
+              <input
+                type="text"
+                placeholder="Ville (ex: Casablanca)..."
+                value={searchCity}
+                onChange={(e) => setSearchCity(e.target.value)}
+                className="urbanet-header-search-input"
+                aria-label="Rechercher par ville"
+              />
+              <button
+                type="submit"
+                className="urbanet-header-search-btn"
+                aria-label="Rechercher"
+                title="Rechercher"
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+              </button>
+            </form>
+          )}
 
           {isLoggedIn ? (
             <div className="urbanet-user-header-group">
-              {/* Notifications */}
-              <NotificationDropdown />
-
-              {/* Bouton Messages pour Client ou Agence */}
-              <button
-                type="button"
-                className="urbanet-header-messages-btn"
-                onClick={() => navigate('/messages')}
-                title="Mes discussions"
-              >
-                <span className="header-messages-icon">✉️</span>
-                <span className="header-messages-text">Messages</span>
-              </button>
-
-              {/* Bouton "Mon Espace Agence" uniquement pour les professionnels */}
-              {(user.role === 'PROFESSIONAL' || user.role === 'AGENCE') && (
+              {/* Bouton "Mon Espace" pour les agences */}
+              {isAgency && (
                 <button
                   type="button"
                   className="agency-header-dashboard-btn"
                   onClick={() => navigate('/agency/dashboard')}
-                  title="Tableau de bord agence"
+                  title="Mon Espace Agence"
                 >
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <rect x="3" y="3" width="7" height="7" />
@@ -149,7 +156,7 @@ const Header = () => {
               )}
 
               {/* Bouton "Administration" pour les admins */}
-              {user.role === 'ADMIN' && (
+              {isAdmin && (
                 <button
                   type="button"
                   className="agency-header-dashboard-btn"
@@ -165,19 +172,54 @@ const Header = () => {
                   Admin
                 </button>
               )}
+
+              {/* Notifications */}
+              <NotificationDropdown />
+
+              {/* Bouton Messages pour Client ou Agence */}
+              <button
+                type="button"
+                className="urbanet-header-messages-btn"
+                onClick={() => navigate('/messages')}
+                title="Mes discussions"
+              >
+                <span className="header-messages-icon">✉️</span>
+                <span className="header-messages-text">Messages</span>
+              </button>
+
+              {/* Bouton "Mon Espace" pour les clients */}
+              {isClient && (
+                <button
+                  type="button"
+                  className="agency-header-dashboard-btn"
+                  onClick={() => navigate('/client/dashboard')}
+                  title="Mon Espace Client"
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                  </svg>
+                  Mon Espace
+                </button>
+              )}
+
+              {/* Bouton Profil */}
               <button
                 type="button"
                 onClick={handleProfileClick}
                 className="urbanet-header-profile-btn"
+                title="Mon profil"
               >
                 <div className="header-avatar-circle">
                   {user.firstName ? user.firstName.charAt(0).toUpperCase() : 'U'}
                 </div>
                 <span className="header-user-name">{user.firstName}</span>
                 <span className="header-user-role-badge">
-                  {user.role === 'ADMIN' ? 'Admin' : (user.role === 'PROFESSIONAL' || user.role === 'AGENCE' ? 'Agence' : 'Client')}
+                  {isAdmin ? 'Admin' : isAgency ? 'Agence' : 'Client'}
                 </span>
               </button>
+
+              {/* Bouton Déconnexion */}
               <button
                 type="button"
                 onClick={logout}

@@ -59,11 +59,17 @@ public class UserController {
     }
 
     @PutMapping("/{id}/profile")
-    public ResponseEntity<UserDTO> updateProfile(@PathVariable Long id, @RequestBody UpdateProfileDTO dto) {
+    public ResponseEntity<?> updateProfile(@PathVariable Long id, @RequestBody UpdateProfileDTO dto) {
         try {
             return ResponseEntity.ok(userService.updateProfile(id, dto));
         } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
+            if ("User not found".equals(e.getMessage())) {
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.badRequest().body(Map.of(
+                    "message", e.getMessage() != null ? e.getMessage() : "Erreur lors de la mise à jour du profil.",
+                    "error", e.getMessage() != null ? e.getMessage() : "Erreur lors de la mise à jour du profil."
+            ));
         }
     }
 

@@ -24,6 +24,11 @@ public class ResidenceController {
         return ResponseEntity.ok(residenceService.getAllResidences());
     }
 
+    @GetMapping({"/owner/{ownerId}", "/user/{ownerId}"})
+    public ResponseEntity<List<ResidenceDTO>> getResidencesByOwner(@PathVariable Long ownerId) {
+        return ResponseEntity.ok(residenceService.getResidencesByOwnerId(ownerId));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<ResidenceDTO> getResidenceById(@PathVariable Long id) {
         try {
@@ -69,6 +74,15 @@ public class ResidenceController {
     public ResponseEntity<ResidenceDTO> toggleAvailability(@PathVariable Long id) {
         try {
             return ResponseEntity.ok(residenceService.toggleAvailability(id));
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PatchMapping("/{id}/view")
+    public ResponseEntity<ResidenceDTO> incrementViews(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(residenceService.incrementViews(id));
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }

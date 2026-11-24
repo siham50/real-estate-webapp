@@ -3,12 +3,13 @@ import { useAuth } from '../../context/AuthContext';
 import { updateProfile, getUserProfile } from '../../services/api';
 
 const EditProfileForm = ({ onProfileUpdated }) => {
-  const { user, updateUserState } = useAuth();
+  const { user, updateUser, updateUserState } = useAuth();
 
   const isAgency = user?.role === 'PROFESSIONAL' || user?.role === 'AGENCE';
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [companyName, setCompanyName] = useState('');
   const [rcNumber, setRcNumber] = useState('');
@@ -17,11 +18,12 @@ const EditProfileForm = ({ onProfileUpdated }) => {
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState({ type: '', message: '' });
 
-  // Pré-remplissage des champs avec les données actuelles de l'utilisateur
+  // Pré-remplissage de tous les champs avec les données actuelles de l'utilisateur (AuthContext)
   useEffect(() => {
     if (user) {
       setFirstName(user.firstName || '');
       setLastName(user.lastName || '');
+      setEmail(user.email || '');
       setPhone(user.phone || '');
       setCompanyName(user.companyName || '');
       setRcNumber(user.rcNumber || '');
@@ -40,6 +42,7 @@ const EditProfileForm = ({ onProfileUpdated }) => {
       const payload = {
         firstName: firstName.trim(),
         lastName: lastName.trim(),
+        email: email.trim(),
         phone: phone.trim(),
       };
 
@@ -56,29 +59,34 @@ const EditProfileForm = ({ onProfileUpdated }) => {
       if (updatedUser) {
         setFirstName(updatedUser.firstName || firstName);
         setLastName(updatedUser.lastName || lastName);
+        setEmail(updatedUser.email || email);
         setPhone(updatedUser.phone || phone);
         if (updatedUser.companyName !== undefined) setCompanyName(updatedUser.companyName || '');
         if (updatedUser.rcNumber !== undefined) setRcNumber(updatedUser.rcNumber || '');
         if (updatedUser.iceNumber !== undefined) setIceNumber(updatedUser.iceNumber || '');
       }
 
-      // Mise à jour immédiate de l'AuthContext et du localStorage
-      updateUserState(updatedUser);
+      // Mise à jour du AuthContext et du localStorage pour refléter les données sans rechargement
+      const updateFn = updateUser || updateUserState;
+      if (updateFn) {
+        updateFn(updatedUser);
+      }
 
-      // Rechargement des données fraîches depuis le backend pour garantir une synchronisation complète
+      // Rechargement synchronisé depuis le backend en cas d'informations additionnelles
       try {
         const freshProfile = await getUserProfile(user.id);
-        if (freshProfile) {
-          updateUserState(freshProfile);
+        if (freshProfile && updateFn) {
+          updateFn(freshProfile);
           if (freshProfile.firstName) setFirstName(freshProfile.firstName);
           if (freshProfile.lastName) setLastName(freshProfile.lastName);
+          if (freshProfile.email) setEmail(freshProfile.email);
           if (freshProfile.phone) setPhone(freshProfile.phone);
           if (freshProfile.companyName !== undefined) setCompanyName(freshProfile.companyName || '');
           if (freshProfile.rcNumber !== undefined) setRcNumber(freshProfile.rcNumber || '');
           if (freshProfile.iceNumber !== undefined) setIceNumber(freshProfile.iceNumber || '');
         }
       } catch {
-        // En cas d'indisponibilité, updatedUser est déjà appliqué
+        // En cas d'erreur de requête additionnelle, updatedUser est déjà appliqué
       }
 
       setFeedback({
@@ -202,15 +210,17 @@ const EditProfileForm = ({ onProfileUpdated }) => {
           />
         </div>
 
-        {/* Email non modifiable */}
+        {/* Email modifiable */}
         <div className="form-group">
-          <label htmlFor="email">Adresse email (non modifiable)</label>
+          <label htmlFor="email">Adresse email *</label>
           <input
             id="email"
             type="email"
-            disabled
-            className="input-field input-field-disabled"
-            value={user?.email || ''}
+            required
+            className="input-field"
+            placeholder="Ex: exemple@domaine.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
           />
         </div>
 
@@ -228,4 +238,3 @@ const EditProfileForm = ({ onProfileUpdated }) => {
 };
 
 export default EditProfileForm;
-

@@ -10,16 +10,20 @@ import MessagesPage from './pages/MessagesPage';
 import ClientProfilePage from './pages/ClientProfilePage';
 import AgencyProfilePage from './pages/AgencyProfilePage';
 import AgencyDashboard from './pages/AgencyDashboard';
+import ClientDashboard from './pages/ClientDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminStats from './components/admin/AdminStats';
 import AdminUsers from './components/admin/AdminUsers';
 import AdminProperties from './components/admin/AdminProperties';
+import AdminPendingListings from './components/admin/AdminPendingListings';
 import AdminReports from './components/admin/AdminReports';
 import ProtectedRoute from './components/ProtectedRoute';
+import ScrollToTop from './components/utils/ScrollToTop';
 
 function App() {
   return (
     <AuthProvider>
+      <ScrollToTop />
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/properties" element={<SearchResultsPage />} />
@@ -39,6 +43,14 @@ function App() {
           element={
             <ProtectedRoute requiredRole="CLIENT">
               <ClientProfilePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/client/dashboard"
+          element={
+            <ProtectedRoute requiredRole="CLIENT">
+              <ClientDashboard />
             </ProtectedRoute>
           }
         />
@@ -71,6 +83,7 @@ function App() {
           <Route index element={<AdminStats />} />
           <Route path="users" element={<AdminUsers />} />
           <Route path="properties" element={<AdminProperties />} />
+          <Route path="pending-listings" element={<AdminPendingListings />} />
           <Route path="reports" element={<AdminReports />} />
         </Route>
       </Routes>

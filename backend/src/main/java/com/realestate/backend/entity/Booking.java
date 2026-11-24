@@ -32,8 +32,8 @@ public class Booking {
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Property property;
 
-    @OneToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "availability_id", unique = true, nullable = false)
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "availability_id", nullable = false)
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Availability availability;
 
@@ -47,6 +47,9 @@ public class Booking {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @Column(name = "cancellation_reason", length = 500)
+    private String cancellationReason;
 
     @Transient
     private Long clientId;

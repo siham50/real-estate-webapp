@@ -1,5 +1,6 @@
 package com.realestate.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,6 +23,7 @@ public class ResidenceDocument {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "residence_id", nullable = false)
+    @JsonIgnore
     private Residence residence;
 
     @Column(name = "document_url", nullable = false)

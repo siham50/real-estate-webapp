@@ -32,6 +32,8 @@ const LoginPage = () => {
         navigate('/admin');
       } else if (userRole === 'PROFESSIONAL' || userRole === 'AGENCE') {
         navigate('/agency/dashboard');
+      } else if (userRole === 'CLIENT') {
+        navigate('/');
       } else {
         navigate('/');
       }
@@ -45,6 +47,10 @@ const LoginPage = () => {
   return (
     <div className="auth-container">
       <div className="auth-card">
+        <Link to="/" className="back-link">
+          ← Retour à l'accueil
+        </Link>
+
         {/* En-tête avec logo Urbanet */}
         <div className="auth-header">
           <Link to="/" className="urbanet-logo auth-logo-center">

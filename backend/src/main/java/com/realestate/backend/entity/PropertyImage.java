@@ -1,6 +1,7 @@
 package com.realestate.backend.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -27,6 +28,7 @@ public class PropertyImage {
     @Column(name = "image_url", nullable = false, length = 255)
     private String imageUrl;
 
+    @JsonProperty("isPrimary")
     @Builder.Default
     @Column(name = "is_primary", nullable = false)
     private boolean isPrimary = false;

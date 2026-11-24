@@ -1,6 +1,24 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+export const MOROCCAN_CITIES = [
+  'Casablanca',
+  'Rabat',
+  'Marrakech',
+  'Fès',
+  'Tanger',
+  'Agadir',
+  'Meknès',
+  'Oujda',
+  'Kénitra',
+  'Tétouan',
+  'Salé',
+  'Safi',
+  'El Jadida',
+  'Nador',
+  'Mohammedia',
+];
+
 const SearchBar = ({ initialValues = {} }) => {
   const navigate = useNavigate();
   const [transactionType, setTransactionType] = useState(
@@ -96,12 +114,11 @@ const SearchBar = ({ initialValues = {} }) => {
               className="urbanet-select"
             >
               <option value="">Toutes les villes</option>
-              <option value="Casablanca">Casablanca</option>
-              <option value="Marrakech">Marrakech</option>
-              <option value="Rabat">Rabat</option>
-              <option value="Tanger">Tanger</option>
-              <option value="Agadir">Agadir</option>
-              <option value="Fès">Fès</option>
+              {MOROCCAN_CITIES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
             </select>
             <svg
               className="select-chevron"

@@ -11,6 +11,7 @@ import com.realestate.backend.entity.User;
 import com.realestate.backend.entity.enums.PropertyPurpose;
 import com.realestate.backend.entity.enums.PropertyType;
 import com.realestate.backend.entity.enums.Role;
+import com.realestate.backend.entity.enums.VerificationStatus;
 import com.realestate.backend.repository.AgencyProfileRepository;
 import com.realestate.backend.repository.PropertyRepository;
 import com.realestate.backend.repository.ResidenceRepository;
@@ -32,7 +33,8 @@ public class PropertyService {
     private final AgencyProfileRepository agencyProfileRepository;
 
     public List<PropertyDTO> getAllProperties() {
-        return propertyRepository.findByIsAvailableTrueAndIsDeletedFalse().stream()
+        return propertyRepository.findByVerificationStatusAndIsDeletedFalse(VerificationStatus.VERIFIED).stream()
+                .filter(p -> !p.isDeleted() && p.isAvailable() && p.getVerificationStatus() == VerificationStatus.VERIFIED)
                 .map(DtoMapper::toPropertyDTO)
                 .toList();
     }
@@ -62,10 +64,14 @@ public class PropertyService {
                 if (!agencyProfile.isVerified()) {
                     throw new RuntimeException("Votre compte agence doit être vérifié par un administrateur avant de publier.");
                 }
+                property.setVerificationStatus(VerificationStatus.VERIFIED);
+                property.setAvailable(true);
             } else if (owner.getRole() == Role.CLIENT) {
                 if (!Boolean.TRUE.equals(owner.getIsIdentityVerified())) {
                     throw new RuntimeException("Vous devez faire vérifier votre CIN avant de publier.");
                 }
+                property.setVerificationStatus(VerificationStatus.PENDING);
+                property.setAvailable(false);
             }
         }
 
@@ -77,18 +83,38 @@ public class PropertyService {
             property.setResidence(null);
         }
 
+        if (property.getDocuments() != null) {
+            for (PropertyDocument doc : property.getDocuments()) {
+                doc.setProperty(property);
+            }
+        }
+
         if (property.getDocumentUrl() != null && !property.getDocumentUrl().isBlank()) {
-            PropertyDocument doc = PropertyDocument.builder()
-                    .property(property)
-                    .documentUrl(property.getDocumentUrl())
-                    .build();
             if (property.getDocuments() == null) {
                 property.setDocuments(new ArrayList<>());
             }
-            property.getDocuments().add(doc);
+            boolean exists = property.getDocuments().stream()
+                    .anyMatch(d -> property.getDocumentUrl().equals(d.getDocumentUrl()));
+            if (!exists) {
+                PropertyDocument doc = PropertyDocument.builder()
+                        .property(property)
+                        .documentUrl(property.getDocumentUrl())
+                        .build();
+                property.getDocuments().add(doc);
+            }
+        }
+
+        if (property.getOwner() != null && property.getOwner().getRole() == Role.CLIENT) {
+            if (property.getDocuments() == null || property.getDocuments().isEmpty()) {
+                throw new RuntimeException("Vous devez fournir au moins un document justificatif de propriété.");
+            }
         }
 
         if (property.getImages() != null && !property.getImages().isEmpty()) {
+            boolean hasPrimary = property.getImages().stream().anyMatch(PropertyImage::isPrimary);
+            if (!hasPrimary) {
+                property.getImages().get(0).setPrimary(true);
+            }
             for (PropertyImage img : property.getImages()) {
                 img.setProperty(property);
             }
@@ -150,6 +176,17 @@ public class PropertyService {
                     .orElseThrow(() -> new RuntimeException("Owner not found"));
             existingProperty.setOwner(owner);
         }
+        if (updatedProperty.getImages() != null) {
+            existingProperty.getImages().clear();
+            boolean hasPrimary = updatedProperty.getImages().stream().anyMatch(PropertyImage::isPrimary);
+            if (!hasPrimary && !updatedProperty.getImages().isEmpty()) {
+                updatedProperty.getImages().get(0).setPrimary(true);
+            }
+            for (PropertyImage img : updatedProperty.getImages()) {
+                img.setProperty(existingProperty);
+                existingProperty.getImages().add(img);
+            }
+        }
 
         Property savedProperty = propertyRepository.save(existingProperty);
         return DtoMapper.toPropertyDTO(savedProperty);
@@ -168,6 +205,12 @@ public class PropertyService {
         property.setAvailable(!property.isAvailable());
         Property updated = propertyRepository.save(property);
         return DtoMapper.toPropertyDTO(updated);
+    }
+
+    public List<PropertyDTO> getPropertiesByOwnerId(Long ownerId) {
+        return propertyRepository.findByOwnerIdAndIsDeletedFalse(ownerId).stream()
+                .map(DtoMapper::toPropertyDTO)
+                .toList();
     }
 
     public List<PropertyDTO> getAllPropertiesAdmin() {

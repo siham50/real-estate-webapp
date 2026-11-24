@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
+import { useParams, useNavigate, Link, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
   getPropertyById,
@@ -14,6 +14,7 @@ import PropertyMap from '../components/property/PropertyMap';
 import LoanCalculator from '../components/property/LoanCalculator';
 import ContactOwnerButton from '../components/property/ContactOwnerButton';
 import ReportModal from '../components/property/ReportModal';
+import { getImageUrl, DEFAULT_PLACEHOLDER_IMAGE } from '../utils/imageUtils';
 import {
   DEFAULT_PROPERTIES,
   TYPE_IMAGES,
@@ -28,6 +29,16 @@ const PropertyDetailsPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isAuthenticated } = useAuth();
+  const userRole = String(user?.role || '').toUpperCase();
+  const isAgency = userRole === 'PROFESSIONAL' || userRole === 'AGENCE';
+  const isAdmin = userRole === 'ADMIN';
+
+  if (isAgency) {
+    return <Navigate to="/agency/dashboard" replace />;
+  }
+  if (isAdmin) {
+    return <Navigate to="/admin" replace />;
+  }
 
   // État du bien immobilier
   const [property, setProperty] = useState(null);
@@ -214,21 +225,41 @@ const PropertyDetailsPage = () => {
     return user.id !== realOwnerId;
   }, [isAuthenticated, user, property]);
 
-  // Image d'affichage principale
+  // Image d'affichage principale (priorité absolue à isPrimary === true)
   const propertyHeroImage = useMemo(() => {
-    if (!property) return FALLBACK_DEFAULT_IMAGE;
-    if (property.image) return property.image;
+    if (!property) return DEFAULT_PLACEHOLDER_IMAGE;
+
+    let displayImage = null;
+    if (property.images && property.images.length > 0) {
+      // Cherche spécifiquement l'image qui a isPrimary = true
+      const primaryImg = property.images.find((img) => img.isPrimary === true || img.primary === true);
+      // Si elle n'existe pas (bug), prend la première par défaut
+      displayImage = primaryImg ? primaryImg : property.images[0];
+    }
+
+    if (displayImage) {
+      const path = typeof displayImage === 'string' ? displayImage : displayImage.imageUrl;
+      if (path) return getImageUrl(path);
+    }
+    if (property.image) return getImageUrl(property.image);
     if (property.documents && property.documents.length > 0) {
       const imgDoc = property.documents.find(
         (d) => d.documentType === 'PHOTO' || (d.documentUrl && d.documentUrl.match(/\.(jpeg|jpg|png|webp)/i))
       );
-      if (imgDoc?.documentUrl) return imgDoc.documentUrl;
+      if (imgDoc?.documentUrl) return getImageUrl(imgDoc.documentUrl);
     }
     if (property.type && TYPE_IMAGES[property.type]) {
       return TYPE_IMAGES[property.type][0];
     }
-    return FALLBACK_DEFAULT_IMAGE;
+    return DEFAULT_PLACEHOLDER_IMAGE;
   }, [property]);
+
+  const [selectedImage, setSelectedImage] = useState(null);
+  const activeHeroImage = selectedImage || propertyHeroImage;
+
+  useEffect(() => {
+    setSelectedImage(null);
+  }, [property?.id]);
 
   // Créneau sélectionné objet
   const selectedSlot = useMemo(() => {
@@ -253,21 +284,34 @@ const PropertyDetailsPage = () => {
     setBookingError(null);
 
     const payload = {
+      client: { id: user.id },
+      property: { id: Number(id) },
+      availability: { id: Number(selectedSlotId) },
       clientId: user.id,
       propertyId: Number(id),
       availabilityId: Number(selectedSlotId),
     };
 
+    console.log('Payload de réservation envoyé à createBooking :', payload);
+
     try {
       const res = await createBooking(payload);
+      console.log('Réponse réservation reçue du backend :', res);
+      const bookingData = res?.data || res;
       setBookingSuccess(true);
-      setBookingSuccessData(res || { slot: selectedSlot });
+      setBookingSuccessData(bookingData || { slot: selectedSlot });
       // Rafraîchir les créneaux pour retirer celui qui vient d'être réservé
       if (ownerId) {
         fetchAvailableSlots(ownerId);
       }
     } catch (err) {
-      setBookingError(err.message || 'Une erreur est survenue lors de la réservation.');
+      console.error('Erreur lors de la réservation :', err);
+      setBookingError(
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        err.message ||
+        'Une erreur est survenue lors de la réservation.'
+      );
     } finally {
       setBookingLoading(false);
     }
@@ -411,14 +455,91 @@ const PropertyDetailsPage = () => {
                 {/* Galerie / Image Showcase */}
                 <div className="property-details-hero-gallery">
                   <img
-                    src={propertyHeroImage}
+                    src={activeHeroImage}
                     alt={property.title}
                     className="property-details-hero-img"
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = DEFAULT_PLACEHOLDER_IMAGE;
+                    }}
                   />
                   <div className="hero-img-badge-overlay">
                     <span>Photos certifiées haute résolution</span>
                   </div>
                 </div>
+
+                {/* Carrousel de vignettes si plusieurs photos */}
+                {Array.isArray(property.images) && property.images.length > 1 && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      gap: '10px',
+                      marginTop: '12px',
+                      overflowX: 'auto',
+                      paddingBottom: '8px',
+                    }}
+                  >
+                    {property.images.map((img, idx) => {
+                      const src = getImageUrl(typeof img === 'string' ? img : img?.imageUrl);
+                      const isSelected = activeHeroImage === src;
+                      const isPrimary = Boolean(img?.isPrimary);
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => setSelectedImage(src)}
+                          style={{
+                            position: 'relative',
+                            padding: 0,
+                            border: isSelected
+                              ? '2px solid var(--color-primary, #0f172a)'
+                              : '2px solid transparent',
+                            borderRadius: '8px',
+                            overflow: 'hidden',
+                            cursor: 'pointer',
+                            flexShrink: 0,
+                            background: 'none',
+                            outline: 'none',
+                          }}
+                          title={isPrimary ? 'Image principale' : `Photo ${idx + 1}`}
+                        >
+                          <img
+                            src={src}
+                            alt=""
+                            style={{
+                              width: '84px',
+                              height: '62px',
+                              objectFit: 'cover',
+                              display: 'block',
+                            }}
+                            onError={(e) => {
+                              e.currentTarget.onerror = null;
+                              e.currentTarget.src = DEFAULT_PLACEHOLDER_IMAGE;
+                            }}
+                          />
+                          {isPrimary && (
+                            <span
+                              style={{
+                                position: 'absolute',
+                                top: '3px',
+                                left: '3px',
+                                background: '#eab308',
+                                color: '#000',
+                                fontSize: '10px',
+                                fontWeight: 700,
+                                borderRadius: '6px',
+                                padding: '1px 5px',
+                                lineHeight: 1.2,
+                              }}
+                            >
+                              ⭐
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
 
                 {/* Grille des caractéristiques clés */}
                 <div className="property-specs-grid-cards">
@@ -482,12 +603,6 @@ const PropertyDetailsPage = () => {
                   </div>
                 </div>
 
-                {/* Emplacement & Carte Interactive */}
-                <PropertyMap
-                  latitude={property.latitude}
-                  longitude={property.longitude}
-                  title={property.title}
-                />
                 <div className="property-details-section-card owner-section-card">
                   <h2 className="section-card-title">Propriétaire & Gestionnaire</h2>
                   <div className="owner-profile-row">
@@ -873,6 +988,13 @@ const PropertyDetailsPage = () => {
 
                 {/* Calculateur de prêt immobilier interactif */}
                 <LoanCalculator price={property.price} />
+
+                {/* Emplacement & Carte Interactive */}
+                <PropertyMap
+                  latitude={property.latitude}
+                  longitude={property.longitude}
+                  title={property.title}
+                />
               </aside>
             </div>
           )}

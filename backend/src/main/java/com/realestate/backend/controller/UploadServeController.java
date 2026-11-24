@@ -17,7 +17,7 @@ import java.nio.file.Path;
 
 @RestController
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
+@CrossOrigin(originPatterns = "*", allowCredentials = "true")
 public class UploadServeController {
 
     private final FileStorageService fileStorageService;

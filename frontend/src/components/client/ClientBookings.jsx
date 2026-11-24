@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { getClientBookings, updateBookingStatus } from '../../services/api';
+import { getClientBookings, updateBookingStatus, respondToReschedule } from '../../services/api';
 import ReviewModal from './ReviewModal';
+import CancelBookingModal from './CancelBookingModal';
 
 const STATUS_CONFIG = {
   PENDING: { label: 'En attente', className: 'status-pill-pending' },
@@ -18,12 +19,14 @@ const ClientBookings = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [actionLoadingId, setActionLoadingId] = useState(null);
+  const [rescheduleActionLoadingId, setRescheduleActionLoadingId] = useState(null);
 
   // Filtre
   const [filter, setFilter] = useState('ALL');
 
-  // Modale Avis
+  // Modales
   const [selectedBookingForReview, setSelectedBookingForReview] = useState(null);
+  const [selectedBookingForCancel, setSelectedBookingForCancel] = useState(null);
 
   const fetchBookings = useCallback(async () => {
     if (!user?.id) return;
@@ -43,22 +46,17 @@ const ClientBookings = () => {
     fetchBookings();
   }, [fetchBookings]);
 
-  // Annulation de la réservation
-  const handleCancelBooking = async (id, propertyTitle) => {
-    const confirmMsg = `Êtes-vous sûr de vouloir annuler votre demande de visite pour "${propertyTitle || 'ce bien'}" ?`;
-    if (!window.confirm(confirmMsg)) return;
-
-    setActionLoadingId(id);
+  // Réponse à la proposition de replanification
+  const handleRespondReschedule = async (bookingId, accept) => {
+    setRescheduleActionLoadingId(bookingId);
     setError('');
     try {
-      await updateBookingStatus(id, 'CANCELLED');
-      setBookings((prev) =>
-        prev.map((b) => (b.id === id ? { ...b, status: 'CANCELLED' } : b))
-      );
+      await respondToReschedule(bookingId, accept);
+      await fetchBookings();
     } catch (err) {
-      setError(err.message || "Erreur lors de l'annulation de la visite.");
+      setError(err.message || 'Erreur lors de la réponse à la replanification.');
     } finally {
-      setActionLoadingId(null);
+      setRescheduleActionLoadingId(null);
     }
   };
 
@@ -142,6 +140,13 @@ const ClientBookings = () => {
           onClick={() => setFilter('CONFIRMED')}
         >
           Confirmées ({bookings.filter((b) => b.status === 'CONFIRMED').length})
+        </button>
+        <button
+          type="button"
+          className={`filter-btn ${filter === 'RESCHEDULED' ? 'active' : ''}`}
+          onClick={() => setFilter('RESCHEDULED')}
+        >
+          Replanifiées ({bookings.filter((b) => b.status === 'RESCHEDULED').length})
         </button>
         <button
           type="button"
@@ -231,19 +236,81 @@ const ClientBookings = () => {
                       )}
                     </div>
                   </div>
+
+                  {/* Proposition de replanification par l'agence */}
+                  {booking.status === 'RESCHEDULED' && (
+                    <div
+                      className="booking-reschedule-card-box"
+                      style={{
+                        marginTop: '14px',
+                        padding: '14px',
+                        background: '#eff6ff',
+                        border: '1px solid #bfdbfe',
+                        borderRadius: '8px',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                        <span style={{ fontSize: '1.2rem' }}>🔄</span>
+                        <strong style={{ color: '#1e40af', fontSize: '0.92rem' }}>
+                          L'agence propose une nouvelle date
+                        </strong>
+                      </div>
+                      <p style={{ margin: '0 0 12px', fontSize: '0.85rem', color: '#1e3a8a' }}>
+                        Nouveau créneau proposé : <strong>{formatDateDisplay(avail.date)}</strong>
+                        {(avail.startTime || avail.endTime) && (
+                          <span> (de {formatTimeDisplay(avail.startTime)} à {formatTimeDisplay(avail.endTime)})</span>
+                        )}
+                      </p>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                          type="button"
+                          onClick={() => handleRespondReschedule(booking.id, true)}
+                          disabled={rescheduleActionLoadingId === booking.id}
+                          style={{
+                            background: '#16a34a',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: '6px',
+                            padding: '7px 16px',
+                            fontSize: '0.84rem',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          {rescheduleActionLoadingId === booking.id ? 'Traitement...' : '✓ Accepter'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRespondReschedule(booking.id, false)}
+                          disabled={rescheduleActionLoadingId === booking.id}
+                          style={{
+                            background: '#fee2e2',
+                            color: '#b91c1c',
+                            border: '1px solid #fca5a5',
+                            borderRadius: '6px',
+                            padding: '7px 16px',
+                            fontSize: '0.84rem',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          {rescheduleActionLoadingId === booking.id ? 'Traitement...' : '✕ Refuser'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Footer Carte : Actions */}
                 <div className="booking-card-footer">
-                  {/* Si PENDING ou CONFIRMED : bouton d'annulation */}
+                  {/* Si PENDING ou CONFIRMED : bouton d'annulation ouvrant CancelBookingModal */}
                   {(booking.status === 'PENDING' || booking.status === 'CONFIRMED') && (
                     <button
                       type="button"
-                      onClick={() => handleCancelBooking(booking.id, prop.title)}
-                      disabled={isCancelling}
+                      onClick={() => setSelectedBookingForCancel(booking)}
                       className="btn-booking-cancel"
                     >
-                      {isCancelling ? 'Annulation...' : 'Annuler la demande'}
+                      Annuler
                     </button>
                   )}
 
@@ -260,7 +327,14 @@ const ClientBookings = () => {
 
                   {/* Si CANCELLED */}
                   {booking.status === 'CANCELLED' && (
-                    <span className="booking-cancelled-label">Visite annulée</span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <span className="booking-cancelled-label">Visite annulée</span>
+                      {booking.cancellationReason && (
+                        <span style={{ fontSize: '0.78rem', color: '#64748b', fontStyle: 'italic' }}>
+                          Motif : {booking.cancellationReason}
+                        </span>
+                      )}
+                    </div>
                   )}
 
                   {prop.id && (
@@ -281,6 +355,17 @@ const ClientBookings = () => {
         isOpen={Boolean(selectedBookingForReview)}
         onClose={() => setSelectedBookingForReview(null)}
         onReviewAdded={() => {
+          fetchBookings();
+        }}
+      />
+
+      {/* Modale d'annulation motivée */}
+      <CancelBookingModal
+        booking={selectedBookingForCancel}
+        isOpen={Boolean(selectedBookingForCancel)}
+        onClose={() => setSelectedBookingForCancel(null)}
+        onCancelled={() => {
+          setSelectedBookingForCancel(null);
           fetchBookings();
         }}
       />

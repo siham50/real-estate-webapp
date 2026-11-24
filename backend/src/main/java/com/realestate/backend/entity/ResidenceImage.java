@@ -1,5 +1,7 @@
 package com.realestate.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,11 +22,13 @@ public class ResidenceImage {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "residence_id", nullable = false)
+    @JsonIgnore
     private Residence residence;
 
     @Column(name = "image_url", nullable = false)
     private String imageUrl;
 
+    @JsonProperty("isPrimary")
     @Builder.Default
     @Column(name = "is_primary", nullable = false)
     private boolean isPrimary = false;

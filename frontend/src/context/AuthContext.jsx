@@ -10,6 +10,7 @@ const AuthContext = createContext({
   register: async () => {},
   logout: () => {},
   updateUserState: () => {},
+  updateUser: () => {},
 });
 
 export const AuthProvider = ({ children }) => {
@@ -58,11 +59,20 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     try {
       const response = await apiLogin(data);
-      let fullUser = response;
-      if (response?.id) {
+
+      // Sauvegarde immédiate du token avant toute autre requête API protégée
+      const jwtToken = response?.token || response?.data?.token;
+      if (jwtToken) {
+        setToken(jwtToken);
+        localStorage.setItem('token', jwtToken);
+        localStorage.setItem('urbanet_token', jwtToken);
+      }
+
+      let fullUser = response?.data || response;
+      if (fullUser?.id) {
         try {
-          const profile = await getUserProfile(response.id);
-          fullUser = { ...response, ...profile };
+          const profile = await getUserProfile(fullUser.id);
+          fullUser = { ...fullUser, ...profile };
         } catch (err) {
           // Fallback sur la réponse directe
         }
@@ -71,12 +81,6 @@ export const AuthProvider = ({ children }) => {
       setUser(fullUser);
       localStorage.setItem('user', JSON.stringify(fullUser));
       localStorage.setItem('urbanet_user', JSON.stringify(fullUser));
-
-      if (response?.token) {
-        setToken(response.token);
-        localStorage.setItem('token', response.token);
-        localStorage.setItem('urbanet_token', response.token);
-      }
 
       return fullUser;
     } finally {
@@ -88,10 +92,11 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     try {
       const res = await apiRegister(data);
-      if (res?.token) {
-        setToken(res.token);
-        localStorage.setItem('token', res.token);
-        localStorage.setItem('urbanet_token', res.token);
+      const jwtToken = res?.token || res?.data?.token;
+      if (jwtToken) {
+        setToken(jwtToken);
+        localStorage.setItem('token', jwtToken);
+        localStorage.setItem('urbanet_token', jwtToken);
       }
       return res;
     } finally {
@@ -128,6 +133,7 @@ export const AuthProvider = ({ children }) => {
         register,
         logout,
         updateUserState,
+        updateUser: updateUserState,
       }}
     >
       {children}

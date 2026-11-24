@@ -1,29 +1,28 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams, Link, Navigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import PropertyCard from '../components/PropertyCard';
 import { searchProperties } from '../services/api';
-import { TYPE_IMAGES, TYPE_TRANSLATIONS } from '../components/FeaturedProperties';
+import { TYPE_TRANSLATIONS } from '../components/FeaturedProperties';
+import { MOROCCAN_CITIES } from '../components/SearchBar';
 
-const FALLBACK_DEFAULT_IMAGE =
-  'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=900&q=80';
-
-const CITIES_LIST = [
-  'Casablanca',
-  'Marrakech',
-  'Rabat',
-  'Tanger',
-  'Agadir',
-  'Fès',
-  'Meknès',
-  'Oujda',
-  'Kénitra',
-  'Tétouan',
-  'Mohammedia',
-  'El Jadida',
-];
+const CITIES_LIST = MOROCCAN_CITIES;
 
 const SearchResultsPage = () => {
+  const { user } = useAuth();
+  const userRole = String(user?.role || '').toUpperCase();
+  const isAgency = userRole === 'PROFESSIONAL' || userRole === 'AGENCE';
+  const isAdmin = userRole === 'ADMIN';
+
+  if (isAgency) {
+    return <Navigate to="/agency/dashboard" replace />;
+  }
+  if (isAdmin) {
+    return <Navigate to="/admin" replace />;
+  }
+
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Filtres actifs issus de l'URL
@@ -125,27 +124,6 @@ const SearchResultsPage = () => {
     if (maxPriceParam) count++;
     return count;
   }, [cityParam, typeParam, purposeParam, minPriceParam, maxPriceParam]);
-
-  // Image d'une propriété (résolution de fallback)
-  const getPropertyImage = (item) => {
-    if (item.images && item.images.length > 0 && item.images[0].imageUrl) {
-      const img = item.images[0].imageUrl;
-      if (img.startsWith('http://') || img.startsWith('https://')) return img;
-      return `http://localhost:8080${img.startsWith('/') ? img : `/${img}`}`;
-    }
-    if (item.type && TYPE_IMAGES[item.type] && TYPE_IMAGES[item.type].length > 0) {
-      return TYPE_IMAGES[item.type][0];
-    }
-    return FALLBACK_DEFAULT_IMAGE;
-  };
-
-  // Formatage du prix
-  const formatPrice = (price, purpose) => {
-    if (!price && price !== 0) return 'Prix sur demande';
-    const num = Number(price);
-    const formatted = num.toLocaleString('fr-FR');
-    return purpose === 'RENT' ? `${formatted} MAD / mois` : `${formatted} MAD`;
-  };
 
   return (
     <div className="urbanet-app-root">
@@ -280,22 +258,17 @@ const SearchResultsPage = () => {
                   {/* Ville */}
                   <div className="filter-field-group">
                     <label htmlFor="filterCity" className="filter-label">Ville</label>
-                    <div className="filter-input-wrap">
-                      <input
-                        id="filterCity"
-                        type="text"
-                        list="moroccan-cities"
-                        placeholder="Ex: Casablanca, Marrakech..."
-                        value={cityInput}
-                        onChange={(e) => setCityInput(e.target.value)}
-                        className="filter-input"
-                      />
-                      <datalist id="moroccan-cities">
-                        {CITIES_LIST.map((c) => (
-                          <option key={c} value={c} />
-                        ))}
-                      </datalist>
-                    </div>
+                    <select
+                      id="filterCity"
+                      value={cityInput}
+                      onChange={(e) => setCityInput(e.target.value)}
+                      className="filter-select"
+                    >
+                      <option value="">Toutes les villes</option>
+                      {CITIES_LIST.map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
                   </div>
 
                   {/* Type de bien */}
@@ -400,109 +373,9 @@ const SearchResultsPage = () => {
               {/* Grille des biens */}
               {!loading && !error && properties.length > 0 && (
                 <div className="urbanet-properties-grid search-grid">
-                  {properties.map((item) => {
-                    const imageSrc = getPropertyImage(item);
-                    const tag = item.purpose === 'RENT' ? 'À louer' : 'À vendre';
-                    const typeLabel = TYPE_TRANSLATIONS[item.type] || item.type || 'Bien';
-                    const priceDisplay = formatPrice(item.price, item.purpose);
-                    const locationDisplay = [item.address, item.city].filter(Boolean).join(', ') || item.city || 'Maroc';
-                    const bedsDisplay = item.surfaceArea ? `${Math.max(1, Math.round(item.surfaceArea / 55))} ch.` : '3 ch.';
-                    const bathsDisplay = item.surfaceArea ? `${Math.max(1, Math.round(item.surfaceArea / 75))} sdb` : '2 sdb';
-                    const areaDisplay = item.surfaceArea ? `${item.surfaceArea} m²` : 'Superficie non précisée';
-                    const agencyName = item.owner
-                      ? `${item.owner.firstName || ''} ${item.owner.lastName || ''}`.trim() || item.owner.email
-                      : 'Propriétaire vérifié';
-
-                    return (
-                      <article key={item.id} className="urbanet-property-card">
-                        {/* Media Header */}
-                        <div className="property-media-wrapper">
-                          <img
-                            src={imageSrc}
-                            alt={item.title}
-                            className="property-img"
-                            loading="lazy"
-                          />
-                          <span className="property-badge">{tag}</span>
-
-                          {item.type && (
-                            <span className="property-type-tag">
-                              {typeLabel}
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Card Body */}
-                        <div className="property-body">
-                          <div className="property-price">{priceDisplay}</div>
-                          <h3 className="property-title" title={item.title}>
-                            {item.title}
-                          </h3>
-
-                          <div className="property-location">
-                            <svg
-                              width="15"
-                              height="15"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="#94a3b8"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            >
-                              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                              <circle cx="12" cy="10" r="3" />
-                            </svg>
-                            <span>{locationDisplay}</span>
-                          </div>
-
-                          {/* Caractéristiques */}
-                          <div className="property-specs">
-                            <span className="spec-item" title="Chambres estimées">
-                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M2 4v16" />
-                                <path d="M2 8h18a2 2 0 0 1 2 2v10" />
-                                <path d="M2 17h20" />
-                                <path d="M6 8v9" />
-                              </svg>
-                              {bedsDisplay}
-                            </span>
-                            <span className="spec-item" title="Salles de bain estimées">
-                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M9 6h11a2 2 0 0 1 2 2v2a4 4 0 0 1-4 4H9V6z" />
-                                <path d="M4 12v6" />
-                                <path d="M2 18h20" />
-                              </svg>
-                              {bathsDisplay}
-                            </span>
-                            <span className="spec-item" title="Superficie">
-                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <polyline points="15 3 21 3 21 9" />
-                                <polyline points="9 21 3 21 3 15" />
-                                <line x1="21" y1="3" x2="14" y2="10" />
-                                <line x1="3" y1="21" x2="10" y2="14" />
-                              </svg>
-                              {areaDisplay}
-                            </span>
-                          </div>
-
-                          {/* Card Footer */}
-                          <div className="property-footer">
-                            <span className="property-agency" title={`Annonce proposée par ${agencyName}`}>
-                              {agencyName}
-                            </span>
-                            <Link
-                              to={`/properties/${item.id}`}
-                              className="property-link property-link-btn"
-                              style={{ textDecoration: 'none' }}
-                            >
-                              Voir le bien →
-                            </Link>
-                          </div>
-                        </div>
-                      </article>
-                    );
-                  })}
+                  {properties.map((item) => (
+                    <PropertyCard key={item.id} property={item} />
+                  ))}
                 </div>
               )}
             </section>
