@@ -6,6 +6,8 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import AgencyResidenceList from '../components/AgencyResidenceList';
 import AgencyPropertyList from '../components/AgencyPropertyList';
+import AgencyBookings from '../components/agency/AgencyBookings';
+import AgencyAvailabilities from '../components/agency/AgencyAvailabilities';
 import ResidenceFormModal from '../components/ResidenceFormModal';
 import PropertyFormModal from '../components/PropertyFormModal';
 import PropertyReviewsModal from '../components/property/PropertyReviewsModal';
@@ -42,7 +44,7 @@ const ClientDashboard = () => {
       setShowPropertyModal(true);
     } else if (params.get('tab')) {
       const tabParam = params.get('tab');
-      if (tabParam === 'properties' || tabParam === 'residences') {
+      if (['properties', 'residences', 'bookings', 'availabilities'].includes(tabParam)) {
         setActiveTab(tabParam);
       }
     }
@@ -103,7 +105,7 @@ const ClientDashboard = () => {
       ? loadingProps
       : activeTab === 'residences'
       ? loadingRes
-      : loadingProps || loadingRes;
+      : false;
 
   return (
     <div className="urbanet-app-root">
@@ -251,6 +253,12 @@ const ClientDashboard = () => {
                 Mes Résidences
                 <span className="agency-tab-count">{residencesCount}</span>
               </button>
+              <button type="button" className={`agency-tab ${activeTab === 'bookings' ? 'active' : ''}`} onClick={() => setActiveTab('bookings')}>
+                Demandes de visites
+              </button>
+              <button type="button" className={`agency-tab ${activeTab === 'availabilities' ? 'active' : ''}`} onClick={() => setActiveTab('availabilities')}>
+                Mes disponibilités
+              </button>
             </div>
 
             {/* Boutons d'action et d'ajout */}
@@ -318,6 +326,8 @@ const ClientDashboard = () => {
                     />
                   </div>
                 )}
+                {activeTab === 'bookings' && <AgencyBookings />}
+                {activeTab === 'availabilities' && <AgencyAvailabilities />}
               </>
             )}
           </div>

@@ -139,7 +139,7 @@ const AgencyAvailabilities = () => {
           <div>
             <h2 className="agency-avail-title">Ajouter un créneau de disponibilité</h2>
             <p className="agency-avail-subtitle">
-              Publiez les plages horaires où vos agents ou collaborateurs peuvent recevoir des visites.
+              Publiez les plages horaires pendant lesquelles des visites peuvent être organisées.
             </p>
           </div>
         </div>
